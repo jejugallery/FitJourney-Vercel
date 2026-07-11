@@ -42,6 +42,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         buttonColor,
         videoThumbnailUrl,
         createdBy,
+        linkType,
+        linkLabel,
+        linkUrl,
+        detailUrl,
       } = req.body;
 
       if (!name || !datetime) {
@@ -55,12 +59,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           id, name, image_url, datetime, start_datetime_iso, 
           end_datetime_display, end_datetime_iso, location, 
           description, invitation_text, invitation_color, 
-          button_color, video_thumbnail_url, created_by
+          button_color, video_thumbnail_url, created_by,
+          link_type, link_label, link_url, detail_url
         ) VALUES (
           ${eventId}, ${name}, ${imageUrl || ''}, ${datetime}, ${startDatetimeIso || null}, 
           ${endDatetimeDisplay || null}, ${endDatetimeIso || null}, ${location || ''}, 
           ${description || ''}, ${invitationText || ''}, ${invitationColor || ''}, 
-          ${buttonColor || ''}, ${videoThumbnailUrl || ''}, ${createdBy || ''}
+          ${buttonColor || ''}, ${videoThumbnailUrl || ''}, ${createdBy || ''},
+          ${linkType || 'none'}, ${linkLabel || ''}, ${linkUrl || ''}, ${detailUrl || ''}
         )
       `;
 
@@ -86,6 +92,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         invitationColor,
         buttonColor,
         videoThumbnailUrl,
+        linkType,
+        linkLabel,
+        linkUrl,
+        detailUrl,
       } = req.body;
 
       const result = await sql`
@@ -101,7 +111,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           invitation_text = COALESCE(${invitationText}, invitation_text),
           invitation_color = COALESCE(${invitationColor}, invitation_color),
           button_color = COALESCE(${buttonColor}, button_color),
-          video_thumbnail_url = COALESCE(${videoThumbnailUrl}, video_thumbnail_url)
+          video_thumbnail_url = COALESCE(${videoThumbnailUrl}, video_thumbnail_url),
+          link_type = COALESCE(${linkType}, link_type),
+          link_label = COALESCE(${linkLabel}, link_label),
+          link_url = COALESCE(${linkUrl}, link_url),
+          detail_url = COALESCE(${detailUrl}, detail_url)
         WHERE id = ${eventId}
         RETURNING *
       `;

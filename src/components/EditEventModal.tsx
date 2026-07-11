@@ -29,10 +29,27 @@ interface EditEventModalProps {
   event: any;
 }
 
+const formatDatetimeForInput = (isoStr: string) => {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return '';
+    const pad = (num: number) => String(num).padStart(2, '0');
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  } catch {
+    return '';
+  }
+};
+
 export default function EditEventModal({ onClose, onSuccess, event }: EditEventModalProps) {
   const [name, setName] = useState(event.name || '');
-  const [datetime, setDatetime] = useState(event.startDatetimeIso || '');
-  const [endDatetime, setEndDatetime] = useState(event.endDatetimeIso || '');
+  const [datetime, setDatetime] = useState(formatDatetimeForInput(event.startDatetimeIso));
+  const [endDatetime, setEndDatetime] = useState(formatDatetimeForInput(event.endDatetimeIso));
   const [location, setLocation] = useState(event.location || '');
   const [description, setDescription] = useState(event.description || '');
   const [invitationText, setInvitationText] = useState(event.invitationText || '');
