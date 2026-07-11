@@ -67,6 +67,15 @@ export default function ShareEventPage() {
   const appointmentId = getParamSafe('appointmentId');
   const action = getParamSafe('action');
 
+  const normalizeRsvp = (r: any) => ({
+    id: r.userId || r.user_id || '',
+    userId: r.userId || r.user_id || '',
+    displayName: r.displayName || r.display_name || 'ผู้เข้าร่วม',
+    pictureUrl: r.pictureUrl || r.picture_url || '',
+    joinedAt: r.joinedAt || r.joined_at || '',
+    registeredBy: r.registeredBy || r.registered_by || ''
+  });
+
   useEffect(() => {
     if (liffLoading) return;
     if (liffError) {
@@ -91,14 +100,7 @@ export default function ShareEventPage() {
 
           // Fetch all RSVPs
           const rsvpsList = await eventRsvpsApi.list(eventId);
-          const rsvps = rsvpsList.map((r: any) => ({
-            id: r.user_id,
-            userId: r.user_id,
-            displayName: r.display_name,
-            pictureUrl: r.picture_url,
-            joinedAt: r.joined_at,
-            registeredBy: r.registered_by || ''
-          }));
+          const rsvps = rsvpsList.map(normalizeRsvp);
           setRsvpList(rsvps);
 
           setLoading(false);
@@ -286,13 +288,7 @@ export default function ShareEventPage() {
           let rsvpList: any[] = [];
           try {
             const rsvpsList = await eventRsvpsApi.list(eventId);
-            rsvpList = rsvpsList.map((r: any) => ({
-              userId: r.user_id,
-              displayName: r.display_name,
-              pictureUrl: r.picture_url,
-              joinedAt: r.joined_at,
-              registeredBy: r.registered_by || ''
-            }));
+            rsvpList = rsvpsList.map(normalizeRsvp);
           } catch (rsvpErr) {
             console.error("Error fetching RSVPs for share:", rsvpErr);
           }
@@ -845,14 +841,7 @@ export default function ShareEventPage() {
 
       // Fetch all RSVPs
       const rsvpsList = await eventRsvpsApi.list(eventId);
-      const updatedRsvps = rsvpsList.map((r: any) => ({
-        id: r.user_id,
-        userId: r.user_id,
-        displayName: r.display_name,
-        pictureUrl: r.picture_url,
-        joinedAt: r.joined_at,
-        registeredBy: r.registered_by || ''
-      }));
+      const updatedRsvps = rsvpsList.map(normalizeRsvp);
       setRsvpList(updatedRsvps);
       if (rsvpDocId === profile.userId) {
         setAlreadyRsvped(true);
@@ -881,7 +870,7 @@ export default function ShareEventPage() {
     if (!profile) return false;
     if (r.id === profile.userId) return true;
     if (r.registeredBy === profile.userId) return true;
-    if (r.id.startsWith('friend_') && r.displayName.endsWith(`(${profile.displayName})`)) return true;
+    if (String(r.id || '').startsWith('friend_') && String(r.displayName || '').endsWith(`(${profile.displayName})`)) return true;
     return false;
   };
 

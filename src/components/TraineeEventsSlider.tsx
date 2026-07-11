@@ -337,11 +337,11 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
       try {
         const rsvpsList = await eventRsvpsApi.list(ev.id);
         rsvpList = rsvpsList.map((r: any) => ({
-          userId: r.user_id,
-          displayName: r.display_name,
-          pictureUrl: r.picture_url,
-          joinedAt: r.joined_at,
-          registeredBy: r.registered_by || ''
+          userId: r.userId || r.user_id || '',
+          displayName: r.displayName || r.display_name || 'ผู้เข้าร่วม',
+          pictureUrl: r.pictureUrl || r.picture_url || '',
+          joinedAt: r.joinedAt || r.joined_at || '',
+          registeredBy: r.registeredBy || r.registered_by || ''
         }));
       } catch (rsvpErr) {
         console.error("Error fetching RSVPs for share:", rsvpErr);
