@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { sql } from './_db';
+import { sql } from './_db.js';
 import * as crypto from 'crypto';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

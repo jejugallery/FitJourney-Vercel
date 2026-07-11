@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { sql } from './_db';
+import { sql } from './_db.js';
 import axios from 'axios';
 import * as crypto from 'crypto';
 
