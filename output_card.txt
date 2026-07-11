@@ -1,0 +1,123 @@
+
+type Goal = 'maintain' | 'lose' | 'build';
+
+interface NutritionResultCardProps {
+  targetPictureUrl: string;
+  targetName: string;
+  bmr: number | '';
+  goal: Goal;
+  activityLevel: number;
+  adjustment: number;
+  tdee: number;
+  targetCalories: number;
+  macros: {
+    pPercent: number;
+    cPercent: number;
+    fPercent: number;
+    pGrams: number;
+    cGrams: number;
+    fGrams: number;
+  };
+}
+
+export default function NutritionResultCard({
+  targetPictureUrl,
+  targetName,
+  bmr,
+  goal,
+  activityLevel,
+  adjustment,
+  tdee,
+  targetCalories,
+  macros
+}: NutritionResultCardProps) {
+
+  const goalText = goal === 'maintain' ? 'รักษามวลกล้ามเนื้อ' : goal === 'lose' ? 'ลดน้ำหนัก' : 'เพิ่มกล้ามเนื้อ';
+  let activityText = 'ไม่ออกกำลังกายเลย';
+  if (activityLevel === 1.375) activityText = 'ออกกำลังกาย 1-3 วัน/สัปดาห์';
+  if (activityLevel === 1.55) activityText = 'ออกกำลังกาย 3-5 วัน/สัปดาห์';
+  if (activityLevel === 1.725) activityText = 'ออกกำลังกาย 6-7 วัน/สัปดาห์';
+  if (activityLevel === 1.9) activityText = 'ออกกำลังกายหนักมาก/นักกีฬา';
+
+  return (
+    <div style={{ background: '#fff', borderRadius: '16px', padding: '1.2rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+      {/* Profile Summary Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
+        {targetPictureUrl ? (
+          <img src={targetPictureUrl} alt="Profile" style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }} />
+        ) : (
+          <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#cbd5e1', border: '2px solid var(--primary)' }} />
+        )}
+        <div>
+          <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--text-main)' }}>{targetName || 'ไม่ระบุชื่อ'}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>ผลลัพธ์การคำนวณสารอาหาร</div>
+        </div>
+      </div>
+
+      {/* Summary Details */}
+      <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+          <span style={{ color: 'var(--text-muted)' }}>BMR:</span>
+          <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{bmr ? Number(bmr).toLocaleString() : '-'} kcal</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+          <span style={{ color: 'var(--text-muted)' }}>เป้าหมาย:</span>
+          <span style={{ fontWeight: '500' }}>{goalText}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+          <span style={{ color: 'var(--text-muted)' }}>กิจกรรม:</span>
+          <span style={{ fontWeight: '500' }}>{activityText}</span>
+        </div>
+        {(goal === 'lose' || goal === 'build') && (
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--text-muted)' }}>พลังงานที่{goal === 'lose' ? 'ลด' : 'เพิ่ม'}:</span>
+            <span style={{ fontWeight: '500', color: goal === 'lose' ? '#ef4444' : '#10b981' }}>{adjustment} kcal</span>
+          </div>
+        )}
+      </div>
+      
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+        <div style={{ flex: 1, background: '#f8fafc', padding: '1rem', borderRadius: '12px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>TDEE</div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#475569' }}>{tdee.toLocaleString()}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>kcal</div>
+        </div>
+        
+        <div style={{ flex: 1.2, background: 'var(--primary)', color: '#fff', padding: '1rem', borderRadius: '12px', textAlign: 'center', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.3)' }}>
+          <div style={{ fontSize: '0.8rem', opacity: 0.9, marginBottom: '0.3rem' }}>แคลอรีเป้าหมาย</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 'bold' }}>{targetCalories.toLocaleString()}</div>
+          <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>kcal/วัน</div>
+        </div>
+      </div>
+
+      <h4 style={{ marginBottom: '0.8rem', color: 'var(--text-main)', fontSize: '0.95rem' }}>สัดส่วนสารอาหารหลัก</h4>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+        {/* Protein */}
+        <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: '12px', padding: '0.8rem 0.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.2rem', marginBottom: '0.2rem' }}>🥩</div>
+          <div style={{ fontWeight: 'bold', color: '#be123c', fontSize: '0.8rem' }}>โปรตีน {macros.pPercent}%</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', margin: '0.3rem 0', color: '#9f1239' }}>{macros.pGrams}</div>
+          <div style={{ fontSize: '0.7rem', color: '#e11d48' }}>กรัม</div>
+        </div>
+
+        {/* Carbs */}
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '0.8rem 0.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.2rem', marginBottom: '0.2rem' }}>🍚</div>
+          <div style={{ fontWeight: 'bold', color: '#15803d', fontSize: '0.8rem' }}>คาร์บ {macros.cPercent}%</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', margin: '0.3rem 0', color: '#166534' }}>{macros.cGrams}</div>
+          <div style={{ fontSize: '0.7rem', color: '#16a34a' }}>กรัม</div>
+        </div>
+
+        {/* Fats */}
+        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '0.8rem 0.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.2rem', marginBottom: '0.2rem' }}>🥑</div>
+          <div style={{ fontWeight: 'bold', color: '#b45309', fontSize: '0.8rem' }}>ไขมัน {macros.fPercent}%</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', margin: '0.3rem 0', color: '#92400e' }}>{macros.fGrams}</div>
+          <div style={{ fontSize: '0.7rem', color: '#d97706' }}>กรัม</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+

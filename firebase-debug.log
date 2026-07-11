@@ -1,0 +1,47 @@
+[debug] [2026-07-11T09:00:05.625Z] ----------------------------------------------------------------------
+[debug] [2026-07-11T09:00:05.627Z] Command:       /opt/homebrew/Cellar/node/26.0.0/bin/node /Users/jejugallery/Desktop/FitJourney App/node_modules/.bin/firebase deploy --only hosting
+[debug] [2026-07-11T09:00:05.627Z] CLI Version:   15.19.1
+[debug] [2026-07-11T09:00:05.627Z] Platform:      darwin
+[debug] [2026-07-11T09:00:05.627Z] Node Version:  v26.0.0
+[debug] [2026-07-11T09:00:05.627Z] Time:          Sat Jul 11 2026 16:00:05 GMT+0700 (Indochina Time)
+[debug] [2026-07-11T09:00:05.627Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-11T09:00:06.347Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-11T09:00:06.347Z] > authorizing via signed-in user (jmaster.ani@gmail.com)
+[debug] [2026-07-11T09:00:06.347Z] [iam] checking project fitjourneythailand for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-07-11T09:00:06.348Z] Checked if tokens are valid: true, expires at: 1783762952166
+[debug] [2026-07-11T09:00:06.348Z] Checked if tokens are valid: true, expires at: 1783762952166
+[debug] [2026-07-11T09:00:06.349Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitjourneythailand:testIamPermissions [none]
+[debug] [2026-07-11T09:00:06.349Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitjourneythailand:testIamPermissions  x-goog-user-project=fitjourneythailand
+[debug] [2026-07-11T09:00:06.349Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitjourneythailand:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-07-11T09:00:07.552Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitjourneythailand:testIamPermissions 200
+[debug] [2026-07-11T09:00:07.552Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitjourneythailand:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-07-11T09:00:07.552Z] Checked if tokens are valid: true, expires at: 1783762952166
+[debug] [2026-07-11T09:00:07.552Z] Checked if tokens are valid: true, expires at: 1783762952166
+[debug] [2026-07-11T09:00:07.553Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/fitjourneythailand [none]
+[debug] [2026-07-11T09:00:08.035Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/fitjourneythailand 200
+[debug] [2026-07-11T09:00:08.035Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/fitjourneythailand {"projectId":"fitjourneythailand","projectNumber":"971236941563","displayName":"FitJourneyThailand","name":"projects/fitjourneythailand","resources":{"hostingSite":"fitjourneythailand"},"state":"ACTIVE","labels":{"firebase":"enabled"},"etag":"1_7e3c84d5-4b7b-4a06-961b-be5d745e54f9"}
+[info] 
+[info] === Deploying to 'fitjourneythailand'...
+[info] 
+[info] i  deploying hosting 
+[debug] [2026-07-11T09:00:08.037Z] Checked if tokens are valid: true, expires at: 1783762952166
+[debug] [2026-07-11T09:00:08.037Z] Checked if tokens are valid: true, expires at: 1783762952166
+[debug] [2026-07-11T09:00:08.037Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/fitjourneythailand/sites/fitjourneythailand [none]
+[debug] [2026-07-11T09:00:09.226Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/fitjourneythailand/sites/fitjourneythailand 200
+[debug] [2026-07-11T09:00:09.226Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/fitjourneythailand/sites/fitjourneythailand {"name":"projects/fitjourneythailand/sites/fitjourneythailand","defaultUrl":"https://fitjourneythailand.web.app","appId":"1:971236941563:web:cb44dfbd76f7b1fed6da5e","type":"DEFAULT_SITE"}
+[debug] [2026-07-11T09:00:09.227Z] Checked if tokens are valid: true, expires at: 1783762952166
+[debug] [2026-07-11T09:00:09.227Z] Checked if tokens are valid: true, expires at: 1783762952166
+[debug] [2026-07-11T09:00:09.227Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/fitjourneythailand/versions [none]
+[debug] [2026-07-11T09:00:09.227Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/fitjourneythailand/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2026-07-11T09:00:10.575Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/fitjourneythailand/versions 200
+[debug] [2026-07-11T09:00:10.575Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/fitjourneythailand/versions {"name":"projects/971236941563/sites/fitjourneythailand/versions/9a750283066b8802","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[info] i  hosting[fitjourneythailand]: beginning deploy... 
+[info] i  hosting[fitjourneythailand]: found 17 files in dist 
+[debug] [2026-07-11T09:00:10.583Z] [hosting] uploading with 200 concurrency
+[debug] [2026-07-11T09:00:10.639Z] Checked if tokens are valid: true, expires at: 1783762952166
+[debug] [2026-07-11T09:00:10.639Z] Checked if tokens are valid: true, expires at: 1783762952166
+[debug] [2026-07-11T09:00:10.640Z] [hosting] hash cache [ZGlzdA] stored for 17 files
+[debug] [2026-07-11T09:00:10.640Z] [hosting][hash queue][FINAL] {"max":54,"min":7,"avg":26.58823529411765,"active":0,"complete":17,"success":17,"errored":0,"retried":0,"total":17,"elapsed":56}
+[debug] [2026-07-11T09:00:10.640Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/971236941563/sites/fitjourneythailand/versions/9a750283066b8802:populateFiles [none]
+[debug] [2026-07-11T09:00:10.640Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/971236941563/sites/fitjourneythailand/versions/9a750283066b8802:populateFiles {"files":{"/index.html":"3a31bfe395d355f3a7154c6a42d494ea1da308c5116786087ad6eda3660c3dd7","/sync.png":"bc3c004af9bbe2add009fcdddc663410609b20b15cb651b8aa364ebc3da7bb27","/favicon.svg":"9764bb7560c46b519fbf06a254142cd29b5760bf072d3858eafd4ae7b6f3d298","/assets/vendor-firebase-storage-kaXKWoWj.js":"7981821685142619062b5baf7e64f589a8e3027df9efa81db9ef3a105dee5a1a","/icons.svg":"3e9c9fadbde05292d9b4b7f9fe78081c1905971ddc77e665209d20ea998db877","/assets/index-CaKfLgrQ.css":"692a39e8200d3a69ff532ff3741619d5ae1e46b8d5c599fef6c63b2e1125ca73","/assets/rolldown-runtime-QTnfLwEv.js":"bf17120666d6c90bbc89bd9c75cbaf455bb80856b1f892f18a2d0efddf88a265","/favicon.ico":"da3297b2d4f2bdab00b4d9ebf1a207b1a36404e87f349d7d6f103363aa9d946f","/line-qr.png":"23ca91c0caf1f1bf528c0fb38af70b55a3eae7d767e40d85c604f0305dde7374","/assets/vendor-firebase-core-Cq-HxZFO.js":"3418aff7ec4b57bb29ce7a52f7c716115e190090ffe41a7d02b3b4496e0aeee0","/assets/vendor-liff-DFEoZzVt.js":"450463a89821fa581def761a43c65eddcb3b90b9f11eff1b469ea228fa1807f5","/assets/vendor-firebase-firestore-DuPJImb2.js":"edf4f119162dc82bc703a9765a7fc13a857f22f2cf9392351554f314fb62d9bc","/fat-icon.png":"9ade0b1af3335c3e6976e8a5a448811d48917d2608919d43c396c55acb6ad325","/assets/vendor-react-C-ge003y.js":"3fc90e7f150e49a8311cca2af4bf66265ef92c0ab17072524cb1f27ee4251836","/assets/vendor-charts-C8w6sZIG.js":"cdb747471009809b9eb3a60ca32c1d0b49b3f7743bdb380b32083a9be4aaee6f","/invite_hero.png":"08ff1b374fb2f87b0bf6f07c2e807cfe2ed7656f2a0e0521e3c2749fcf380806","/assets/index-iKBifUxA.js":"b35482ba4eb3c446fd9c015ea592ee37459d0b3c45b93aeea20e7fc167651b06"}}
