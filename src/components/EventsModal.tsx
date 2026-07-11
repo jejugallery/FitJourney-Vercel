@@ -1396,6 +1396,13 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
                         <div style={{ fontSize: '0.9rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px' }}>
                           📍 {ev.location}
                         </div>
+
+                        {(ev.linkType === 'rsvp' || ev.linkType === 'zoom') && (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '10px', padding: '6px 10px', borderRadius: '999px', background: ev.linkType === 'rsvp' ? '#f3e8ff' : '#e0f2fe', color: ev.linkType === 'rsvp' ? '#6d28d9' : '#0369a1', fontSize: '0.78rem', fontWeight: 'bold' }}>
+                            <span>{ev.linkType === 'rsvp' ? '✍️' : '🎥'}</span>
+                            รูปแบบปุ่ม: {ev.linkType === 'rsvp' ? 'ลงชื่อ' : 'เข้าผ่าน Zoom'}
+                          </div>
+                        )}
                         
                         {myInv && myInv.status === 'pending' && (
                           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>

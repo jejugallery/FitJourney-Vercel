@@ -632,6 +632,13 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
                 <div style={{ fontSize: '0.85rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   📍 {ev.location}
                 </div>
+
+                {(ev.linkType === 'rsvp' || ev.linkType === 'zoom') && (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', alignSelf: 'flex-start', gap: '5px', marginBottom: '12px', padding: '5px 9px', borderRadius: '999px', background: ev.linkType === 'rsvp' ? '#f3e8ff' : '#e0f2fe', color: ev.linkType === 'rsvp' ? '#6d28d9' : '#0369a1', fontSize: '0.72rem', fontWeight: 'bold' }}>
+                    <span>{ev.linkType === 'rsvp' ? '✍️' : '🎥'}</span>
+                    {ev.linkType === 'rsvp' ? 'ปุ่มลงชื่อ' : 'ปุ่มเข้าผ่าน Zoom'}
+                  </div>
+                )}
                 
                 <div style={{ marginTop: 'auto' }}>
                   {myInv && myInv.status === 'pending' && (

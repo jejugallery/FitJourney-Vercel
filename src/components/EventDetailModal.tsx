@@ -462,6 +462,12 @@ export default function EventDetailModal({ eventId, initialEventData, onClose, u
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#475569', fontSize: '1rem' }}>
               <span style={{ fontSize: '1.2rem' }}>📍</span> {eventData.location}
             </div>
+            {(eventData.linkType === 'rsvp' || eventData.linkType === 'zoom') && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', alignSelf: 'flex-start', gap: '7px', marginTop: '4px', padding: '7px 12px', borderRadius: '999px', background: eventData.linkType === 'rsvp' ? '#f3e8ff' : '#e0f2fe', color: eventData.linkType === 'rsvp' ? '#6d28d9' : '#0369a1', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                <span>{eventData.linkType === 'rsvp' ? '✍️' : '🎥'}</span>
+                รูปแบบปุ่มลิงก์: {eventData.linkType === 'rsvp' ? 'ลงชื่อ' : 'เข้าผ่าน Zoom'}
+              </div>
+            )}
           </div>
 
           {eventData.description && (
