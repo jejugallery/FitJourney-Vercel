@@ -170,8 +170,8 @@ export default function Home({ isRecordOnly = false }: { isRecordOnly?: boolean 
 
       const trainerCode = adminData?.trainerCode ? String(adminData.trainerCode) : '';
       const registerUri = trainerCode
-        ? `https://liff.line.me/2010284484-HzKokXFF/register-trainee?trainerCode=${encodeURIComponent(trainerCode)}`
-        : "https://liff.line.me/2010284484-HzKokXFF/register-trainee";
+        ? `https://liff.line.me/2010284484-jvUDlx0u/register-trainee?trainerCode=${encodeURIComponent(trainerCode)}`
+        : "https://liff.line.me/2010284484-jvUDlx0u/register-trainee";
 
       // Build trainerInfoContents imperatively with profile name and code stacked vertically
       const profileInfoContents: any[] = [

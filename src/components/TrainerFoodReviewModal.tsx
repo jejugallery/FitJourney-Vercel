@@ -66,7 +66,7 @@ export default function TrainerFoodReviewModal({ trainerId, initialTraineeId, on
                 action: {
                   type: "uri",
                   label: "ลงทะเบียนเลย",
-                  uri: "https://liff.line.me/2010284484-HzKokXFF"
+                  uri: "https://liff.line.me/2010284484-jvUDlx0u"
                 },
                 contents: [
                   {
@@ -440,7 +440,7 @@ export default function TrainerFoodReviewModal({ trainerId, initialTraineeId, on
               action: {
                 type: "uri",
                 label: "ส่งอาหารเพิ่ม",
-                uri: "https://liff.line.me/2010284484-HzKokXFF"
+                uri: "https://liff.line.me/2010284484-jvUDlx0u"
               }
             }
           ],

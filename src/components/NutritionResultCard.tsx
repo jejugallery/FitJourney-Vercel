@@ -273,7 +273,7 @@ export default function NutritionResultCard({
                 action: {
                   type: 'uri',
                   label: 'ดูรายละเอียด',
-                  uri: 'https://liff.line.me/2010284484-HzKokXFF'
+                  uri: 'https://liff.line.me/2010284484-jvUDlx0u'
                 }
               }
             ]

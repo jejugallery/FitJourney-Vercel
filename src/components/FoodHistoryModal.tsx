@@ -224,7 +224,7 @@ export default function FoodHistoryModal({ targetId, onClose }: FoodHistoryModal
               { type: "box", layout: "vertical", margin: "lg", spacing: "sm", contents: [{ type: "text", text: "คอมเมนต์จาก:", color: "#94a3b8", size: "sm" }, { type: "box", layout: "horizontal", spacing: "md", margin: "md", alignItems: "center", contents: [{ type: "image", url: log.reviewerImage || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png", flex: 0, size: "40px", aspectRatio: "1:1", aspectMode: "cover" }, { type: "text", text: log.reviewerName || "เทรนเนอร์ของคุณ", weight: "bold", size: "md", color: "#333333" }] }, { type: "box", layout: "vertical", margin: "lg", spacing: "sm", contents: [{ type: "text", text: textMessage, wrap: true, color: "#666666", size: "sm" }] }] }
             ]
           },
-          footer: { type: "box", layout: "vertical", spacing: 'sm', contents: [{ type: "button", style: "primary", color: "#ef4444", height: "sm", action: { type: "uri", label: "ส่งอาหารเพิ่ม", uri: "https://liff.line.me/2010284484-HzKokXFF" } }], flex: 0 }
+          footer: { type: "box", layout: "vertical", spacing: 'sm', contents: [{ type: "button", style: "primary", color: "#ef4444", height: "sm", action: { type: "uri", label: "ส่งอาหารเพิ่ม", uri: "https://liff.line.me/2010284484-jvUDlx0u" } }], flex: 0 }
         }
       };
       const res = await liff.shareTargetPicker([flexMessage as any]);

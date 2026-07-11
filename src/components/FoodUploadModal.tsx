@@ -236,7 +236,7 @@ export default function FoodUploadModal({ traineeId, trainerIds, onClose }: { tr
                     action: {
                       type: "uri",
                       label: "ตรวจเลย",
-                      uri: `https://liff.line.me/2010284484-HzKokXFF/review-food/${traineeId}`
+                      uri: `https://liff.line.me/2010284484-jvUDlx0u/review-food/${traineeId}`
                     },
                     contents: [
                       {

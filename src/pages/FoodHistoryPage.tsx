@@ -414,7 +414,7 @@ export default function FoodHistoryPage() {
                 action: {
                   type: "uri",
                   label: "ส่งอาหารเพิ่ม",
-                  uri: "https://liff.line.me/2010284484-HzKokXFF"
+                  uri: "https://liff.line.me/2010284484-jvUDlx0u"
                 }
               }
             ],
