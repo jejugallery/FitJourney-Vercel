@@ -265,24 +265,30 @@ export default function PaymentPage() {
       // Send Flex Message back to chat thread
       try {
         const paymentsListRaw = await billingPaymentsApi.list(billingId);
-        let paymentsList = paymentsListRaw.map((p: any) => ({
-          userId: p.user_id,
-          displayName: p.display_name,
-          pictureUrl: p.picture_url,
-          slipUrl: p.slip_url,
-          submittedAt: p.submitted_at,
-          friends: p.friends || [],
-          slips: p.slips || []
-        }));
+        // The API service converts response keys to camelCase. Keep snake_case
+        // fallbacks for compatibility with any direct/legacy API responses.
+        let paymentsList = paymentsListRaw
+          .map((p: any) => ({
+            userId: p.userId ?? p.user_id,
+            displayName: p.displayName ?? p.display_name,
+            pictureUrl: p.pictureUrl ?? p.picture_url,
+            slipUrl: p.slipUrl ?? p.slip_url,
+            submittedAt: p.submittedAt ?? p.submitted_at,
+            friends: p.friends || [],
+            slips: p.slips || []
+          }))
+          // Never render malformed rows as anonymous duplicate payers.
+          .filter(p => Boolean(p.userId));
 
-        // Force override current user's latest data to ensure immediate consistency
+        // Replace the current user's API row with the latest local data rather
+        // than appending a second copy of the same payer.
         paymentsList = paymentsList.filter(p => p.userId !== profile.userId);
         paymentsList.push({
           userId: profile.userId,
           displayName: profile.displayName,
           pictureUrl: profile.pictureUrl || '',
           slipUrl,
-          submittedAt: null,
+          submittedAt: new Date().toISOString(),
           friends: accumulatedFriends,
           slips: updatedSlips
         });
