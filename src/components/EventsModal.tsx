@@ -1366,11 +1366,18 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
                       onMouseOut={(e) => e.currentTarget.style.transform = 'none'}
                     >
                       {ev.imageUrl && (
-                        isVideoUrl(ev.imageUrl) ? (
-                          <video src={ev.imageUrl} muted loop playsInline autoPlay style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
-                        ) : (
-                          <img src={ev.imageUrl} alt={ev.name} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
-                        )
+                        <div style={{ position: 'relative' }}>
+                          {isVideoUrl(ev.imageUrl) ? (
+                            <video src={ev.imageUrl} muted loop playsInline autoPlay style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
+                          ) : (
+                            <img src={ev.imageUrl} alt={ev.name} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
+                          )}
+                          {(ev.linkType === 'rsvp' || ev.linkType === 'zoom') && (
+                            <div style={{ position: 'absolute', right: '10px', bottom: '10px', padding: '6px 12px', borderRadius: '999px', background: '#6d28d9', color: '#fff', fontSize: '0.78rem', fontWeight: 'bold', boxShadow: '0 3px 10px rgba(76,29,149,0.35)' }}>
+                              {ev.linkType === 'rsvp' ? 'ลงชื่อ' : 'เข้าผ่าน Zoom'}
+                            </div>
+                          )}
+                        </div>
                       )}
                       <div style={{ padding: '16px' }}>
                         <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text-main)', marginBottom: '8px' }}>
@@ -1397,13 +1404,6 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
                           📍 {ev.location}
                         </div>
 
-                        {(ev.linkType === 'rsvp' || ev.linkType === 'zoom') && (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '10px', padding: '6px 10px', borderRadius: '999px', background: ev.linkType === 'rsvp' ? '#f3e8ff' : '#e0f2fe', color: ev.linkType === 'rsvp' ? '#6d28d9' : '#0369a1', fontSize: '0.78rem', fontWeight: 'bold' }}>
-                            <span>{ev.linkType === 'rsvp' ? '✍️' : '🎥'}</span>
-                            รูปแบบปุ่ม: {ev.linkType === 'rsvp' ? 'ลงชื่อ' : 'เข้าผ่าน Zoom'}
-                          </div>
-                        )}
-                        
                         {myInv && myInv.status === 'pending' && (
                           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
                             <button 

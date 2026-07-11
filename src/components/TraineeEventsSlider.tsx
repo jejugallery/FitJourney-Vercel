@@ -596,17 +596,22 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
                 flexDirection: 'column'
               }}
             >
-              {ev.imageUrl ? (
-                isVideoUrl(ev.imageUrl) ? (
-                  <video src={ev.imageUrl} muted loop playsInline autoPlay style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
+              <div style={{ position: 'relative' }}>
+                {ev.imageUrl ? (
+                  isVideoUrl(ev.imageUrl) ? (
+                    <video src={ev.imageUrl} muted loop playsInline autoPlay style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
+                  ) : (
+                    <img src={ev.imageUrl} alt={ev.name} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
+                  )
                 ) : (
-                  <img src={ev.imageUrl} alt={ev.name} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
-                )
-              ) : (
-                <div style={{ width: '100%', height: '140px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>
-                  📅
-                </div>
-              )}
+                  <div style={{ width: '100%', height: '140px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>📅</div>
+                )}
+                {(ev.linkType === 'rsvp' || ev.linkType === 'zoom') && (
+                  <div style={{ position: 'absolute', right: '10px', bottom: '10px', padding: '6px 12px', borderRadius: '999px', background: '#6d28d9', color: '#fff', fontSize: '0.75rem', fontWeight: 'bold', boxShadow: '0 3px 10px rgba(76,29,149,0.35)' }}>
+                    {ev.linkType === 'rsvp' ? 'ลงชื่อ' : 'เข้าผ่าน Zoom'}
+                  </div>
+                )}
+              </div>
               
               <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--text-main)', marginBottom: '8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -633,13 +638,6 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
                   📍 {ev.location}
                 </div>
 
-                {(ev.linkType === 'rsvp' || ev.linkType === 'zoom') && (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', alignSelf: 'flex-start', gap: '5px', marginBottom: '12px', padding: '5px 9px', borderRadius: '999px', background: ev.linkType === 'rsvp' ? '#f3e8ff' : '#e0f2fe', color: ev.linkType === 'rsvp' ? '#6d28d9' : '#0369a1', fontSize: '0.72rem', fontWeight: 'bold' }}>
-                    <span>{ev.linkType === 'rsvp' ? '✍️' : '🎥'}</span>
-                    {ev.linkType === 'rsvp' ? 'ปุ่มลงชื่อ' : 'ปุ่มเข้าผ่าน Zoom'}
-                  </div>
-                )}
-                
                 <div style={{ marginTop: 'auto' }}>
                   {myInv && myInv.status === 'pending' && (
                     <div style={{ display: 'flex', gap: '8px' }}>
