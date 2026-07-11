@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { healthKnowledgesApi } from '../utils/api';
-import { LIFF_URLS } from '../constants/liff';
+import { LIFF_IDS, LIFF_URLS } from '../constants/liff';
 import { uploadToImgBB } from '../utils/mediaHelper';
 import HealthKnowledgePlayerModal from './HealthKnowledgePlayerModal';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
@@ -385,7 +385,12 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
         return;
       }
 
-      const liffUrl = `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${item.id}`;
+      const knowledgeLiffUrl = item.category === 'business'
+        ? LIFF_URLS.SHARE_KNOWLEDGE
+        : LIFF_URLS.SHARE_LINK;
+      const liffUrl = item.category === 'business'
+        ? `${knowledgeLiffUrl}?knowledgeId=${item.id}`
+        : `${knowledgeLiffUrl}?knowledgeId=${item.id}&liffId=${LIFF_IDS.SHARE_LINK}`;
       let flexMsg: any;
 
       if (item.category === 'business') {
@@ -477,7 +482,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                         type: "uri",
                         label: "กดฟังเลยตอนนี้",
                         uri: item.isChallenge 
-                          ? `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${item.id}`
+                          ? liffUrl
                           : (item.videoUrl ? (item.videoUrl.includes('?') ? `${item.videoUrl}&openExternalBrowser=1` : `${item.videoUrl}?openExternalBrowser=1`) : '')
                       },
                       contents: [
@@ -501,7 +506,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                         action: {
                           type: "uri",
                           label: "Share",
-                          uri: `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${item.id}`
+                          uri: liffUrl
                         }
                       }
                     ] : [])
@@ -518,7 +523,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                     action: {
                       type: "uri",
                       label: "แชร์สิ่งที่ได้",
-                      uri: `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${item.id}`
+                      uri: liffUrl
                     },
                     contents: [
                       {

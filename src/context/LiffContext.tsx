@@ -42,9 +42,10 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (path.startsWith('/shareKnowledge')) {
           LIFF_ID = LIFF_IDS.SHARE_KNOWLEDGE;
         } else if (path.startsWith('/shareLink')) {
-          // Links created for knowledge content use FYLbLMl2 and its
-          // endpoint is /shareLink, so this page must initialize the same LIFF app.
-          LIFF_ID = LIFF_IDS.SHARE_KNOWLEDGE;
+          const requestedLiffId = new URLSearchParams(window.location.search).get('liffId');
+          LIFF_ID = requestedLiffId === LIFF_IDS.SHARE_LINK
+            ? LIFF_IDS.SHARE_LINK
+            : LIFF_IDS.SHARE_KNOWLEDGE;
         } else if (path.startsWith('/shareEvent')) {
           LIFF_ID = LIFF_IDS.SHARE_EVENT;
         }

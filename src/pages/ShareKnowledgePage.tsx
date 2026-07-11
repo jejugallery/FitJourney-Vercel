@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { healthKnowledgesApi } from '../utils/api';
-import { LIFF_URLS } from '../constants/liff';
+import { LIFF_IDS, LIFF_URLS } from '../constants/liff';
 import { useLiff } from '../context/LiffContext';
 import liff from '@line/liff';
 
@@ -73,6 +73,14 @@ export default function ShareKnowledgePage() {
           return;
         }
 
+        const category = rawData.category;
+        if (category === 'business') {
+          const shareLinkUrl = new URL('/shareLink', window.location.origin);
+          shareLinkUrl.searchParams.set('knowledgeId', knowledgeId);
+          window.location.replace(shareLinkUrl.toString());
+          return;
+        }
+
         const data = {
           id: rawData.id,
           title: rawData.title,
@@ -80,13 +88,13 @@ export default function ShareKnowledgePage() {
           videoThumbnailUrl: rawData.videoThumbnailUrl || rawData.video_thumbnail_url,
           createdBy: rawData.createdBy || rawData.created_by,
           createdAt: rawData.createdAt || rawData.created_at,
-          category: rawData.category,
+          category,
           promoText: rawData.promoText || rawData.promo_text,
           isChallenge: rawData.isChallenge || rawData.is_challenge
         };
 
         // Construct Flex Message
-        const liffUrl = `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${data.id}`;
+        const liffUrl = `${LIFF_URLS.SHARE_LINK}?knowledgeId=${data.id}&liffId=${LIFF_IDS.SHARE_LINK}`;
         let flexMsg: any;
 
         if (data.category === 'business') {
@@ -178,7 +186,7 @@ export default function ShareKnowledgePage() {
                           type: "uri",
                           label: "กดฟังเลยตอนนี้",
                           uri: data.isChallenge 
-                            ? `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${data.id}`
+                            ? liffUrl
                             : (data.videoUrl ? (data.videoUrl.includes('?') ? `${data.videoUrl}&openExternalBrowser=1` : `${data.videoUrl}?openExternalBrowser=1`) : '')
                         },
                         contents: [
@@ -202,7 +210,7 @@ export default function ShareKnowledgePage() {
                           action: {
                             type: "uri",
                             label: "Share",
-                            uri: `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${data.id}`
+                            uri: liffUrl
                           }
                         }
                       ] : [])
@@ -219,7 +227,7 @@ export default function ShareKnowledgePage() {
                       action: {
                         type: "uri",
                         label: "แชร์สิ่งที่ได้",
-                        uri: `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${data.id}`
+                        uri: liffUrl
                       },
                       contents: [
                         {
