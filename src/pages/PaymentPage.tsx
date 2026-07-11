@@ -77,16 +77,16 @@ export default function PaymentPage() {
               id: data.id,
               name: data.name,
               amount: data.amount,
-              bankName: data.bank_name,
-              accountName: data.account_name,
-              accountNumber: data.account_number,
+              bankName: data.bankName || data.bank_name,
+              accountName: data.accountName || data.account_name,
+              accountNumber: data.accountNumber || data.account_number,
               description: data.description,
-              invitationText: data.invitation_text,
-              invitationColor: data.invitation_color,
-              buttonColor: data.button_color,
+              invitationText: data.invitationText || data.invitation_text,
+              invitationColor: data.invitationColor || data.invitation_color,
+              buttonColor: data.buttonColor || data.button_color,
               status: data.status,
-              createdBy: data.created_by,
-              createdAt: data.created_at
+              createdBy: data.createdBy || data.created_by,
+              createdAt: data.createdAt || data.created_at
             });
           }
         } else {
@@ -109,18 +109,18 @@ export default function PaymentPage() {
         const data = await billingPaymentsApi.get(billingId, profile.userId);
         if (data) {
           const mappedPayment = {
-            userId: data.user_id,
-            slipUrl: data.slip_url,
+            userId: data.userId || data.user_id,
+            slipUrl: data.slipUrl || data.slip_url,
             amount: data.amount,
-            transDate: data.trans_date,
-            transTime: data.trans_time,
+            transDate: data.transDate || data.trans_date,
+            transTime: data.transTime || data.trans_time,
             status: data.status,
-            slipData: data.slip_data,
-            verifiedAt: data.verified_at,
-            errorMessage: data.error_message,
-            senderName: data.sender_name,
-            receiverName: data.receiver_name,
-            submittedAt: data.submitted_at
+            slipData: data.slipData || data.slip_data,
+            verifiedAt: data.verifiedAt || data.verified_at,
+            errorMessage: data.errorMessage || data.error_message,
+            senderName: data.senderName || data.sender_name,
+            receiverName: data.receiverName || data.receiver_name,
+            submittedAt: data.submittedAt || data.submitted_at
           };
           setExistingPayment(mappedPayment);
           if (mappedPayment.slipUrl) {
