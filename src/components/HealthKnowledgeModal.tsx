@@ -33,13 +33,13 @@ const fetchGlobalItems = async () => {
     const list = listRaw.map((k: any) => ({
       id: k.id,
       title: k.title,
-      videoUrl: k.video_url,
-      videoThumbnailUrl: k.video_thumbnail_url,
-      createdBy: k.created_by,
-      createdAt: k.created_at,
+      videoUrl: k.videoUrl || k.video_url,
+      videoThumbnailUrl: k.videoThumbnailUrl || k.video_thumbnail_url,
+      createdBy: k.createdBy || k.created_by,
+      createdAt: k.createdAt || k.created_at,
       category: k.category,
-      promoText: k.promo_text,
-      isChallenge: k.is_challenge
+      promoText: k.promoText || k.promo_text,
+      isChallenge: k.isChallenge || k.is_challenge
     }));
     cachedItems = list;
     loadingCache = false;

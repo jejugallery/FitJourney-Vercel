@@ -279,13 +279,13 @@ export default function ShareNotePage() {
         setKnowledge({
           id: rawData.id,
           title: rawData.title,
-          videoUrl: rawData.video_url,
-          videoThumbnailUrl: rawData.video_thumbnail_url,
-          createdBy: rawData.created_by,
-          createdAt: rawData.created_at,
+          videoUrl: rawData.videoUrl || rawData.video_url,
+          videoThumbnailUrl: rawData.videoThumbnailUrl || rawData.video_thumbnail_url,
+          createdBy: rawData.createdBy || rawData.created_by,
+          createdAt: rawData.createdAt || rawData.created_at,
           category: rawData.category,
-          promoText: rawData.promo_text,
-          isChallenge: rawData.is_challenge
+          promoText: rawData.promoText || rawData.promo_text,
+          isChallenge: rawData.isChallenge || rawData.is_challenge
         });
         setLoading(false);
       } catch (err: any) {
@@ -305,12 +305,12 @@ export default function ShareNotePage() {
       const rawNotes = await knowledgeNotesApi.list(knowledgeId);
       const mapped = rawNotes.map((n: any) => ({
         id: n.id,
-        knowledgeId: n.knowledge_id,
-        userId: n.user_id,
-        displayName: n.display_name,
-        pictureUrl: n.picture_url,
+        knowledgeId: n.knowledgeId || n.knowledge_id,
+        userId: n.userId || n.user_id,
+        displayName: n.displayName || n.display_name,
+        pictureUrl: n.pictureUrl || n.picture_url,
         note: n.note,
-        createdAt: n.created_at
+        createdAt: n.createdAt || n.created_at
       }));
       setNotes(mapped);
     } catch (err) {

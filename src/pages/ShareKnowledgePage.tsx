@@ -76,13 +76,13 @@ export default function ShareKnowledgePage() {
         const data = {
           id: rawData.id,
           title: rawData.title,
-          videoUrl: rawData.video_url,
-          videoThumbnailUrl: rawData.video_thumbnail_url,
-          createdBy: rawData.created_by,
-          createdAt: rawData.created_at,
+          videoUrl: rawData.videoUrl || rawData.video_url,
+          videoThumbnailUrl: rawData.videoThumbnailUrl || rawData.video_thumbnail_url,
+          createdBy: rawData.createdBy || rawData.created_by,
+          createdAt: rawData.createdAt || rawData.created_at,
           category: rawData.category,
-          promoText: rawData.promo_text,
-          isChallenge: rawData.is_challenge
+          promoText: rawData.promoText || rawData.promo_text,
+          isChallenge: rawData.isChallenge || rawData.is_challenge
         };
 
         // Construct Flex Message
