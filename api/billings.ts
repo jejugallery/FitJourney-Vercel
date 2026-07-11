@@ -77,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           amount = COALESCE(${amount}, amount),
           bank_name = COALESCE(${bankName}, bank_name),
           account_name = COALESCE(${accountName}, account_name),
-          account_number = COALESCE(${accountNumber}, accountNumber),
+          account_number = COALESCE(${accountNumber}, account_number),
           description = COALESCE(${description}, description),
           invitation_text = COALESCE(${invitationText}, invitation_text),
           invitation_color = COALESCE(${invitationColor}, invitation_color),
