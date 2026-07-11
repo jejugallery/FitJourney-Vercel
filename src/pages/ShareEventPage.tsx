@@ -1009,54 +1009,81 @@ export default function ShareEventPage() {
             );
           })()}
 
-          {/* Divider */}
-          <div style={{ height: '1px', background: '#f1f5f9', margin: '0 0 24px 0' }} />
-
+          {/* Owner toggles */}
           {eventDataCache?.createdBy === profile.userId && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '12px 14px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'left' }}>
+            <div style={{
+              marginBottom: '22px', padding: '14px', borderRadius: '20px',
+              background: 'linear-gradient(145deg, #fafaff 0%, #f5f3ff 100%)',
+              border: '1px solid #e9e5ff', boxShadow: '0 8px 24px rgba(109,40,217,0.07)',
+              display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 2px 2px' }}>
+                <span style={{ fontSize: '1rem' }}>⚙️</span>
                 <div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#334155' }}>เปิดรับลงชื่อ</div>
-                  <div style={{ fontSize: '0.75rem', color: rsvpEnabled ? '#16a34a' : '#ef4444', marginTop: '2px' }}>
-                    {rsvpEnabled ? 'กำลังเปิดรับลงชื่อ' : 'ปิดการรับลงชื่อแล้ว'}
+                  <div style={{ color: '#312e81', fontWeight: 800, fontSize: '0.82rem' }}>ตั้งค่าการลงชื่อ</div>
+                  <div style={{ color: '#8b8aa3', fontSize: '0.68rem', marginTop: '1px' }}>เฉพาะผู้สร้างกิจกรรมเท่านั้น</div>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+                background: '#ffffff', borderRadius: '15px', padding: '12px 13px',
+                border: `1.5px solid ${rsvpEnabled ? '#bbf7d0' : '#e2e8f0'}`,
+                boxShadow: '0 2px 8px rgba(30,41,59,0.04)', transition: 'all 0.25s ease'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '11px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', background: rsvpEnabled ? '#dcfce7' : '#f1f5f9' }}>✍️</div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#1e293b' }}>เปิดรับลงชื่อ</div>
+                    <div style={{ fontSize: '0.7rem', color: rsvpEnabled ? '#15803d' : '#64748b', marginTop: '2px', fontWeight: 600 }}>
+                      {rsvpEnabled ? 'ผู้เข้าร่วมลงชื่อได้แล้ว' : 'หยุดรับรายชื่อชั่วคราว'}
+                    </div>
                   </div>
                 </div>
                 <button
-                  type="button"
+                  onClick={handleRsvpStatusChange}
+                  disabled={updatingRsvpStatus}
                   role="switch"
                   aria-checked={rsvpEnabled}
                   aria-label="เปิดหรือปิดการรับลงชื่อ"
-                  onClick={handleRsvpStatusChange}
-                  disabled={updatingRsvpStatus}
-                  style={{ width: '52px', height: '30px', padding: '3px', border: 'none', borderRadius: '999px', background: rsvpEnabled ? '#22c55e' : '#cbd5e1', cursor: updatingRsvpStatus ? 'wait' : 'pointer', transition: 'background 0.2s', flexShrink: 0 }}
+                  style={{ width: '62px', height: '32px', borderRadius: '18px', border: 'none', padding: 0, cursor: updatingRsvpStatus ? 'wait' : 'pointer', overflow: 'hidden', background: rsvpEnabled ? 'linear-gradient(135deg, #22c55e, #16a34a)' : '#cbd5e1', position: 'relative', transition: 'all 0.25s ease', flexShrink: 0, opacity: updatingRsvpStatus ? 0.6 : 1, boxShadow: rsvpEnabled ? '0 4px 10px rgba(22,163,74,0.25)' : 'inset 0 1px 3px rgba(15,23,42,0.12)' }}
                 >
-                  <span style={{ display: 'block', width: '24px', height: '24px', borderRadius: '50%', background: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.2)', transform: rsvpEnabled ? 'translateX(22px)' : 'translateX(0)', transition: 'transform 0.2s' }} />
+                  <span style={{ position: 'absolute', left: rsvpEnabled ? '8px' : '29px', top: '9px', color: '#fff', fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.03em' }}>{rsvpEnabled ? 'ON' : 'OFF'}</span>
+                  <span style={{ position: 'absolute', top: '4px', left: rsvpEnabled ? '34px' : '4px', width: '24px', height: '24px', borderRadius: '50%', background: '#fff', transition: 'left 0.25s ease', boxShadow: '0 2px 6px rgba(15,23,42,0.22)' }} />
                 </button>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '12px 14px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'left', opacity: rsvpEnabled ? 1 : 0.55 }}>
-                <div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#334155' }}>อนุญาตให้ลงชื่อให้เพื่อน</div>
-                  <div style={{ fontSize: '0.75rem', color: rsvpFriendEnabled ? '#16a34a' : '#ef4444', marginTop: '2px' }}>
-                    {rsvpFriendEnabled ? 'เปิดการลงชื่อให้เพื่อน' : 'ปิดการลงชื่อให้เพื่อนแล้ว'}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: rsvpEnabled ? '#ffffff' : '#f8fafc', borderRadius: '15px', padding: '12px 13px', border: `1.5px solid ${rsvpEnabled && rsvpFriendEnabled ? '#ddd6fe' : '#e2e8f0'}`, boxShadow: rsvpEnabled ? '0 2px 8px rgba(30,41,59,0.04)' : 'none', opacity: rsvpEnabled ? 1 : 0.68, transition: 'all 0.25s ease' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '11px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', background: rsvpEnabled && rsvpFriendEnabled ? '#ede9fe' : '#e2e8f0' }}>👥</div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.86rem', color: '#1e293b' }}>อนุญาตลงชื่อให้เพื่อน</div>
+                    <div style={{ fontSize: '0.7rem', color: !rsvpEnabled ? '#64748b' : rsvpFriendEnabled ? '#6d28d9' : '#64748b', marginTop: '2px', fontWeight: 600 }}>
+                      {!rsvpEnabled ? 'เปิดรับลงชื่อก่อนจึงจะตั้งค่าได้' : rsvpFriendEnabled ? 'เพิ่มรายชื่อแทนเพื่อนได้' : 'ลงชื่อได้เฉพาะตัวเอง'}
+                    </div>
                   </div>
                 </div>
-                <button type="button" role="switch" aria-checked={rsvpFriendEnabled} aria-label="เปิดหรือปิดการลงชื่อให้เพื่อน" onClick={handleRsvpFriendStatusChange} disabled={updatingRsvpStatus || !rsvpEnabled} style={{ width: '52px', height: '30px', padding: '3px', border: 'none', borderRadius: '999px', background: rsvpFriendEnabled ? '#22c55e' : '#cbd5e1', cursor: updatingRsvpStatus || !rsvpEnabled ? 'not-allowed' : 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
-                  <span style={{ display: 'block', width: '24px', height: '24px', borderRadius: '50%', background: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.2)', transform: rsvpFriendEnabled ? 'translateX(22px)' : 'translateX(0)', transition: 'transform 0.2s' }} />
+                <button onClick={handleRsvpFriendStatusChange} disabled={!rsvpEnabled || updatingRsvpStatus} aria-label="เปิดหรือปิดการลงชื่อให้เพื่อน" role="switch" aria-checked={rsvpEnabled && rsvpFriendEnabled} style={{ width: '62px', height: '32px', borderRadius: '18px', border: 'none', padding: 0, cursor: !rsvpEnabled ? 'not-allowed' : updatingRsvpStatus ? 'wait' : 'pointer', overflow: 'hidden', background: rsvpEnabled && rsvpFriendEnabled ? 'linear-gradient(135deg, #8b5cf6, #6d28d9)' : '#cbd5e1', position: 'relative', transition: 'all 0.25s ease', flexShrink: 0, opacity: (!rsvpEnabled || updatingRsvpStatus) ? 0.65 : 1, boxShadow: rsvpEnabled && rsvpFriendEnabled ? '0 4px 10px rgba(109,40,217,0.25)' : 'inset 0 1px 3px rgba(15,23,42,0.12)' }}>
+                  <span style={{ position: 'absolute', left: rsvpEnabled && rsvpFriendEnabled ? '8px' : '29px', top: '9px', color: '#fff', fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.03em' }}>{rsvpEnabled && rsvpFriendEnabled ? 'ON' : 'OFF'}</span>
+                  <span style={{ position: 'absolute', top: '4px', left: rsvpEnabled && rsvpFriendEnabled ? '34px' : '4px', width: '24px', height: '24px', borderRadius: '50%', background: '#fff', transition: 'left 0.25s ease', boxShadow: '0 2px 6px rgba(15,23,42,0.22)' }} />
                 </button>
               </div>
             </div>
           )}
 
+          {/* Divider */}
+          <div style={{ height: '1px', background: '#f1f5f9', margin: '0 0 24px 0' }} />
+
           {!rsvpEnabled ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', alignItems: 'center' }}>
-              <div style={{ padding: '18px', width: '100%', boxSizing: 'border-box', borderRadius: '16px', background: '#fff1f2', color: '#be123c', fontWeight: 'bold' }}>
-                ปิดการรับลงชื่อแล้ว
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+              <div style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '14px', padding: '16px 20px', textAlign: 'center' }}>
+                <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>🔒</div>
+                <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#dc2626' }}>ปิดการรับลงชื่อแล้ว</div>
+                <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '4px' }}>ผู้สร้างกิจกรรมได้ปิดรับลงชื่อสำหรับกิจกรรมนี้แล้ว</div>
               </div>
               <button
-                onClick={() => liff.closeWindow()}
-                style={{ width: '100%', padding: '13px', borderRadius: '14px', border: 'none', background: '#64748b', color: '#fff', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer' }}
+                onClick={() => liff.isInClient() ? liff.closeWindow() : window.close()}
+                style={{ width: '100%', padding: '13px', borderRadius: '14px', border: '1.5px solid #e2e8f0', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer', background: '#f1f5f9', color: '#475569' }}
               >
-                ออก
+                ← ออก
               </button>
             </div>
           ) : (
