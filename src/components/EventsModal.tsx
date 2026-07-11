@@ -749,9 +749,11 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
 
       // 3. Date range filter
       if (startDate || endDate) {
-        const billingDate = b.createdAt?.toDate 
-          ? b.createdAt.toDate() 
-          : (b.createdAt?.seconds ? new Date(b.createdAt.seconds * 1000) : null);
+        const billingDate = b.createdAt
+          ? (b.createdAt.toDate 
+              ? b.createdAt.toDate() 
+              : (b.createdAt.seconds ? new Date(b.createdAt.seconds * 1000) : new Date(b.createdAt)))
+          : null;
         if (billingDate) {
           const year = billingDate.getFullYear();
           const month = String(billingDate.getMonth() + 1).padStart(2, '0');

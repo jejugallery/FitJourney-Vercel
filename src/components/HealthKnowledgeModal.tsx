@@ -5,6 +5,19 @@ import { uploadToImgBB } from '../utils/mediaHelper';
 import HealthKnowledgePlayerModal from './HealthKnowledgePlayerModal';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
 
+const formatKnowledgeDate = (createdAt: any) => {
+  if (!createdAt) return '';
+  try {
+    if (createdAt.toDate) return createdAt.toDate().toLocaleDateString('th-TH');
+    if (createdAt.seconds) return new Date(createdAt.seconds * 1000).toLocaleDateString('th-TH');
+    const d = new Date(createdAt);
+    if (!isNaN(d.getTime())) return d.toLocaleDateString('th-TH');
+  } catch (e) {
+    console.error('Error formatting date:', e);
+  }
+  return '';
+};
+
 interface HealthKnowledgeModalProps {
   onClose: () => void;
   userId: string;
@@ -682,7 +695,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
 
             {/* Date */}
             <span style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '20px', display: 'block' }}>
-              📅 {sharingItem.createdAt ? new Date(sharingItem.createdAt.seconds * 1000).toLocaleDateString('th-TH') : ''}
+              📅 {sharingItem.createdAt ? formatKnowledgeDate(sharingItem.createdAt) : ''}
             </span>
 
             {/* Promo Text */}
@@ -878,7 +891,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                               {item.title}
                             </h3>
                             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                              📅 {item.createdAt ? new Date(item.createdAt.seconds * 1000).toLocaleDateString('th-TH') : 'กำลังบันทึก...'}
+                              📅 {item.createdAt ? formatKnowledgeDate(item.createdAt) : 'กำลังบันทึก...'}
                             </span>
                           </div>
 
@@ -966,7 +979,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                               {item.title}
                             </h3>
                             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                              📅 {item.createdAt ? new Date(item.createdAt.seconds * 1000).toLocaleDateString('th-TH') : 'กำลังบันทึก...'}
+                              📅 {item.createdAt ? formatKnowledgeDate(item.createdAt) : 'กำลังบันทึก...'}
                             </span>
                           </div>
 
