@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs } from 'firebase/firestore';
@@ -53,9 +53,10 @@ interface BillingItemProps {
   role: string;
   creators: Record<string, any>;
   onNavigatePay: (billingId: string) => void;
+  onUpdateStatus: (billingId: string, status: 'pending' | 'completed') => Promise<void>;
 }
 
-function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProps) {
+function BillingItem({ billing, role, creators, onNavigatePay, onUpdateStatus }: BillingItemProps) {
   const [payments, setPayments] = useState<any[]>([]);
   const [showPayments, setShowPayments] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
@@ -67,30 +68,26 @@ function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProp
   const [reopening, setReopening] = useState(false);
 
   const handleMarkComplete = async () => {
+    setShowCompleteConfirm(false);
     setCompleting(true);
     try {
-      await billingsApi.update(billing.id, {
-        status: 'completed'
-      });
-      setShowCompleteConfirm(false);
+      await onUpdateStatus(billing.id, 'completed');
     } catch (err) {
       console.error("Error marking billing complete:", err);
-      alert("เกิดข้อผิดพลาดในการอัปเดตสถานะ");
+      alert("เกิดข้อผิดพลาดในการอัปเดตสถานะ ระบบคืนสถานะเดิมแล้ว");
     } finally {
       setCompleting(false);
     }
   };
 
   const handleReopen = async () => {
+    setShowReopenConfirm(false);
     setReopening(true);
     try {
-      await billingsApi.update(billing.id, {
-        status: 'pending'
-      });
-      setShowReopenConfirm(false);
+      await onUpdateStatus(billing.id, 'pending');
     } catch (err) {
       console.error("Error reopening billing:", err);
-      alert("เกิดข้อผิดพลาดในการเปิดรายการอีกครั้ง");
+      alert("เกิดข้อผิดพลาดในการเปิดรายการอีกครั้ง ระบบคืนสถานะเดิมแล้ว");
     } finally {
       setReopening(false);
     }
@@ -732,6 +729,7 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
   // New billing states
   const [mode] = useState<'events' | 'billing'>(initialMode);
   const [rawBillings, setRawBillings] = useState<any[]>([]);
+  const pendingBillingStatusesRef = useRef(new Map<string, 'pending' | 'completed'>());
   const [billingStatus, setBillingStatus] = useState<'pending' | 'completed' | 'all'>('pending');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -865,7 +863,15 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
         const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
         return timeB - timeA;
       });
-      setRawBillings(allBillings);
+      setRawBillings(allBillings.map((billing: any) => {
+        const optimisticStatus = pendingBillingStatusesRef.current.get(billing.id);
+        if (!optimisticStatus) return billing;
+
+        if (billing.status === optimisticStatus) {
+          pendingBillingStatusesRef.current.delete(billing.id);
+        }
+        return { ...billing, status: optimisticStatus };
+      }));
       setRawEvents(allEvents);
       setInvitations(allInvs);
     } catch (err) {
@@ -880,6 +886,28 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
     const interval = setInterval(loadData, 10000);
     return () => clearInterval(interval);
   }, [userId, showCreateModal, selectedEventId, showCreateBillingModal]);
+
+  const updateBillingStatus = async (billingId: string, status: 'pending' | 'completed') => {
+    const previousStatus = rawBillings.find((billing: any) => billing.id === billingId)?.status;
+    if (!previousStatus) return;
+
+    pendingBillingStatusesRef.current.set(billingId, status);
+    setRawBillings(current => current.map((billing: any) =>
+      billing.id === billingId ? { ...billing, status } : billing
+    ));
+
+    try {
+      await billingsApi.update(billingId, { status });
+    } catch (error) {
+      if (pendingBillingStatusesRef.current.get(billingId) === status) {
+        pendingBillingStatusesRef.current.delete(billingId);
+        setRawBillings(current => current.map((billing: any) =>
+          billing.id === billingId ? { ...billing, status: previousStatus } : billing
+        ));
+      }
+      throw error;
+    }
+  };
 
   const handleAddToCalendar = (ev: any) => {
     const params = new URLSearchParams({
@@ -1625,7 +1653,8 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
                         key={b.id} 
                         billing={b} 
                         role={role} 
-                        creators={creators} 
+                        creators={creators}
+                        onUpdateStatus={updateBillingStatus}
                         onNavigatePay={(id) => {
                           onClose();
                           navigate(`/payment/${id}`);
