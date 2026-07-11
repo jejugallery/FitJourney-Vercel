@@ -107,14 +107,14 @@ function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProp
       // Expand friends array into individual entries
       const expanded: any[] = [];
       pList.forEach((p: any, pIdx: number) => {
-        const payerSlipUrl = p.slips && p.slips.length > 0 ? p.slips[0].slipUrl : p.slip_url;
-        const payerSlipId = p.slips && p.slips.length > 0 ? p.slips[0].slipId : p.slip_id;
+        const payerSlipUrl = p.slips && p.slips.length > 0 ? p.slips[0].slipUrl : (p.slipUrl || p.slip_url);
+        const payerSlipId = p.slips && p.slips.length > 0 ? p.slips[0].slipId : (p.slipId || p.slip_id);
 
         expanded.push({
           ...p,
           slipUrl: payerSlipUrl,
           slipId: payerSlipId,
-          uniqueKey: p.user_id ? `${p.user_id}-payer-${pIdx}` : `payer-${pIdx}`,
+          uniqueKey: (p.userId || p.user_id) ? `${p.userId || p.user_id}-payer-${pIdx}` : `payer-${pIdx}`,
           isFriend: false
         });
         if (p.friends && Array.isArray(p.friends)) {
@@ -122,15 +122,15 @@ function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProp
             const friendSlip = p.slips && Array.isArray(p.slips)
               ? p.slips.find((s: any) => s.friends && s.friends.includes(friendName))
               : null;
-            const friendSlipUrl = friendSlip ? friendSlip.slipUrl : p.slip_url;
-            const friendSlipId = friendSlip ? friendSlip.slipId : p.slip_id;
+            const friendSlipUrl = friendSlip ? friendSlip.slipUrl : (p.slipUrl || p.slip_url);
+            const friendSlipId = friendSlip ? friendSlip.slipId : (p.slipId || p.slip_id);
 
             expanded.push({
               ...p,
               slipUrl: friendSlipUrl,
               slipId: friendSlipId,
-              uniqueKey: p.user_id ? `${p.user_id}-friend-${fIdx}-${pIdx}` : `friend-${fIdx}-${pIdx}`,
-              displayName: `${friendName} (${p.display_name})`,
+              uniqueKey: (p.userId || p.user_id) ? `${p.userId || p.user_id}-friend-${fIdx}-${pIdx}` : `friend-${fIdx}-${pIdx}`,
+              displayName: `${friendName} (${p.displayName || p.display_name})`,
               pictureUrl: '', // Friend doesn't have profile pic
               isFriend: true
             });
