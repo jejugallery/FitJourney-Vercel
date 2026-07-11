@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
+import { billingsApi, billingPaymentsApi, usedSlipsApi } from '../utils/api';
+import { LIFF_URLS } from '../constants/liff';
 import { uploadToImgBB } from '../utils/mediaHelper';
 import { useLiff } from '../context/LiffContext';
 import { fetchGeminiWithFallback } from '../utils/geminiHelper';
@@ -66,13 +68,26 @@ export default function PaymentPage() {
     const fetchBilling = async () => {
       if (!billingId) return;
       try {
-        const snap = await getDoc(doc(db, 'billings', billingId));
-        if (snap.exists()) {
-          const data = snap.data();
+        const data = await billingsApi.get(billingId);
+        if (data) {
           if (data.status === 'completed') {
             setError('รายการเรียกเก็บเงินนี้เสร็จสิ้นแล้ว ไม่สามารถชำระเงินหรือส่งหลักฐานได้อีก');
           } else {
-            setBilling({ id: snap.id, ...data });
+            setBilling({
+              id: data.id,
+              name: data.name,
+              amount: data.amount,
+              bankName: data.bank_name,
+              accountName: data.account_name,
+              accountNumber: data.account_number,
+              description: data.description,
+              invitationText: data.invitation_text,
+              invitationColor: data.invitation_color,
+              buttonColor: data.button_color,
+              status: data.status,
+              createdBy: data.created_by,
+              createdAt: data.created_at
+            });
           }
         } else {
           setError('ไม่พบข้อมูลรายการเรียกเก็บเงินนี้ในระบบ');
@@ -91,12 +106,25 @@ export default function PaymentPage() {
     const fetchExistingPayment = async () => {
       if (!billingId || !profile?.userId) return;
       try {
-        const snap = await getDoc(doc(db, 'billings', billingId, 'payments', profile.userId));
-        if (snap.exists()) {
-          const data = snap.data();
-          setExistingPayment(data);
-          if (data.slipUrl) {
-            setImagePreview(data.slipUrl);
+        const data = await billingPaymentsApi.get(billingId, profile.userId);
+        if (data) {
+          const mappedPayment = {
+            userId: data.user_id,
+            slipUrl: data.slip_url,
+            amount: data.amount,
+            transDate: data.trans_date,
+            transTime: data.trans_time,
+            status: data.status,
+            slipData: data.slip_data,
+            verifiedAt: data.verified_at,
+            errorMessage: data.error_message,
+            senderName: data.sender_name,
+            receiverName: data.receiver_name,
+            submittedAt: data.submitted_at
+          };
+          setExistingPayment(mappedPayment);
+          if (mappedPayment.slipUrl) {
+            setImagePreview(mappedPayment.slipUrl);
           }
         }
       } catch (err) {
@@ -196,40 +224,56 @@ export default function PaymentPage() {
       ];
 
       const dataToSave: any = {
+        billingId,
         userId: profile.userId,
         displayName: profile.displayName,
         pictureUrl: profile.pictureUrl || '',
         slipUrl,
         slipId,
-        submittedAt: serverTimestamp(),
         friends: accumulatedFriends,
         slips: updatedSlips
       };
 
-      await setDoc(doc(db, 'billings', billingId, 'payments', profile.userId), dataToSave);
+      await billingPaymentsApi.submit(dataToSave);
       
       // Save to global used_slips collection to prevent cross-billing usage
       if (slipId) {
         const normalizedInputId = normalizeSlipId(slipId);
-        await setDoc(doc(db, 'used_slips', normalizedInputId), {
+        await usedSlipsApi.register({
+          slipId: normalizedInputId,
           billingId,
           userId: profile.userId,
-          submittedAt: serverTimestamp(),
           slipUrl
         });
       }
       
       // Reset modes and temp values
-      setExistingPayment(dataToSave);
+      setExistingPayment({
+        userId: profile.userId,
+        displayName: profile.displayName,
+        pictureUrl: profile.pictureUrl || '',
+        slipUrl,
+        slipId,
+        submittedAt: new Date().toISOString(),
+        friends: accumulatedFriends,
+        slips: updatedSlips
+      });
       setImagePreview(slipUrl);
       setImageFile(null);
       setPayForFriendsMode(false);
 
       // Send Flex Message back to chat thread
       try {
-        const paymentsRef = collection(db, 'billings', billingId, 'payments');
-        const paymentsSnap = await getDocs(paymentsRef);
-        let paymentsList = paymentsSnap.docs.map(doc => doc.data() as any);
+        const paymentsListRaw = await billingPaymentsApi.list(billingId);
+        let paymentsList = paymentsListRaw.map((p: any) => ({
+          userId: p.user_id,
+          displayName: p.display_name,
+          pictureUrl: p.picture_url,
+          slipUrl: p.slip_url,
+          submittedAt: p.submitted_at,
+          friends: p.friends || [],
+          slips: p.slips || []
+        }));
 
         // Force override current user's latest data to ensure immediate consistency
         paymentsList = paymentsList.filter(p => p.userId !== profile.userId);
@@ -245,8 +289,8 @@ export default function PaymentPage() {
 
         // Sort payments ascending by submittedAt (oldest first)
         paymentsList.sort((a, b) => {
-          const timeA = a.submittedAt?.toMillis ? a.submittedAt.toMillis() : Date.now();
-          const timeB = b.submittedAt?.toMillis ? b.submittedAt.toMillis() : Date.now();
+          const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : Date.now();
+          const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : Date.now();
           return timeA - timeB;
         });
 
@@ -446,7 +490,7 @@ export default function PaymentPage() {
                   paddingAll: 'md',
                   action: {
                     type: 'uri',
-                    uri: `https://liff.line.me/2010284484-HzKokXFF/payment/${billing.id}`
+                    uri: `${LIFF_URLS.DEFAULT}/payment/${billing.id}`
                   },
                   contents: [
                     {
@@ -595,29 +639,9 @@ export default function PaymentPage() {
         setUploadingStatus('กำลังตรวจสอบความซ้ำซ้อนของสลิป...');
         const normalizedInputId = normalizeSlipId(slipId);
         
-        // 1. Global check in used_slips collection
-        const globalSlipRef = doc(db, 'used_slips', normalizedInputId);
-        const globalSlipSnap = await getDoc(globalSlipRef);
-        let isDuplicate = globalSlipSnap.exists();
-        
-        // 2. Fallback check in local billing payments (for backward compatibility with legacy slips)
-        if (!isDuplicate) {
-          const paymentsRef = collection(db, 'billings', billingId, 'payments');
-          const querySnapshot = await getDocs(paymentsRef);
-          for (const docSnap of querySnapshot.docs) {
-            const pData = docSnap.data();
-            if (normalizeSlipId(pData.slipId) === normalizedInputId) {
-              isDuplicate = true;
-              break;
-            }
-            if (pData.slips && Array.isArray(pData.slips)) {
-              if (pData.slips.some((s: any) => normalizeSlipId(s.slipId) === normalizedInputId)) {
-                isDuplicate = true;
-                break;
-              }
-            }
-          }
-        }
+        // Global duplicate check via usedSlips REST API
+        const checkResult = await usedSlipsApi.check(normalizedInputId);
+        let isDuplicate = checkResult.exists;
 
         if (isDuplicate) {
           setDuplicateSlipId(slipId);

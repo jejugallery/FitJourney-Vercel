@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, onSnapshot, where, getDocs, updateDoc, doc, orderBy } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
+import { eventsApi, eventInvitationsApi, eventRsvpsApi, billingsApi, billingPaymentsApi } from '../utils/api';
+import { LIFF_URLS } from '../constants/liff';
 import CreateEventModal from './CreateEventModal';
 import EventDetailModal from './EventDetailModal';
 import CreateBillingModal from './CreateBillingModal';
@@ -66,7 +68,7 @@ function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProp
   const handleMarkComplete = async () => {
     setCompleting(true);
     try {
-      await updateDoc(doc(db, 'billings', billing.id), {
+      await billingsApi.update(billing.id, {
         status: 'completed'
       });
       setShowCompleteConfirm(false);
@@ -81,7 +83,7 @@ function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProp
   const handleReopen = async () => {
     setReopening(true);
     try {
-      await updateDoc(doc(db, 'billings', billing.id), {
+      await billingsApi.update(billing.id, {
         status: 'pending'
       });
       setShowReopenConfirm(false);
@@ -93,28 +95,26 @@ function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProp
     }
   };
 
-  useEffect(() => {
-    if (role !== 'superadmin' && role !== 'trainer') return;
-    const paymentsRef = collection(db, 'billings', billing.id, 'payments');
-    const unsubPayments = onSnapshot(paymentsRef, (snap) => {
-      const pList = snap.docs.map(d => d.data() as any);
-      pList.sort((a, b) => {
-        const tA = a.submittedAt?.toMillis ? a.submittedAt.toMillis() : 0;
-        const tB = b.submittedAt?.toMillis ? b.submittedAt.toMillis() : 0;
+  const loadPayments = async () => {
+    try {
+      const pList = await billingPaymentsApi.list(billing.id);
+      pList.sort((a: any, b: any) => {
+        const tA = a.submitted_at ? new Date(a.submitted_at).getTime() : 0;
+        const tB = b.submitted_at ? new Date(b.submitted_at).getTime() : 0;
         return tB - tA;
       });
 
       // Expand friends array into individual entries
       const expanded: any[] = [];
-      pList.forEach((p, pIdx) => {
-        const payerSlipUrl = p.slips && p.slips.length > 0 ? p.slips[0].slipUrl : p.slipUrl;
-        const payerSlipId = p.slips && p.slips.length > 0 ? p.slips[0].slipId : p.slipId;
+      pList.forEach((p: any, pIdx: number) => {
+        const payerSlipUrl = p.slips && p.slips.length > 0 ? p.slips[0].slipUrl : p.slip_url;
+        const payerSlipId = p.slips && p.slips.length > 0 ? p.slips[0].slipId : p.slip_id;
 
         expanded.push({
           ...p,
           slipUrl: payerSlipUrl,
           slipId: payerSlipId,
-          uniqueKey: p.userId ? `${p.userId}-payer-${pIdx}` : `payer-${pIdx}`,
+          uniqueKey: p.user_id ? `${p.user_id}-payer-${pIdx}` : `payer-${pIdx}`,
           isFriend: false
         });
         if (p.friends && Array.isArray(p.friends)) {
@@ -122,15 +122,15 @@ function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProp
             const friendSlip = p.slips && Array.isArray(p.slips)
               ? p.slips.find((s: any) => s.friends && s.friends.includes(friendName))
               : null;
-            const friendSlipUrl = friendSlip ? friendSlip.slipUrl : p.slipUrl;
-            const friendSlipId = friendSlip ? friendSlip.slipId : p.slipId;
+            const friendSlipUrl = friendSlip ? friendSlip.slipUrl : p.slip_url;
+            const friendSlipId = friendSlip ? friendSlip.slipId : p.slip_id;
 
             expanded.push({
               ...p,
               slipUrl: friendSlipUrl,
               slipId: friendSlipId,
-              uniqueKey: p.userId ? `${p.userId}-friend-${fIdx}-${pIdx}` : `friend-${fIdx}-${pIdx}`,
-              displayName: `${friendName} (${p.displayName})`,
+              uniqueKey: p.user_id ? `${p.user_id}-friend-${fIdx}-${pIdx}` : `friend-${fIdx}-${pIdx}`,
+              displayName: `${friendName} (${p.display_name})`,
               pictureUrl: '', // Friend doesn't have profile pic
               isFriend: true
             });
@@ -139,10 +139,17 @@ function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProp
       });
 
       setPayments(expanded);
-    }, (err) => {
+    } catch (err) {
       console.error("payments error:", err);
-    });
-    return () => unsubPayments();
+    }
+  };
+
+  useEffect(() => {
+    if (role !== 'superadmin' && role !== 'trainer') return;
+    loadPayments();
+    // Poll payments list every 10 seconds
+    const interval = setInterval(loadPayments, 10000);
+    return () => clearInterval(interval);
   }, [billing.id, role]);
 
   const handleShareToLine = async () => {
@@ -153,14 +160,12 @@ function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProp
       }
 
       // Fetch latest payments
-      const paymentsRef = collection(db, 'billings', billing.id, 'payments');
-      const paymentsSnap = await getDocs(paymentsRef);
-      const paymentsList = paymentsSnap.docs.map(doc => doc.data() as any);
+      const paymentsList = await billingPaymentsApi.list(billing.id);
 
-      // Sort payments ascending by submittedAt (oldest first)
-      paymentsList.sort((a, b) => {
-        const timeA = a.submittedAt?.toMillis ? a.submittedAt.toMillis() : Date.now();
-        const timeB = b.submittedAt?.toMillis ? b.submittedAt.toMillis() : Date.now();
+      // Sort payments ascending by submitted_at (oldest first)
+      paymentsList.sort((a: any, b: any) => {
+        const timeA = a.submitted_at ? new Date(a.submitted_at).getTime() : Date.now();
+        const timeB = b.submitted_at ? new Date(b.submitted_at).getTime() : Date.now();
         return timeA - timeB;
       });
 
@@ -168,14 +173,14 @@ function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProp
       const expandedList: any[] = [];
       for (const p of paymentsList) {
         expandedList.push({
-          displayName: p.displayName,
-          pictureUrl: p.pictureUrl,
+          displayName: p.display_name,
+          pictureUrl: p.picture_url,
           isFriend: false
         });
         if (p.friends && Array.isArray(p.friends)) {
           for (const friendName of p.friends) {
             expandedList.push({
-              displayName: `${friendName} (${p.displayName})`,
+              displayName: `${friendName} (${p.display_name})`,
               pictureUrl: '',
               isFriend: true
             });
@@ -361,7 +366,7 @@ function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProp
               paddingAll: 'md',
               action: {
                 type: 'uri',
-                uri: `https://liff.line.me/2010284484-HzKokXFF/payment/${billing.id}`
+                uri: `${LIFF_URLS.DEFAULT}/payment/${billing.id}`
               },
               contents: [
                 {
@@ -844,52 +849,34 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
     };
   }, [showCreateModal, selectedEventId, showCreateBillingModal]);
 
-  useEffect(() => {
-    const billingsQ = query(collection(db, 'billings'));
-    const unsubBillings = onSnapshot(billingsQ, (snap) => {
-      const allBillings = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-      allBillings.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+  const loadData = async () => {
+    try {
+      const [allBillings, allEvents, allInvs] = await Promise.all([
+        billingsApi.list(),
+        eventsApi.list(),
+        eventInvitationsApi.listForUser(userId)
+      ]);
+      
+      allBillings.sort((a: any, b: any) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
         return timeB - timeA;
       });
       setRawBillings(allBillings);
-    }, (err) => {
-      console.error("billingsQ error:", err);
-    });
-    return () => unsubBillings();
-  }, []);
-
-  useEffect(() => {
-    // 1. Fetch invitations for this user (if not superadmin, they only see events they are invited to)
-    const invQ = query(collection(db, 'eventInvitations'), where('inviteeId', '==', userId));
-    const unsubInv = onSnapshot(invQ, (snap) => {
-      const invList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setInvitations(invList);
-    }, (err) => {
-      console.error("invQ error:", err);
-      alert("Error loading invitations: " + err.message);
-    });
-
-    return () => unsubInv();
-  }, [userId]);
-
-  useEffect(() => {
-    // 2. Fetch events (subscribes once on mount)
-    const eventsQ = query(collection(db, 'events'));
-
-    const unsubEvents = onSnapshot(eventsQ, (snap) => {
-      let allEvents = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
       setRawEvents(allEvents);
+      setInvitations(allInvs);
+    } catch (err) {
+      console.error("Error loading data in EventsModal:", err);
+    } finally {
       setLoading(false);
-    }, (err) => {
-      console.error("eventsQ error:", err);
-      alert("Error loading events: " + err.message);
-      setLoading(false);
-    });
+    }
+  };
 
-    return () => unsubEvents();
-  }, []);
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 10000);
+    return () => clearInterval(interval);
+  }, [userId, showCreateModal, selectedEventId, showCreateBillingModal]);
 
   const handleAddToCalendar = (ev: any) => {
     const params = new URLSearchParams({
@@ -910,7 +897,8 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
   const handleAccept = async (e: React.MouseEvent, invitationId: string) => {
     e.stopPropagation();
     try {
-      await updateDoc(doc(db, 'eventInvitations', invitationId), { status: 'accepted' });
+      await eventInvitationsApi.update(invitationId, { status: 'accepted' });
+      await loadData();
     } catch (err) {
       console.error(err);
       alert('เกิดข้อผิดพลาดในการตอบรับคำเชิญ');
@@ -985,7 +973,7 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
                 action: {
                   type: 'uri',
                   label: 'Share',
-                  uri: `https://liff.line.me/2010284484-Mahx0Ao8?eventId=${ev.id}`
+                  uri: `${LIFF_URLS.SHARE_EVENT}?eventId=${ev.id}`
                 }
               }
             ] : [])
@@ -1077,9 +1065,14 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
       // Fetch RSVPs
       let rsvpList: any[] = [];
       try {
-        const rsvpsRef = collection(db, 'events', ev.id, 'rsvps');
-        const rsvpsSnap = await getDocs(query(rsvpsRef, orderBy('joinedAt')));
-        rsvpList = rsvpsSnap.docs.map(d => d.data());
+        const rsvpsList = await eventRsvpsApi.list(ev.id);
+        rsvpList = rsvpsList.map((r: any) => ({
+          userId: r.user_id,
+          displayName: r.display_name,
+          pictureUrl: r.picture_url,
+          joinedAt: r.joined_at,
+          registeredBy: r.registered_by || ''
+        }));
       } catch (rsvpErr) {
         console.error("Error fetching RSVPs for share:", rsvpErr);
       }
@@ -1220,7 +1213,7 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
           buttonAction = {
             type: 'uri',
             label: 'ลงชื่อเข้าร่วม',
-            uri: `https://liff.line.me/2010284484-Mahx0Ao8?action=rsvp&eventId=${ev.id || ''}&v=${Date.now()}`
+            uri: `${LIFF_URLS.SHARE_EVENT}?action=rsvp&eventId=${ev.id || ''}&v=${Date.now()}`
           };
         } else if (shareLinkType === 'calendar') {
           buttonLabel = 'เพิ่มลงบนปฏิทิน 📅';

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { eventsApi, eventInvitationsApi } from '../utils/api';
 import { uploadToCloudinary } from '../utils/mediaHelper';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
 
@@ -160,7 +159,7 @@ export default function CreateEventModal({ onClose, userId }: CreateEventModalPr
         formattedEndDatetime = `${ed.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, ${ed.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.`;
       }
 
-      const eventDocRef = await addDoc(collection(db, 'events'), {
+      const newEvent = await eventsApi.create({
         name: name.trim(),
         imageUrl,
         videoThumbnailUrl,
@@ -179,17 +178,14 @@ export default function CreateEventModal({ onClose, userId }: CreateEventModalPr
         linkUrl: (linkType !== 'none' && linkType !== 'rsvp' && linkType !== 'calendar') ? linkUrl.trim() : '',
         buttonColor,
         createdBy: userId,
-        invitedTrainers: [], // superadmin is implicit owner
-        createdAt: serverTimestamp()
       });
 
-      await addDoc(collection(db, 'eventInvitations'), {
-        eventId: eventDocRef.id,
+      await eventInvitationsApi.create({
+        eventId: newEvent.id,
         inviterId: userId,
         inviteeId: userId,
         role: 'trainer',
         status: 'accepted',
-        createdAt: serverTimestamp(),
         viewed: true
       });
 

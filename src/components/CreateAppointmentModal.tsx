@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { appointmentsApi, appointmentInvitationsApi } from '../utils/api';
 import { isVideoUrl, uploadToCloudinary } from '../utils/mediaHelper';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
 
@@ -125,7 +124,7 @@ export default function CreateAppointmentModal({ onClose, userId }: CreateAppoin
         formattedEndDatetime = `${ed.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, ${ed.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.`;
       }
 
-      const appointmentDocRef = await addDoc(collection(db, 'appointments'), {
+      const newAppointment = await appointmentsApi.create({
         name: finalName.trim(),
         imageUrl,
         datetime: formattedDatetime,
@@ -137,17 +136,14 @@ export default function CreateAppointmentModal({ onClose, userId }: CreateAppoin
         linkType,
         linkUrl: linkType === 'none' ? '' : linkUrl.trim(),
         createdBy: userId,
-        invitedTrainers: [], // superadmin is implicit owner
-        createdAt: serverTimestamp()
       });
 
-      await addDoc(collection(db, 'appointmentInvitations'), {
-        appointmentId: appointmentDocRef.id,
+      await appointmentInvitationsApi.create({
+        appointmentId: newAppointment.id,
         inviterId: userId,
         inviteeId: userId,
         role: 'trainer',
         status: 'accepted',
-        createdAt: serverTimestamp(),
         viewed: true
       });
 

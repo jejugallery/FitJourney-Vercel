@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { collection, query, onSnapshot, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import CreateAppointmentModal from './CreateAppointmentModal';
 import AppointmentDetailModal from './AppointmentDetailModal';
 import { isVideoUrl } from '../utils/mediaHelper';
+import { appointmentsApi, appointmentInvitationsApi } from '../utils/api';
 
 interface AppointmentsModalProps {
   onClose: () => void;
@@ -102,36 +103,28 @@ export default function AppointmentsModal({ onClose, userId, role, onSwitchEvent
     };
   }, [showCreateModal, selectedAppointmentId]);
 
-  useEffect(() => {
-    // 1. Fetch invitations for this user
-    const invQ = query(collection(db, 'appointmentInvitations'), where('inviteeId', '==', userId));
-    const unsubInv = onSnapshot(invQ, (snap) => {
-      const invList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setInvitations(invList);
-    }, (err) => {
-      console.error("invQ error:", err);
-      alert("Error loading invitations: " + err.message);
-    });
-
-    return () => unsubInv();
-  }, [userId]);
-
-  useEffect(() => {
-    // 2. Fetch appointments
-    const appointmentsQ = query(collection(db, 'appointments'));
-
-    const unsubAppointments = onSnapshot(appointmentsQ, (snap) => {
-      let allAppointments = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [allAppointments, userInvs] = await Promise.all([
+        appointmentsApi.list(),
+        appointmentInvitationsApi.listForUser(userId)
+      ]);
       setRawAppointments(allAppointments);
+      setInvitations(userInvs);
+    } catch (err: any) {
+      console.error("Error loading data in AppointmentsModal:", err);
+    } finally {
       setLoading(false);
-    }, (err) => {
-      console.error("appointmentsQ error:", err);
-      alert("Error loading appointments: " + err.message);
-      setLoading(false);
-    });
+    }
+  };
 
-    return () => unsubAppointments();
-  }, []);
+  useEffect(() => {
+    loadData();
+    // Poll every 10 seconds for real-time freshness
+    const interval = setInterval(loadData, 10000);
+    return () => clearInterval(interval);
+  }, [userId, showCreateModal, selectedAppointmentId]);
 
   const handleAddToCalendar = (ev: any) => {
     const params = new URLSearchParams({
@@ -152,7 +145,8 @@ export default function AppointmentsModal({ onClose, userId, role, onSwitchEvent
   const handleAccept = async (e: React.MouseEvent, invitationId: string) => {
     e.stopPropagation();
     try {
-      await updateDoc(doc(db, 'appointmentInvitations', invitationId), { status: 'accepted' });
+      await appointmentInvitationsApi.update(invitationId, { status: 'accepted' });
+      await loadData();
     } catch (err) {
       console.error(err);
       alert('เกิดข้อผิดพลาดในการตอบรับคำเชิญ');

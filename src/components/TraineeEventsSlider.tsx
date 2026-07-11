@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { collection, query, onSnapshot, where, updateDoc, doc, getDocs, orderBy } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import EventDetailModal from './EventDetailModal';
 import { isVideoUrl, getMediaFlexUrl, getMediaThumbnailUrl, getMediaVideoLoopUrl } from '../utils/mediaHelper';
 import liff from '@line/liff';
 import SuccessPopup from './SuccessPopup';
+import { eventsApi, eventInvitationsApi, eventRsvpsApi } from '../utils/api';
+import { LIFF_URLS } from '../constants/liff';
 
 const getEventDateText = (ev: any): string => {
   if (ev.startDatetimeIso && ev.endDatetimeIso && ev.startDatetimeIso.substring(0, 10) !== ev.endDatetimeIso.substring(0, 10)) {
@@ -108,27 +110,25 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
     fetchCreators();
   }, []);
 
-  useEffect(() => {
+  const loadData = async () => {
     if (!userId) return;
-    
-    // Fetch invitations for this trainee
-    const invQ = query(collection(db, 'eventInvitations'), where('inviteeId', '==', userId));
-    const unsubInv = onSnapshot(invQ, (snap) => {
-      const invList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setInvitations(invList);
-    });
-
-    return () => unsubInv();
-  }, [userId]);
+    try {
+      const [allEvents, userInvs] = await Promise.all([
+        eventsApi.list(),
+        eventInvitationsApi.listForUser(userId)
+      ]);
+      setRawEvents(allEvents);
+      setInvitations(userInvs);
+    } catch (err) {
+      console.error("Error loading events/invitations:", err);
+    }
+  };
 
   useEffect(() => {
-    const unsubEvents = onSnapshot(collection(db, 'events'), (snap) => {
-      const allEvents: any[] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setRawEvents(allEvents);
-    });
-
-    return () => unsubEvents();
-  }, []);
+    loadData();
+    const interval = setInterval(loadData, 10000);
+    return () => clearInterval(interval);
+  }, [userId]);
 
   const handleAddToCalendar = (ev: any) => {
     const params = new URLSearchParams({
@@ -149,7 +149,8 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
   const handleAccept = async (e: React.MouseEvent, invitationId: string) => {
     e.stopPropagation();
     try {
-      await updateDoc(doc(db, 'eventInvitations', invitationId), { status: 'accepted' });
+      await eventInvitationsApi.update(invitationId, { status: 'accepted' });
+      await loadData();
     } catch (err) {
       console.error(err);
       alert('เกิดข้อผิดพลาดในการตอบรับคำเชิญ');
@@ -242,7 +243,7 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
                 action: {
                   type: 'uri',
                   label: 'Share',
-                  uri: `https://liff.line.me/2010284484-Mahx0Ao8?eventId=${ev.id}`
+                  uri: `${LIFF_URLS.SHARE_EVENT}?eventId=${ev.id}`
                 }
               }
             ] : [])
@@ -334,9 +335,14 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
       // Fetch RSVPs
       let rsvpList: any[] = [];
       try {
-        const rsvpsRef = collection(db, 'events', ev.id, 'rsvps');
-        const rsvpsSnap = await getDocs(query(rsvpsRef, orderBy('joinedAt')));
-        rsvpList = rsvpsSnap.docs.map(d => d.data());
+        const rsvpsList = await eventRsvpsApi.list(ev.id);
+        rsvpList = rsvpsList.map((r: any) => ({
+          userId: r.user_id,
+          displayName: r.display_name,
+          pictureUrl: r.picture_url,
+          joinedAt: r.joined_at,
+          registeredBy: r.registered_by || ''
+        }));
       } catch (rsvpErr) {
         console.error("Error fetching RSVPs for share:", rsvpErr);
       }
@@ -477,7 +483,7 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
           buttonAction = {
             type: 'uri',
             label: 'ลงชื่อเข้าร่วม',
-            uri: `https://liff.line.me/2010284484-Mahx0Ao8?action=rsvp&eventId=${ev.id || ''}&v=${Date.now()}`
+            uri: `${LIFF_URLS.SHARE_EVENT}?action=rsvp&eventId=${ev.id || ''}&v=${Date.now()}`
           };
         } else if (shareLinkType === 'calendar') {
           buttonLabel = 'เพิ่มลงบนปฏิทิน 📅';

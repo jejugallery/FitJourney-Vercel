@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, updateDoc, collection, getDocs, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { billingsApi, savedAccountsApi } from '../utils/api';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
 
 const INVITATION_COLORS = [
@@ -69,8 +68,13 @@ export default function EditBillingModal({ billing, onClose }: EditBillingModalP
     if (!userId) return;
     const fetchSavedAccounts = async () => {
       try {
-        const snap = await getDocs(collection(db, 'users', userId, 'savedAccounts'));
-        const accounts: SavedAccount[] = snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedAccount));
+        const accountsList = await savedAccountsApi.list(userId);
+        const accounts: SavedAccount[] = accountsList.map((a: any) => ({
+          id: a.id,
+          accountName: a.account_name,
+          bankName: a.bank_name,
+          accountNumber: a.account_number
+        }));
         setSavedAccounts(accounts);
       } catch (err) {
         console.error('Failed to load saved accounts', err);
@@ -108,15 +112,16 @@ export default function EditBillingModal({ billing, onClose }: EditBillingModalP
       // Optionally save account info
       if (saveAccount && userId && accountName.trim() && bankName.trim() && accountNumber.trim()) {
         const accountId = `${accountName.trim()}_${accountNumber.trim()}`.replace(/\s+/g, '_');
-        await setDoc(doc(db, 'users', userId, 'savedAccounts', accountId), {
+        await savedAccountsApi.save({
+          id: accountId,
+          userId,
           accountName: accountName.trim(),
           bankName: bankName.trim(),
-          accountNumber: accountNumber.trim(),
-          updatedAt: serverTimestamp(),
+          accountNumber: accountNumber.trim()
         });
       }
 
-      await updateDoc(doc(db, 'billings', billing.id), {
+      await billingsApi.update(billing.id, {
         name: name.trim(),
         amount: numAmount,
         bankName: bankName.trim(),

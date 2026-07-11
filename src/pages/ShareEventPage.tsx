@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, orderBy, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { eventsApi, eventRsvpsApi, appointmentsApi } from '../utils/api';
+import { LIFF_URLS } from '../constants/liff';
 import liff from '@line/liff';
 import { isVideoUrl, getMediaFlexUrl, getMediaThumbnailUrl, getMediaVideoLoopUrl } from '../utils/mediaHelper';
 import { useLiff } from '../context/LiffContext';
@@ -77,20 +77,23 @@ export default function ShareEventPage() {
       const loadRsvpData = async () => {
         try {
           setStatus('กำลังโหลดข้อมูลกิจกรรม...');
-          const eventRef = doc(db, 'events', eventId);
-          const eventSnap = await getDoc(eventRef);
-          const evData = eventSnap.exists() ? eventSnap.data() : null;
+          const evData = await eventsApi.get(eventId);
           setEventDataCache(evData);
+          
           // Check if user already RSVP'd
-          const rsvpRef = doc(db, 'events', eventId, 'rsvps', profile.userId);
-          const rsvpSnap = await getDoc(rsvpRef);
-          setAlreadyRsvped(rsvpSnap.exists());
+          const rsvpCheck = await eventRsvpsApi.check(eventId, profile.userId);
+          setAlreadyRsvped(rsvpCheck.exists);
 
           // Fetch all RSVPs
-          const rsvpsCollRef = collection(db, 'events', eventId, 'rsvps');
-          const rsvpsQuery = query(rsvpsCollRef, orderBy('joinedAt'));
-          const rsvpsSnap = await getDocs(rsvpsQuery);
-          const rsvps = rsvpsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          const rsvpsList = await eventRsvpsApi.list(eventId);
+          const rsvps = rsvpsList.map((r: any) => ({
+            id: r.user_id,
+            userId: r.user_id,
+            displayName: r.display_name,
+            pictureUrl: r.picture_url,
+            joinedAt: r.joined_at,
+            registeredBy: r.registered_by || ''
+          }));
           setRsvpList(rsvps);
 
           setLoading(false);
@@ -119,12 +122,10 @@ export default function ShareEventPage() {
 
         if (eventId) {
           setStatus('กำลังดึงข้อมูลกิจกรรม...');
-          const docRef = doc(db, 'events', eventId);
-          const docSnap = await getDoc(docRef);
-          if (!docSnap.exists()) {
+          const eventData = await eventsApi.get(eventId);
+          if (!eventData) {
             throw new Error('ไม่พบข้อมูลกิจกรรมนี้ในระบบ');
           }
-          const eventData = docSnap.data();
           title = eventData.name || 'กิจกรรม';
           altText = `${eventData.invitationText || 'เชิญเข้าร่วมกิจกรรม'}: ${eventData.name}`;
 
@@ -187,7 +188,7 @@ export default function ShareEventPage() {
                     action: {
                       type: 'uri',
                       label: 'Share',
-                      uri: `https://liff.line.me/2010284484-Mahx0Ao8?eventId=${eventId}`
+                      uri: `${LIFF_URLS.SHARE_EVENT}?eventId=${eventId}`
                     }
                   }
                 ] : [])
@@ -279,9 +280,14 @@ export default function ShareEventPage() {
           // Fetch RSVPs
           let rsvpList: any[] = [];
           try {
-            const rsvpsRef = collection(db, 'events', eventId, 'rsvps');
-            const rsvpsSnap = await getDocs(query(rsvpsRef, orderBy('joinedAt')));
-            rsvpList = rsvpsSnap.docs.map(d => d.data());
+            const rsvpsList = await eventRsvpsApi.list(eventId);
+            rsvpList = rsvpsList.map((r: any) => ({
+              userId: r.user_id,
+              displayName: r.display_name,
+              pictureUrl: r.picture_url,
+              joinedAt: r.joined_at,
+              registeredBy: r.registered_by || ''
+            }));
           } catch (rsvpErr) {
             console.error("Error fetching RSVPs for share:", rsvpErr);
           }
@@ -426,7 +432,7 @@ export default function ShareEventPage() {
               buttonAction = {
                 type: 'uri',
                 label: 'ลงชื่อเข้าร่วม',
-                uri: `https://liff.line.me/2010284484-Mahx0Ao8?action=rsvp&eventId=${eventId || ''}&v=${Date.now()}`
+                uri: `${LIFF_URLS.SHARE_EVENT}?action=rsvp&eventId=${eventId || ''}&v=${Date.now()}`
               };
             } else if (shareLinkType === 'calendar') {
               buttonLabel = 'เพิ่มลงบนปฏิทิน 📅';
@@ -477,12 +483,10 @@ export default function ShareEventPage() {
           }
         } else if (appointmentId) {
           setStatus('กำลังดึงข้อมูลการนัดหมาย...');
-          const docRef = doc(db, 'appointments', appointmentId);
-          const docSnap = await getDoc(docRef);
-          if (!docSnap.exists()) {
+          const appointmentData = await appointmentsApi.get(appointmentId);
+          if (!appointmentData) {
             throw new Error('ไม่พบข้อมูลการนัดหมายนี้ในระบบ');
           }
-          const appointmentData = docSnap.data();
           title = appointmentData.name || 'นัดหมาย';
           altText = `เรามีนัดกันนะ: ${title}`;
 
@@ -532,7 +536,7 @@ export default function ShareEventPage() {
                   action: {
                     type: 'uri',
                     label: 'Share',
-                    uri: `https://liff.line.me/2010284484-Mahx0Ao8?appointmentId=${appointmentId}`
+                    uri: `${LIFF_URLS.SHARE_EVENT}?appointmentId=${appointmentId}`
                   }
                 }
               ]
@@ -813,7 +817,7 @@ export default function ShareEventPage() {
         },
         footer: {
           type: 'box', layout: 'vertical', spacing: 'sm', flex: 0,
-          contents: [{ type: 'box', layout: 'vertical', backgroundColor: eventButtonColor, cornerRadius: '30px', paddingAll: '10px', action: { type: 'uri', label: 'ลงชื่อเข้าร่วม', uri: `https://liff.line.me/2010284484-Mahx0Ao8?action=rsvp&eventId=${eventId}&v=${Date.now()}` }, contents: [{ type: 'text', text: 'ลงชื่อเข้าร่วม ✍️', color: '#ffffff', weight: 'bold', size: 'sm', align: 'center' }] }]
+          contents: [{ type: 'box', layout: 'vertical', backgroundColor: eventButtonColor, cornerRadius: '30px', paddingAll: '10px', action: { type: 'uri', label: 'ลงชื่อเข้าร่วม', uri: `${LIFF_URLS.SHARE_EVENT}?action=rsvp&eventId=${eventId}&v=${Date.now()}` }, contents: [{ type: 'text', text: 'ลงชื่อเข้าร่วม ✍️', color: '#ffffff', weight: 'bold', size: 'sm', align: 'center' }] }]
         }
       }
     };
@@ -827,20 +831,23 @@ export default function ShareEventPage() {
     setSubmitting(true);
     try {
       // Save RSVP
-      const rsvpRef = doc(db, 'events', eventId, 'rsvps', rsvpDocId);
-      await setDoc(rsvpRef, {
+      await eventRsvpsApi.join({
+        eventId,
         userId: rsvpDocId,
         displayName,
-        pictureUrl,
-        joinedAt: serverTimestamp(),
-        registeredBy: profile.userId
+        pictureUrl
       });
 
       // Fetch all RSVPs
-      const rsvpsCollRef = collection(db, 'events', eventId, 'rsvps');
-      const rsvpsQuery = query(rsvpsCollRef, orderBy('joinedAt'));
-      const rsvpsSnap = await getDocs(rsvpsQuery);
-      const updatedRsvps = rsvpsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const rsvpsList = await eventRsvpsApi.list(eventId);
+      const updatedRsvps = rsvpsList.map((r: any) => ({
+        id: r.user_id,
+        userId: r.user_id,
+        displayName: r.display_name,
+        pictureUrl: r.picture_url,
+        joinedAt: r.joined_at,
+        registeredBy: r.registered_by || ''
+      }));
       setRsvpList(updatedRsvps);
       if (rsvpDocId === profile.userId) {
         setAlreadyRsvped(true);
@@ -878,7 +885,7 @@ export default function ShareEventPage() {
     setSubmitting(true);
     try {
       for (const rsvpId of selectedWithdrawIds) {
-        await deleteDoc(doc(db, 'events', eventId, 'rsvps', rsvpId));
+        await eventRsvpsApi.withdraw(eventId, rsvpId);
       }
       
       const updatedRsvps = rsvpList.filter(r => !selectedWithdrawIds.includes(r.id));

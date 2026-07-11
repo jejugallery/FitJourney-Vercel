@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import liff from '@line/liff';
+import { LIFF_IDS } from '../constants/liff';
 
 export interface LineProfile {
   userId: string;
@@ -37,13 +38,13 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initLiff = async (isRetry = false) => {
       try {
         const path = window.location.pathname;
-        let LIFF_ID = "2010284484-HzKokXFF";
+        let LIFF_ID = LIFF_IDS.DEFAULT;
         if (path.startsWith('/shareKnowledge')) {
-          LIFF_ID = "2010284484-LJT1Jnmy";
+          LIFF_ID = LIFF_IDS.SHARE_KNOWLEDGE;
         } else if (path.startsWith('/shareLink')) {
-          LIFF_ID = "2010284484-SbnH29sB";
+          LIFF_ID = LIFF_IDS.SHARE_LINK;
         } else if (path.startsWith('/shareEvent')) {
-          LIFF_ID = "2010284484-Mahx0Ao8";
+          LIFF_ID = LIFF_IDS.SHARE_EVENT;
         }
         await liff.init({ liffId: LIFF_ID });
         

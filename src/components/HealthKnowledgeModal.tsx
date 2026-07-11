@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, addDoc, updateDoc, doc, deleteDoc, serverTimestamp, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
+import { healthKnowledgesApi } from '../utils/api';
+import { LIFF_URLS } from '../constants/liff';
 import { uploadToImgBB } from '../utils/mediaHelper';
 import HealthKnowledgePlayerModal from './HealthKnowledgePlayerModal';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
@@ -23,25 +23,36 @@ interface HealthKnowledgeItem {
 }
 
 // Module-level global listener and cache to keep data in memory across mount/unmount cycles
-const globalQuery = query(collection(db, 'healthKnowledges'), orderBy('createdAt', 'desc'));
 let cachedItems: HealthKnowledgeItem[] = [];
 let loadingCache = true;
 const listeners: Array<(items: HealthKnowledgeItem[], loading: boolean) => void> = [];
 
-// Initialize snapshot listener once when module is loaded
-onSnapshot(globalQuery, (snap) => {
-  const list: HealthKnowledgeItem[] = [];
-  snap.forEach(doc => {
-    list.push({ id: doc.id, ...doc.data() } as HealthKnowledgeItem);
-  });
-  cachedItems = list;
-  loadingCache = false;
-  listeners.forEach(listener => listener(list, false));
-}, (err) => {
-  console.error("Error loading health knowledges globally:", err);
-  loadingCache = false;
-  listeners.forEach(listener => listener(cachedItems, false));
-});
+const fetchGlobalItems = async () => {
+  try {
+    const listRaw = await healthKnowledgesApi.list();
+    const list = listRaw.map((k: any) => ({
+      id: k.id,
+      title: k.title,
+      videoUrl: k.video_url,
+      videoThumbnailUrl: k.video_thumbnail_url,
+      createdBy: k.created_by,
+      createdAt: k.created_at,
+      category: k.category,
+      promoText: k.promo_text,
+      isChallenge: k.is_challenge
+    }));
+    cachedItems = list;
+    loadingCache = false;
+    listeners.forEach(listener => listener(list, false));
+  } catch (err) {
+    console.error("Error loading health knowledges globally:", err);
+    loadingCache = false;
+    listeners.forEach(listener => listener(cachedItems, false));
+  }
+};
+
+fetchGlobalItems();
+setInterval(fetchGlobalItems, 10000);
 
 export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledgeModalProps) {
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
@@ -309,19 +320,18 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
 
       if (editingItem) {
         // Update existing doc
-        await updateDoc(doc(db, 'healthKnowledges', editingItem.id), {
+        await healthKnowledgesApi.update(editingItem.id, {
           title: title.trim(),
           videoUrl: videoUrl.trim(),
           videoThumbnailUrl: finalVideoThumbnailUrl,
           category: category,
           promoText: category === 'business' ? promoText.trim() : '',
           isChallenge: category === 'business' ? isChallenge : false,
-          updatedAt: serverTimestamp()
         });
         setFocusedItemId(editingItem.id);
       } else {
         // Create new doc
-        const docRef = await addDoc(collection(db, 'healthKnowledges'), {
+        const newKnowledge = await healthKnowledgesApi.create({
           title: title.trim(),
           videoUrl: videoUrl.trim(),
           videoThumbnailUrl: finalVideoThumbnailUrl,
@@ -329,9 +339,8 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
           category: category,
           promoText: category === 'business' ? promoText.trim() : '',
           isChallenge: category === 'business' ? isChallenge : false,
-          createdAt: serverTimestamp()
         });
-        setFocusedItemId(docRef.id);
+        setFocusedItemId(newKnowledge.id);
       }
 
       setViewMode('list');
@@ -348,7 +357,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
   const handleDelete = async (itemId: string) => {
     if (!confirm('คุณแน่ใจหรือไม่ที่จะลบสื่อความรู้นี้?')) return;
     try {
-      await deleteDoc(doc(db, 'healthKnowledges', itemId));
+      await healthKnowledgesApi.delete(itemId);
     } catch (err) {
       console.error("Error deleting item:", err);
       alert('เกิดข้อผิดพลาดในการลบข้อมูล');
@@ -363,7 +372,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
         return;
       }
 
-      const liffUrl = `https://liff.line.me/2010284484-LJT1Jnmy?knowledgeId=${item.id}`;
+      const liffUrl = `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${item.id}`;
       let flexMsg: any;
 
       if (item.category === 'business') {
@@ -455,7 +464,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                         type: "uri",
                         label: "กดฟังเลยตอนนี้",
                         uri: item.isChallenge 
-                          ? `https://liff.line.me/2010284484-SbnH29sB?knowledgeId=${item.id}`
+                          ? `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${item.id}`
                           : (item.videoUrl ? (item.videoUrl.includes('?') ? `${item.videoUrl}&openExternalBrowser=1` : `${item.videoUrl}?openExternalBrowser=1`) : '')
                       },
                       contents: [
@@ -479,7 +488,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                         action: {
                           type: "uri",
                           label: "Share",
-                          uri: `https://liff.line.me/2010284484-SbnH29sB?knowledgeId=${item.id}`
+                          uri: `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${item.id}`
                         }
                       }
                     ] : [])
@@ -496,7 +505,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                     action: {
                       type: "uri",
                       label: "แชร์สิ่งที่ได้",
-                      uri: `https://liff.line.me/2010284484-SbnH29sB?knowledgeId=${item.id}`
+                      uri: `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${item.id}`
                     },
                     contents: [
                       {

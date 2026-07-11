@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, updateDoc, arrayUnion, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import EditAppointmentModal from './EditAppointmentModal';
 import liff from '@line/liff';
 import SuccessPopup from './SuccessPopup';
 import { isVideoUrl, getMediaFlexUrl, getMediaThumbnailUrl, getMediaVideoLoopUrl } from '../utils/mediaHelper';
+import { appointmentsApi, appointmentInvitationsApi } from '../utils/api';
+import { LIFF_URLS } from '../constants/liff';
 
 interface AppointmentDetailModalProps {
   appointmentId: string;
@@ -44,12 +46,8 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
       try {
         let currentAppointment = appointmentData;
         if (!currentAppointment) {
-          const docRef = doc(db, 'appointments', appointmentId);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            currentAppointment = docSnap.data();
-            setAppointmentData(currentAppointment);
-          }
+          currentAppointment = await appointmentsApi.get(appointmentId);
+          setAppointmentData(currentAppointment);
         }
         
         if (currentAppointment && currentAppointment.createdBy) {
@@ -75,13 +73,11 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
           }
         }
         
-        // Fetch all invitations for this appointment
-        const invQ = query(collection(db, 'appointmentInvitations'), where('appointmentId', '==', appointmentId));
-        const invSnap = await getDocs(invQ);
-        const invList = invSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+        // Fetch all invitations for this appointment from Vercel API
+        const invList = await appointmentInvitationsApi.listForAppointment(appointmentId);
         
         // Enrich invitations with user info
-        const enrichedInvList = await Promise.all(invList.map(async (inv) => {
+        const enrichedInvList = await Promise.all(invList.map(async (inv: any) => {
           if (!inv.inviteeName) {
             try {
               const collectionName = inv.role === 'trainer' ? 'trainers' : 'trainees';
@@ -111,7 +107,7 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
         // Mark as viewed if not already
         const myInv = enrichedInvList.find(inv => inv.inviteeId === userId);
         if (myInv && !myInv.viewed) {
-          updateDoc(doc(db, 'appointmentInvitations', myInv.id), { viewed: true }).catch(console.error);
+          appointmentInvitationsApi.update(myInv.id, { viewed: true }).catch(console.error);
         }
       } catch (err) {
         console.error(err);
@@ -124,18 +120,14 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
 
   const fetchAppointmentData = async () => {
     try {
-      const docRef = doc(db, 'appointments', appointmentId);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setAppointmentData(data);
-        
-        if (data.createdBy) {
-          const q = query(collection(db, 'trainers'), where('trainerId', '==', data.createdBy));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
-            setCreatorData(snap.docs[0].data());
-          }
+      const data = await appointmentsApi.get(appointmentId);
+      setAppointmentData(data);
+      
+      if (data.createdBy) {
+        const q = query(collection(db, 'trainers'), where('trainerId', '==', data.createdBy));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          setCreatorData(snap.docs[0].data());
         }
       }
     } catch (err) {
@@ -194,7 +186,7 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
 
     setInviting(targetId);
     try {
-      await addDoc(collection(db, 'appointmentInvitations'), {
+      const newInv = await appointmentInvitationsApi.create({
         appointmentId,
         inviterId: userId,
         inviteeId: targetId,
@@ -205,16 +197,10 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
         inviteePhoto: invitee.pictureUrl || '',
         inviteeProvince: invitee.province || '',
         inviteeZone: invitee.zone || '',
-        createdAt: serverTimestamp()
       });
 
-      if (invitee.userType === 'trainer') {
-        await updateDoc(doc(db, 'appointments', appointmentId), {
-          invitedTrainers: arrayUnion(targetId)
-        });
-      }
-
       setAllAppointmentInvitations(prev => [...prev, { 
+        id: newInv.id,
         inviteeId: targetId,
         status: 'pending',
         inviteeName: invitee.nickname || invitee.displayName || 'ไม่มีชื่อ',
@@ -235,14 +221,8 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
   const handleDeleteAppointment = async () => {
     if (!window.confirm('คุณต้องการลบการนัดหมายนี้ใช่หรือไม่?')) return;
     try {
-      await deleteDoc(doc(db, 'appointments', appointmentId));
-      
-      const invQ = query(collection(db, 'appointmentInvitations'), where('appointmentId', '==', appointmentId));
-      const invSnap = await getDocs(invQ);
-      for (const d of invSnap.docs) {
-        await deleteDoc(doc(db, 'appointmentInvitations', d.id));
-      }
-      
+      await appointmentsApi.delete(appointmentId);
+      await appointmentInvitationsApi.deleteForAppointment(appointmentId);
       onClose();
     } catch (err) {
       console.error(err);
@@ -253,12 +233,12 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
   const handleAcceptOrJoin = async () => {
     try {
       if (currentUserInv?.id) {
-        await updateDoc(doc(db, 'appointmentInvitations', currentUserInv.id), { status: 'accepted' });
+        await appointmentInvitationsApi.update(currentUserInv.id, { status: 'accepted' });
         setAllAppointmentInvitations(prev => prev.map(inv => 
           inv.id === currentUserInv.id ? { ...inv, status: 'accepted' } : inv
         ));
       } else {
-        const docRef = await addDoc(collection(db, 'appointmentInvitations'), {
+        const docRef = await appointmentInvitationsApi.create({
           appointmentId,
           inviterId: appointmentData.createdBy || userId,
           inviteeId: userId,
@@ -269,7 +249,6 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
           inviteePhoto: currentUserData?.pictureUrl || '',
           inviteeProvince: currentUserData?.province || '',
           inviteeZone: currentUserData?.zone || '',
-          createdAt: serverTimestamp(),
           viewed: true
         });
         
@@ -363,7 +342,7 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
               action: {
                 type: 'uri',
                 label: 'Share',
-                uri: `https://liff.line.me/2010284484-Mahx0Ao8?appointmentId=${appointmentId}`
+                uri: `${LIFF_URLS.SHARE_EVENT}?appointmentId=${appointmentId}`
               }
             }
           ]

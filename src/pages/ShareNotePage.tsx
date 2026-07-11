@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { doc, getDoc, addDoc, collection, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { healthKnowledgesApi, knowledgeNotesApi } from '../utils/api';
+import { LIFF_URLS } from '../constants/liff';
 import { useLiff } from '../context/LiffContext';
 import liff from '@line/liff';
 import { AutoResizeTextarea } from '../components/AutoResizeTextarea';
@@ -268,16 +268,25 @@ export default function ShareNotePage() {
 
     const fetchKnowledge = async () => {
       try {
-        const docRef = doc(db, 'healthKnowledges', knowledgeId);
-        const docSnap = await getDoc(docRef);
+        const rawData = await healthKnowledgesApi.get(knowledgeId);
 
-        if (!docSnap.exists()) {
+        if (!rawData) {
           setErrorText('ไม่พบข้อมูลสื่อความรู้นี้ในระบบ');
           setLoading(false);
           return;
         }
 
-        setKnowledge({ id: docSnap.id, ...docSnap.data() });
+        setKnowledge({
+          id: rawData.id,
+          title: rawData.title,
+          videoUrl: rawData.video_url,
+          videoThumbnailUrl: rawData.video_thumbnail_url,
+          createdBy: rawData.created_by,
+          createdAt: rawData.created_at,
+          category: rawData.category,
+          promoText: rawData.promo_text,
+          isChallenge: rawData.is_challenge
+        });
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching knowledge:', err);
@@ -289,32 +298,36 @@ export default function ShareNotePage() {
     fetchKnowledge();
   }, [knowledgeId, liffLoading, liffError, profile]);
 
-  // 2. Listen to notes for this knowledgeId (Real-time)
-  useEffect(() => {
+  // 2. Poll notes for this knowledgeId
+  const loadNotes = async () => {
     if (!knowledgeId) return;
+    try {
+      const rawNotes = await knowledgeNotesApi.list(knowledgeId);
+      const mapped = rawNotes.map((n: any) => ({
+        id: n.id,
+        knowledgeId: n.knowledge_id,
+        userId: n.user_id,
+        displayName: n.display_name,
+        pictureUrl: n.picture_url,
+        note: n.note,
+        createdAt: n.created_at
+      }));
+      setNotes(mapped);
+    } catch (err) {
+      console.error('Error loading notes:', err);
+    }
+  };
 
-    const q = query(
-      collection(db, 'knowledgeNotes'),
-      where('knowledgeId', '==', knowledgeId)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list: NoteItem[] = [];
-      snapshot.forEach(doc => {
-        list.push({ id: doc.id, ...doc.data() } as NoteItem);
-      });
-      setNotes(list);
-    }, (err) => {
-      console.error('Error listening to notes:', err);
-    });
-
-    return () => unsubscribe();
+  useEffect(() => {
+    loadNotes();
+    const interval = setInterval(loadNotes, 10000);
+    return () => clearInterval(interval);
   }, [knowledgeId]);
 
-  // Sort notes in memory to prevent missing index errors in Firestore
+  // Sort notes in memory
   const sortedNotes = [...notes].sort((a, b) => {
-    const timeA = a.createdAt?.seconds || a.createdAt?.toMillis?.() || 0;
-    const timeB = b.createdAt?.seconds || b.createdAt?.toMillis?.() || 0;
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
     return timeB - timeA;
   });
 
@@ -332,16 +345,13 @@ export default function ShareNotePage() {
     setSubmitting(true);
     try {
       // 1. Save to database
-      const newNote = {
-        knowledgeId: knowledgeId,
+      await knowledgeNotesApi.create({
+        knowledgeId: knowledgeId!,
         userId: profile.userId,
         displayName: profile.displayName,
         pictureUrl: profile.pictureUrl || '',
         note: noteText.trim(),
-        createdAt: serverTimestamp()
-      };
-
-      await addDoc(collection(db, 'knowledgeNotes'), newNote);
+      });
 
       // 2. Construct Flex Message
       const noteFlexMsg = {
@@ -492,7 +502,7 @@ export default function ShareNotePage() {
                     action: {
                       type: 'uri',
                       label: 'ขอแชร์ด้วย',
-                      uri: `https://liff.line.me/2010284484-SbnH29sB?knowledgeId=${knowledgeId}`
+                      uri: `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${knowledgeId}`
                     },
                     contents: [
                       {

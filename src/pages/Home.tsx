@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { collection, query, where, getDocs, updateDoc, doc, onSnapshot, limit, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useLiff } from '../context/LiffContext';
+import { eventInvitationsApi, appointmentInvitationsApi } from '../utils/api';
 import MetricsForm from '../components/MetricsForm';
 import TraineeDashboard from './TraineeDashboard';
 import EventsModal from '../components/EventsModal';
@@ -685,34 +686,25 @@ export default function Home({ isRecordOnly = false }: { isRecordOnly?: boolean 
     }
   }, [role, profile]);
 
-  useEffect(() => {
+  const fetchPendingCounts = async () => {
     if (role === 'admin_approved' && profile) {
-      const q = query(
-        collection(db, 'eventInvitations'),
-        where('inviteeId', '==', profile.userId),
-        where('status', '==', 'pending')
-      );
-      const unsubscribe = onSnapshot(q, (snap) => {
-        const unviewed = snap.docs.filter(doc => doc.data().viewed !== true);
-        setPendingEventsCount(unviewed.length);
-      });
-      return () => unsubscribe();
+      try {
+        const [eventRes, apptRes] = await Promise.all([
+          eventInvitationsApi.getPendingCount(profile.userId),
+          appointmentInvitationsApi.getPendingCount(profile.userId)
+        ]);
+        setPendingEventsCount(eventRes.count);
+        setPendingAppointmentsCount(apptRes.count);
+      } catch (err) {
+        console.error("Error fetching pending notification counts:", err);
+      }
     }
-  }, [role, profile]);
+  };
 
   useEffect(() => {
-    if (role === 'admin_approved' && profile) {
-      const q = query(
-        collection(db, 'appointmentInvitations'),
-        where('inviteeId', '==', profile.userId),
-        where('status', '==', 'pending')
-      );
-      const unsubscribe = onSnapshot(q, (snap) => {
-        const unviewed = snap.docs.filter(doc => doc.data().viewed !== true);
-        setPendingAppointmentsCount(unviewed.length);
-      });
-      return () => unsubscribe();
-    }
+    fetchPendingCounts();
+    const interval = setInterval(fetchPendingCounts, 10000);
+    return () => clearInterval(interval);
   }, [role, profile]);
 
   if (liffLoading || checkingRole) {

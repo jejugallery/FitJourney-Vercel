@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, updateDoc, arrayUnion, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import EditEventModal from './EditEventModal';
 import { isVideoUrl } from '../utils/mediaHelper';
+import { eventsApi, eventInvitationsApi } from '../utils/api';
 
 const getEventDateText = (ev: any): string => {
   if (ev.startDatetimeIso && ev.endDatetimeIso && ev.startDatetimeIso.substring(0, 10) !== ev.endDatetimeIso.substring(0, 10)) {
@@ -59,12 +60,8 @@ export default function EventDetailModal({ eventId, initialEventData, onClose, u
       try {
         let currentEvent = eventData;
         if (!currentEvent) {
-          const docRef = doc(db, 'events', eventId);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            currentEvent = docSnap.data();
-            setEventData(currentEvent);
-          }
+          currentEvent = await eventsApi.get(eventId);
+          setEventData(currentEvent);
         }
         
         if (currentEvent && currentEvent.createdBy) {
@@ -93,12 +90,10 @@ export default function EventDetailModal({ eventId, initialEventData, onClose, u
         }
         
         // Fetch all invitations for this event to see who is already invited
-        const invQ = query(collection(db, 'eventInvitations'), where('eventId', '==', eventId));
-        const invSnap = await getDocs(invQ);
-        const invList = invSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+        const invList = await eventInvitationsApi.listForEvent(eventId);
         
         // Enrich old invitations that don't have embedded data
-        const enrichedInvList = await Promise.all(invList.map(async (inv) => {
+        const enrichedInvList = await Promise.all(invList.map(async (inv: any) => {
           if (!inv.inviteeName) {
             try {
               const collectionName = inv.role === 'trainer' ? 'trainers' : 'trainees';
@@ -128,7 +123,7 @@ export default function EventDetailModal({ eventId, initialEventData, onClose, u
         // Mark as viewed if not already
         const myInv = enrichedInvList.find(inv => inv.inviteeId === userId);
         if (myInv && !myInv.viewed) {
-          updateDoc(doc(db, 'eventInvitations', myInv.id), { viewed: true }).catch(console.error);
+          eventInvitationsApi.update(myInv.id, { viewed: true }).catch(console.error);
         }
       } catch (err) {
         console.error(err);
@@ -141,18 +136,14 @@ export default function EventDetailModal({ eventId, initialEventData, onClose, u
 
   const fetchEventData = async () => {
     try {
-      const docRef = doc(db, 'events', eventId);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setEventData(data);
-        
-        if (data.createdBy) {
-          const q = query(collection(db, 'trainers'), where('trainerId', '==', data.createdBy));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
-            setCreatorData(snap.docs[0].data());
-          }
+      const data = await eventsApi.get(eventId);
+      setEventData(data);
+      
+      if (data.createdBy) {
+        const q = query(collection(db, 'trainers'), where('trainerId', '==', data.createdBy));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          setCreatorData(snap.docs[0].data());
         }
       }
     } catch (err) {
@@ -216,7 +207,7 @@ export default function EventDetailModal({ eventId, initialEventData, onClose, u
 
     setInviting(targetId);
     try {
-      await addDoc(collection(db, 'eventInvitations'), {
+      const newInv = await eventInvitationsApi.create({
         eventId,
         inviterId: userId,
         inviteeId: targetId,
@@ -227,16 +218,10 @@ export default function EventDetailModal({ eventId, initialEventData, onClose, u
         inviteePhoto: invitee.pictureUrl || '',
         inviteeProvince: invitee.province || '',
         inviteeZone: invitee.zone || '',
-        createdAt: serverTimestamp()
       });
 
-      if (invitee.userType === 'trainer') {
-        await updateDoc(doc(db, 'events', eventId), {
-          invitedTrainers: arrayUnion(targetId)
-        });
-      }
-
       setAllEventInvitations(prev => [...prev, { 
+        id: newInv.id,
         inviteeId: targetId,
         status: 'pending',
         inviteeName: invitee.nickname || invitee.displayName || 'ไม่มีชื่อ',
@@ -257,15 +242,8 @@ export default function EventDetailModal({ eventId, initialEventData, onClose, u
   const handleDeleteEvent = async () => {
     if (!window.confirm('คุณต้องการลบกิจกรรมนี้ใช่หรือไม่?')) return;
     try {
-      await deleteDoc(doc(db, 'events', eventId));
-      
-      // Delete invitations
-      const invQ = query(collection(db, 'eventInvitations'), where('eventId', '==', eventId));
-      const invSnap = await getDocs(invQ);
-      for (const d of invSnap.docs) {
-        await deleteDoc(doc(db, 'eventInvitations', d.id));
-      }
-      
+      await eventsApi.delete(eventId);
+      await eventInvitationsApi.deleteForEvent(eventId);
       onClose();
     } catch (err) {
       console.error(err);
@@ -276,12 +254,12 @@ export default function EventDetailModal({ eventId, initialEventData, onClose, u
   const handleAcceptOrJoin = async () => {
     try {
       if (currentUserInv?.id) {
-        await updateDoc(doc(db, 'eventInvitations', currentUserInv.id), { status: 'accepted' });
+        await eventInvitationsApi.update(currentUserInv.id, { status: 'accepted' });
         setAllEventInvitations(prev => prev.map(inv => 
           inv.id === currentUserInv.id ? { ...inv, status: 'accepted' } : inv
         ));
       } else {
-        const docRef = await addDoc(collection(db, 'eventInvitations'), {
+        const docRef = await eventInvitationsApi.create({
           eventId,
           inviterId: eventData.createdBy || userId,
           inviteeId: userId,
@@ -292,7 +270,6 @@ export default function EventDetailModal({ eventId, initialEventData, onClose, u
           inviteePhoto: currentUserData?.pictureUrl || '',
           inviteeProvince: currentUserData?.province || '',
           inviteeZone: currentUserData?.zone || '',
-          createdAt: serverTimestamp(),
           viewed: true
         });
         

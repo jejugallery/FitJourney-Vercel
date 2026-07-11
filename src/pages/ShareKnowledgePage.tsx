@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { healthKnowledgesApi } from '../utils/api';
+import { LIFF_URLS } from '../constants/liff';
 import { useLiff } from '../context/LiffContext';
 import liff from '@line/liff';
 
@@ -65,19 +65,28 @@ export default function ShareKnowledgePage() {
           return;
         }
 
-        // Fetch the knowledge item from Firestore
-        const docRef = doc(db, 'healthKnowledges', knowledgeId);
-        const docSnap = await getDoc(docRef);
+        // Fetch the knowledge item via REST API
+        const rawData = await healthKnowledgesApi.get(knowledgeId);
 
-        if (!docSnap.exists()) {
+        if (!rawData) {
           setErrorText('ไม่พบข้อมูลสื่อความรู้นี้ในระบบ');
           return;
         }
 
-        const data = { id: docSnap.id, ...docSnap.data() } as any;
+        const data = {
+          id: rawData.id,
+          title: rawData.title,
+          videoUrl: rawData.video_url,
+          videoThumbnailUrl: rawData.video_thumbnail_url,
+          createdBy: rawData.created_by,
+          createdAt: rawData.created_at,
+          category: rawData.category,
+          promoText: rawData.promo_text,
+          isChallenge: rawData.is_challenge
+        };
 
         // Construct Flex Message
-        const liffUrl = `https://liff.line.me/2010284484-LJT1Jnmy?knowledgeId=${data.id}`;
+        const liffUrl = `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${data.id}`;
         let flexMsg: any;
 
         if (data.category === 'business') {
@@ -169,7 +178,7 @@ export default function ShareKnowledgePage() {
                           type: "uri",
                           label: "กดฟังเลยตอนนี้",
                           uri: data.isChallenge 
-                            ? `https://liff.line.me/2010284484-SbnH29sB?knowledgeId=${data.id}`
+                            ? `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${data.id}`
                             : (data.videoUrl ? (data.videoUrl.includes('?') ? `${data.videoUrl}&openExternalBrowser=1` : `${data.videoUrl}?openExternalBrowser=1`) : '')
                         },
                         contents: [
@@ -193,7 +202,7 @@ export default function ShareKnowledgePage() {
                           action: {
                             type: "uri",
                             label: "Share",
-                            uri: `https://liff.line.me/2010284484-SbnH29sB?knowledgeId=${data.id}`
+                            uri: `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${data.id}`
                           }
                         }
                       ] : [])
@@ -210,7 +219,7 @@ export default function ShareKnowledgePage() {
                       action: {
                         type: "uri",
                         label: "แชร์สิ่งที่ได้",
-                        uri: `https://liff.line.me/2010284484-SbnH29sB?knowledgeId=${data.id}`
+                        uri: `${LIFF_URLS.SHARE_KNOWLEDGE}?knowledgeId=${data.id}`
                       },
                       contents: [
                         {

@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@line/liff": "^2.29.0",
+    "@neondatabase/serverless": "^0.9.4",
+    "axios": "^1.7.2",
     "browser-image-compression": "^2.0.2",
     "firebase": "^12.14.0",
     "react": "^19.2.6",

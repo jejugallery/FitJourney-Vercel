@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { appointmentsApi } from '../utils/api';
 import { isVideoUrl, uploadToCloudinary } from '../utils/mediaHelper';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
 
@@ -117,7 +116,7 @@ export default function EditAppointmentModal({ onClose, onSuccess, appointment }
         formattedEndDatetime = `${ed.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, ${ed.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.`;
       }
 
-      await updateDoc(doc(db, 'appointments', appointment.id), {
+      await appointmentsApi.update(appointment.id, {
         name: name.trim(),
         imageUrl,
         datetime: formattedDatetime,
