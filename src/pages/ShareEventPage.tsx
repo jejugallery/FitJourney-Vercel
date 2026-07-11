@@ -26,6 +26,8 @@ export default function ShareEventPage() {
   const [showWithdrawMode, setShowWithdrawMode] = useState(false);
   const [selectedWithdrawIds, setSelectedWithdrawIds] = useState<string[]>([]);
   const [fadeOutActive, setFadeOutActive] = useState(false);
+  const [rsvpEnabled, setRsvpEnabled] = useState(true);
+  const [updatingRsvpStatus, setUpdatingRsvpStatus] = useState(false);
 
   const getParamSafe = (name: string): string | null => {
     let val = searchParams.get(name);
@@ -79,6 +81,7 @@ export default function ShareEventPage() {
           setStatus('กำลังโหลดข้อมูลกิจกรรม...');
           const evData = await eventsApi.get(eventId);
           setEventDataCache(evData);
+          setRsvpEnabled(evData.rsvpEnabled !== false);
           
           // Check if user already RSVP'd
           const rsvpCheck = await eventRsvpsApi.check(eventId, profile.userId);
@@ -918,6 +921,26 @@ export default function ShareEventPage() {
     }
   };
 
+  const handleRsvpStatusChange = async () => {
+    if (!eventId || !profile || eventDataCache?.createdBy !== profile.userId) return;
+    const nextValue = !rsvpEnabled;
+    setUpdatingRsvpStatus(true);
+    try {
+      const updatedEvent = await eventsApi.update(eventId, {
+        rsvpEnabled: nextValue,
+        requesterId: profile.userId
+      });
+      setRsvpEnabled(updatedEvent.rsvpEnabled !== false);
+      setEventDataCache((current: any) => ({ ...current, rsvpEnabled: updatedEvent.rsvpEnabled }));
+      setRsvpMode(null);
+      setShowWithdrawMode(false);
+    } catch (err: any) {
+      alert('เปลี่ยนสถานะการรับลงชื่อไม่สำเร็จ: ' + (err.message || err));
+    } finally {
+      setUpdatingRsvpStatus(false);
+    }
+  };
+
   // ─── RSVP Mode Selection Popup ───
   if (showModePopup && profile && action === 'rsvp') {
     return (
@@ -975,6 +998,43 @@ export default function ShareEventPage() {
 
           {/* Divider */}
           <div style={{ height: '1px', background: '#f1f5f9', margin: '0 0 24px 0' }} />
+
+          {eventDataCache?.createdBy === profile.userId && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '12px 14px', marginBottom: '20px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'left' }}>
+              <div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#334155' }}>เปิดรับลงชื่อ</div>
+                <div style={{ fontSize: '0.75rem', color: rsvpEnabled ? '#16a34a' : '#ef4444', marginTop: '2px' }}>
+                  {rsvpEnabled ? 'กำลังเปิดรับลงชื่อ' : 'ปิดการรับลงชื่อแล้ว'}
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={rsvpEnabled}
+                aria-label="เปิดหรือปิดการรับลงชื่อ"
+                onClick={handleRsvpStatusChange}
+                disabled={updatingRsvpStatus}
+                style={{ width: '52px', height: '30px', padding: '3px', border: 'none', borderRadius: '999px', background: rsvpEnabled ? '#22c55e' : '#cbd5e1', cursor: updatingRsvpStatus ? 'wait' : 'pointer', transition: 'background 0.2s', flexShrink: 0 }}
+              >
+                <span style={{ display: 'block', width: '24px', height: '24px', borderRadius: '50%', background: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.2)', transform: rsvpEnabled ? 'translateX(22px)' : 'translateX(0)', transition: 'transform 0.2s' }} />
+              </button>
+            </div>
+          )}
+
+          {!rsvpEnabled ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', alignItems: 'center' }}>
+              <div style={{ padding: '18px', width: '100%', boxSizing: 'border-box', borderRadius: '16px', background: '#fff1f2', color: '#be123c', fontWeight: 'bold' }}>
+                ปิดการรับลงชื่อแล้ว
+              </div>
+              <button
+                onClick={() => liff.closeWindow()}
+                style={{ width: '100%', padding: '13px', borderRadius: '14px', border: 'none', background: '#64748b', color: '#fff', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer' }}
+              >
+                ออก
+              </button>
+            </div>
+          ) : (
+            <>
 
           {/* Profile */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '28px' }}>
@@ -1135,6 +1195,8 @@ export default function ShareEventPage() {
                 </button>
               )}
             </div>
+          )}
+            </>
           )}
         </div>
       </div>

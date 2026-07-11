@@ -96,7 +96,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         linkLabel,
         linkUrl,
         detailUrl,
+        rsvpEnabled,
+        requesterId,
       } = req.body;
+
+      if (typeof rsvpEnabled === 'boolean') {
+        await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS rsvp_enabled BOOLEAN NOT NULL DEFAULT TRUE`;
+        const toggleResult = await sql`
+          UPDATE events SET rsvp_enabled = ${rsvpEnabled}
+          WHERE id = ${eventId} AND created_by = ${requesterId || ''}
+          RETURNING *
+        `;
+        if (toggleResult.length === 0) {
+          return res.status(403).json({ error: 'Only the event creator can change RSVP availability' });
+        }
+        return res.status(200).json(toggleResult[0]);
+      }
 
       const result = await sql`
         UPDATE events SET

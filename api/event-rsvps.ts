@@ -43,6 +43,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'eventId and userId are required' });
       }
 
+      const eventRows = await sql`
+        SELECT COALESCE((to_jsonb(events)->>'rsvp_enabled')::boolean, TRUE) AS rsvp_enabled
+        FROM events WHERE id = ${eventId}
+      `;
+      if (eventRows.length === 0) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      if (!eventRows[0].rsvp_enabled) {
+        return res.status(403).json({ error: 'ปิดการรับลงชื่อแล้ว' });
+      }
+
       // Use upsert to handle duplicate join requests
       const result = await sql`
         INSERT INTO event_rsvps (event_id, user_id, display_name, picture_url, joined_at)

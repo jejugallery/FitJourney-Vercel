@@ -68,8 +68,11 @@ CREATE TABLE IF NOT EXISTS events (
   button_color TEXT,
   video_thumbnail_url TEXT,
   created_by TEXT,
+  rsvp_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE events ADD COLUMN IF NOT EXISTS rsvp_enabled BOOLEAN NOT NULL DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS event_invitations (
   id TEXT PRIMARY KEY,
