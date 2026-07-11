@@ -27,6 +27,7 @@ export default function ShareEventPage() {
   const [selectedWithdrawIds, setSelectedWithdrawIds] = useState<string[]>([]);
   const [fadeOutActive, setFadeOutActive] = useState(false);
   const [rsvpEnabled, setRsvpEnabled] = useState(true);
+  const [rsvpFriendEnabled, setRsvpFriendEnabled] = useState(true);
   const [updatingRsvpStatus, setUpdatingRsvpStatus] = useState(false);
 
   const getParamSafe = (name: string): string | null => {
@@ -82,6 +83,7 @@ export default function ShareEventPage() {
           const evData = await eventsApi.get(eventId);
           setEventDataCache(evData);
           setRsvpEnabled(evData.rsvpEnabled !== false);
+          setRsvpFriendEnabled(evData.rsvpFriendEnabled !== false);
           
           // Check if user already RSVP'd
           const rsvpCheck = await eventRsvpsApi.check(eventId, profile.userId);
@@ -941,6 +943,28 @@ export default function ShareEventPage() {
     }
   };
 
+  const handleRsvpFriendStatusChange = async () => {
+    if (!eventId || !profile || eventDataCache?.createdBy !== profile.userId) return;
+    const nextValue = !rsvpFriendEnabled;
+    setUpdatingRsvpStatus(true);
+    try {
+      const updatedEvent = await eventsApi.update(eventId, {
+        rsvpFriendEnabled: nextValue,
+        requesterId: profile.userId
+      });
+      setRsvpFriendEnabled(updatedEvent.rsvpFriendEnabled !== false);
+      setEventDataCache((current: any) => ({ ...current, rsvpFriendEnabled: updatedEvent.rsvpFriendEnabled }));
+      if (!nextValue) {
+        setRsvpMode(null);
+        setFriendName('');
+      }
+    } catch (err: any) {
+      alert('เปลี่ยนสถานะการลงชื่อให้เพื่อนไม่สำเร็จ: ' + (err.message || err));
+    } finally {
+      setUpdatingRsvpStatus(false);
+    }
+  };
+
   // ─── RSVP Mode Selection Popup ───
   if (showModePopup && profile && action === 'rsvp') {
     return (
@@ -1000,24 +1024,37 @@ export default function ShareEventPage() {
           <div style={{ height: '1px', background: '#f1f5f9', margin: '0 0 24px 0' }} />
 
           {eventDataCache?.createdBy === profile.userId && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '12px 14px', marginBottom: '20px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'left' }}>
-              <div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#334155' }}>เปิดรับลงชื่อ</div>
-                <div style={{ fontSize: '0.75rem', color: rsvpEnabled ? '#16a34a' : '#ef4444', marginTop: '2px' }}>
-                  {rsvpEnabled ? 'กำลังเปิดรับลงชื่อ' : 'ปิดการรับลงชื่อแล้ว'}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '12px 14px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'left' }}>
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#334155' }}>เปิดรับลงชื่อ</div>
+                  <div style={{ fontSize: '0.75rem', color: rsvpEnabled ? '#16a34a' : '#ef4444', marginTop: '2px' }}>
+                    {rsvpEnabled ? 'กำลังเปิดรับลงชื่อ' : 'ปิดการรับลงชื่อแล้ว'}
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={rsvpEnabled}
+                  aria-label="เปิดหรือปิดการรับลงชื่อ"
+                  onClick={handleRsvpStatusChange}
+                  disabled={updatingRsvpStatus}
+                  style={{ width: '52px', height: '30px', padding: '3px', border: 'none', borderRadius: '999px', background: rsvpEnabled ? '#22c55e' : '#cbd5e1', cursor: updatingRsvpStatus ? 'wait' : 'pointer', transition: 'background 0.2s', flexShrink: 0 }}
+                >
+                  <span style={{ display: 'block', width: '24px', height: '24px', borderRadius: '50%', background: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.2)', transform: rsvpEnabled ? 'translateX(22px)' : 'translateX(0)', transition: 'transform 0.2s' }} />
+                </button>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={rsvpEnabled}
-                aria-label="เปิดหรือปิดการรับลงชื่อ"
-                onClick={handleRsvpStatusChange}
-                disabled={updatingRsvpStatus}
-                style={{ width: '52px', height: '30px', padding: '3px', border: 'none', borderRadius: '999px', background: rsvpEnabled ? '#22c55e' : '#cbd5e1', cursor: updatingRsvpStatus ? 'wait' : 'pointer', transition: 'background 0.2s', flexShrink: 0 }}
-              >
-                <span style={{ display: 'block', width: '24px', height: '24px', borderRadius: '50%', background: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.2)', transform: rsvpEnabled ? 'translateX(22px)' : 'translateX(0)', transition: 'transform 0.2s' }} />
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '12px 14px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'left', opacity: rsvpEnabled ? 1 : 0.55 }}>
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#334155' }}>อนุญาตให้ลงชื่อให้เพื่อน</div>
+                  <div style={{ fontSize: '0.75rem', color: rsvpFriendEnabled ? '#16a34a' : '#ef4444', marginTop: '2px' }}>
+                    {rsvpFriendEnabled ? 'เปิดการลงชื่อให้เพื่อน' : 'ปิดการลงชื่อให้เพื่อนแล้ว'}
+                  </div>
+                </div>
+                <button type="button" role="switch" aria-checked={rsvpFriendEnabled} aria-label="เปิดหรือปิดการลงชื่อให้เพื่อน" onClick={handleRsvpFriendStatusChange} disabled={updatingRsvpStatus || !rsvpEnabled} style={{ width: '52px', height: '30px', padding: '3px', border: 'none', borderRadius: '999px', background: rsvpFriendEnabled ? '#22c55e' : '#cbd5e1', cursor: updatingRsvpStatus || !rsvpEnabled ? 'not-allowed' : 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
+                  <span style={{ display: 'block', width: '24px', height: '24px', borderRadius: '50%', background: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.2)', transform: rsvpFriendEnabled ? 'translateX(22px)' : 'translateX(0)', transition: 'transform 0.2s' }} />
+                </button>
+              </div>
             </div>
           )}
 
@@ -1171,16 +1208,18 @@ export default function ShareEventPage() {
                 </button>
               )}
               
-              <button
-                onClick={() => setRsvpMode('friend')}
-                disabled={submitting}
-                style={{
-                  width: '100%', padding: '11px', borderRadius: '14px', border: '1.5px solid #e2e8f0', fontWeight: 'bold', fontSize: '0.88rem', cursor: 'pointer',
-                  background: '#f8fafc', color: '#475569', transition: 'all 0.2s'
-                }}
-              >
-                👥 ลงชื่อให้เพื่อน
-              </button>
+              {rsvpFriendEnabled && (
+                <button
+                  onClick={() => setRsvpMode('friend')}
+                  disabled={submitting}
+                  style={{
+                    width: '100%', padding: '11px', borderRadius: '14px', border: '1.5px solid #e2e8f0', fontWeight: 'bold', fontSize: '0.88rem', cursor: 'pointer',
+                    background: '#f8fafc', color: '#475569', transition: 'all 0.2s'
+                  }}
+                >
+                  👥 ลงชื่อให้เพื่อน
+                </button>
+              )}
 
               {rsvpList.filter(canWithdraw).length > 0 && (
                 <button

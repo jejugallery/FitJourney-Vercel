@@ -44,7 +44,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const eventRows = await sql`
-        SELECT COALESCE((to_jsonb(events)->>'rsvp_enabled')::boolean, TRUE) AS rsvp_enabled
+        SELECT
+          COALESCE((to_jsonb(events)->>'rsvp_enabled')::boolean, TRUE) AS rsvp_enabled,
+          COALESCE((to_jsonb(events)->>'rsvp_friend_enabled')::boolean, TRUE) AS rsvp_friend_enabled
         FROM events WHERE id = ${eventId}
       `;
       if (eventRows.length === 0) {
@@ -52,6 +54,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       if (!eventRows[0].rsvp_enabled) {
         return res.status(403).json({ error: 'ปิดการรับลงชื่อแล้ว' });
+      }
+      if (String(userId).startsWith('friend_') && !eventRows[0].rsvp_friend_enabled) {
+        return res.status(403).json({ error: 'ปิดการลงชื่อให้เพื่อนแล้ว' });
       }
 
       // Use upsert to handle duplicate join requests

@@ -97,13 +97,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         linkUrl,
         detailUrl,
         rsvpEnabled,
+        rsvpFriendEnabled,
         requesterId,
       } = req.body;
 
-      if (typeof rsvpEnabled === 'boolean') {
+      if (typeof rsvpEnabled === 'boolean' || typeof rsvpFriendEnabled === 'boolean') {
         await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS rsvp_enabled BOOLEAN NOT NULL DEFAULT TRUE`;
-        const toggleResult = await sql`
+        await sql`ALTER TABLE events ADD COLUMN IF NOT EXISTS rsvp_friend_enabled BOOLEAN NOT NULL DEFAULT TRUE`;
+        const toggleResult = typeof rsvpEnabled === 'boolean'
+          ? await sql`
           UPDATE events SET rsvp_enabled = ${rsvpEnabled}
+          WHERE id = ${eventId} AND created_by = ${requesterId || ''}
+          RETURNING *
+        `
+          : await sql`
+          UPDATE events SET rsvp_friend_enabled = ${rsvpFriendEnabled}
           WHERE id = ${eventId} AND created_by = ${requesterId || ''}
           RETURNING *
         `;
