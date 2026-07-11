@@ -2,6 +2,29 @@
 
 
 
+function toCamel(s: string): string {
+  return s.replace(/([-_][a-z])/ig, ($1) => {
+    return $1.toUpperCase().replace('-', '').replace('_', '');
+  });
+}
+
+function toCamelCaseKeys(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(toCamelCaseKeys);
+  }
+  if (typeof obj === 'object') {
+    if (obj instanceof Date) return obj;
+    const result: any = {};
+    for (const key of Object.keys(obj)) {
+      const camelKey = toCamel(key);
+      result[camelKey] = toCamelCaseKeys(obj[key]);
+    }
+    return result;
+  }
+  return obj;
+}
+
 // Generic fetch wrapper
 async function request<T = any>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -17,7 +40,8 @@ async function request<T = any>(url: string, options?: RequestInit): Promise<T> 
     throw new Error(errData.error || `HTTP error! status: ${response.status}`);
   }
   
-  return response.json();
+  const data = await response.json();
+  return toCamelCaseKeys(data) as T;
 }
 
 // 1. Appointments (ระบบนัดหมาย)
