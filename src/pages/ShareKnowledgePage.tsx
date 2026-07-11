@@ -322,7 +322,8 @@ export default function ShareKnowledgePage() {
         }
       } catch (err: any) {
         console.error("Error in ShareKnowledgePage:", err);
-        setErrorText(err.message || 'เกิดข้อผิดพลาดในการโหลดหรือแชร์ข้อมูล');
+        const errMsg = err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+        setErrorText(errMsg || 'เกิดข้อผิดพลาดในการโหลดหรือแชร์ข้อมูล');
       }
     };
 
