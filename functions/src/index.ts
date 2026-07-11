@@ -347,7 +347,7 @@ export const lineWebhook = functions.region('asia-southeast1').https.onRequest(a
                 action: {
                   type: 'uri',
                   label: 'ลงชื่อเข้าร่วม',
-                  uri: `https://liff.line.me/2010284484-Mahx0Ao8?action=rsvp&eventId=${eventId}&v=${Date.now()}`
+                  uri: `https://liff.line.me/2010284484-JPGd3KXg?action=rsvp&eventId=${eventId}&v=${Date.now()}`
                 },
                 contents: [
                   {
