@@ -46,6 +46,12 @@ const formatDatetimeForInput = (isoStr: string) => {
   }
 };
 
+const toLocalISO = (localStr: string) => {
+  if (!localStr) return null;
+  if (localStr.includes('+') || localStr.endsWith('Z')) return localStr;
+  return `${localStr}:00.000+07:00`;
+};
+
 export default function EditEventModal({ onClose, onSuccess, event }: EditEventModalProps) {
   const [name, setName] = useState(event.name || '');
   const [datetime, setDatetime] = useState(formatDatetimeForInput(event.startDatetimeIso));
@@ -189,9 +195,9 @@ export default function EditEventModal({ onClose, onSuccess, event }: EditEventM
         videoThumbnailUrl,
         videoUrl: videoUrl.trim(),
         datetime: formattedDatetime,
-        startDatetimeIso: datetime,
+        startDatetimeIso: toLocalISO(datetime),
         endDatetimeDisplay: formattedEndDatetime,
-        endDatetimeIso: endDatetime,
+        endDatetimeIso: toLocalISO(endDatetime),
         location: location.trim(),
         description: description.trim(),
         detailUrl: (linkType !== 'none' && linkType !== 'rsvp' && linkType !== 'calendar') ? linkUrl.trim() : '',

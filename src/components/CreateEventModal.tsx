@@ -28,6 +28,12 @@ interface CreateEventModalProps {
   userId: string;
 }
 
+const toLocalISO = (localStr: string) => {
+  if (!localStr) return null;
+  if (localStr.includes('+') || localStr.endsWith('Z')) return localStr;
+  return `${localStr}:00.000+07:00`;
+};
+
 export default function CreateEventModal({ onClose, userId }: CreateEventModalProps) {
   const [name, setName] = useState('');
   const [datetime, setDatetime] = useState('');
@@ -165,9 +171,9 @@ export default function CreateEventModal({ onClose, userId }: CreateEventModalPr
         videoThumbnailUrl,
         videoUrl: videoUrl.trim(),
         datetime: formattedDatetime,
-        startDatetimeIso: datetime,
+        startDatetimeIso: toLocalISO(datetime),
         endDatetimeDisplay: formattedEndDatetime,
-        endDatetimeIso: endDatetime,
+        endDatetimeIso: toLocalISO(endDatetime),
         location: location.trim(),
         description: description.trim(),
         detailUrl: (linkType !== 'none' && linkType !== 'rsvp' && linkType !== 'calendar') ? linkUrl.trim() : '',
