@@ -562,7 +562,7 @@ function BillingItem({ billing, role, creators, onNavigatePay }: BillingItemProp
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 'bold', fontSize: '0.85rem', color: '#1e293b' }}>{p.displayName || 'ผู้ใช้'}</div>
                       <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                        {p.submittedAt?.toMillis ? new Date(p.submittedAt.toMillis()).toLocaleString('th-TH') : '-'}
+                        {p.submittedAt ? (p.submittedAt.toMillis ? new Date(p.submittedAt.toMillis()).toLocaleString('th-TH') : new Date(p.submittedAt).toLocaleString('th-TH')) : '-'}
                       </div>
                     </div>
 
