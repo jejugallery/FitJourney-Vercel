@@ -909,6 +909,14 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
   };
 
   const handleShareToLine = async (ev: any) => {
+    try {
+      ev = await eventsApi.get(ev.id);
+    } catch (err) {
+      console.error('Error refreshing event before share:', err);
+      alert('ไม่สามารถโหลดข้อมูลกิจกรรมล่าสุดได้ กรุณาลองใหม่อีกครั้ง');
+      return;
+    }
+
     const shareLinkType = ev?.linkType || 'none';
     const shareLinkUrl = ev?.linkUrl || '';
     const shareLinkLabel = ev?.linkLabel || '';
