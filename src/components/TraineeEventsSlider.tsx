@@ -8,6 +8,7 @@ import liff from '@line/liff';
 import SuccessPopup from './SuccessPopup';
 import { eventsApi, eventInvitationsApi, eventRsvpsApi } from '../utils/api';
 import { LIFF_URLS } from '../constants/liff';
+import { getEventLinkLabel } from '../utils/eventLinkLabel';
 
 const getEventDateText = (ev: any): string => {
   if (ev.startDatetimeIso && ev.endDatetimeIso && ev.startDatetimeIso.substring(0, 10) !== ev.endDatetimeIso.substring(0, 10)) {
@@ -606,9 +607,9 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
                 ) : (
                   <div style={{ width: '100%', height: '140px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>📅</div>
                 )}
-                {(ev.linkType === 'rsvp' || ev.linkType === 'zoom') && (
+                {getEventLinkLabel(ev) && (
                   <div style={{ position: 'absolute', right: '10px', bottom: '10px', padding: '6px 12px', borderRadius: '999px', background: '#6d28d9', color: '#fff', fontSize: '0.75rem', fontWeight: 'bold', boxShadow: '0 3px 10px rgba(76,29,149,0.35)' }}>
-                    {ev.linkType === 'rsvp' ? 'ลงชื่อ' : 'เข้าผ่าน Zoom'}
+                    {getEventLinkLabel(ev)}
                   </div>
                 )}
               </div>

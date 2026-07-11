@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import EditEventModal from './EditEventModal';
 import { isVideoUrl } from '../utils/mediaHelper';
 import { eventsApi, eventInvitationsApi } from '../utils/api';
+import { getEventLinkLabel } from '../utils/eventLinkLabel';
 
 const getEventDateText = (ev: any): string => {
   if (ev.startDatetimeIso && ev.endDatetimeIso && ev.startDatetimeIso.substring(0, 10) !== ev.endDatetimeIso.substring(0, 10)) {
@@ -438,9 +439,9 @@ export default function EventDetailModal({ eventId, initialEventData, onClose, u
             ) : (
               <img src={eventData.imageUrl} alt={eventData.name} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
             )}
-            {(eventData.linkType === 'rsvp' || eventData.linkType === 'zoom') && (
+            {getEventLinkLabel(eventData) && (
               <div style={{ position: 'absolute', right: '12px', bottom: '12px', padding: '7px 14px', borderRadius: '999px', background: '#6d28d9', color: '#fff', fontSize: '0.85rem', fontWeight: 'bold', boxShadow: '0 3px 12px rgba(76,29,149,0.4)' }}>
-                {eventData.linkType === 'rsvp' ? 'ลงชื่อ' : 'เข้าผ่าน Zoom'}
+                {getEventLinkLabel(eventData)}
               </div>
             )}
           </div>

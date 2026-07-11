@@ -10,6 +10,7 @@ import EventDetailModal from './EventDetailModal';
 import CreateBillingModal from './CreateBillingModal';
 import EditBillingModal from './EditBillingModal';
 import { isVideoUrl, getMediaFlexUrl, getMediaThumbnailUrl, getMediaVideoLoopUrl } from '../utils/mediaHelper';
+import { getEventLinkLabel } from '../utils/eventLinkLabel';
 import liff from '@line/liff';
 import SuccessPopup from './SuccessPopup';
 
@@ -1372,9 +1373,9 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
                           ) : (
                             <img src={ev.imageUrl} alt={ev.name} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
                           )}
-                          {(ev.linkType === 'rsvp' || ev.linkType === 'zoom') && (
+                          {getEventLinkLabel(ev) && (
                             <div style={{ position: 'absolute', right: '10px', bottom: '10px', padding: '6px 12px', borderRadius: '999px', background: '#6d28d9', color: '#fff', fontSize: '0.78rem', fontWeight: 'bold', boxShadow: '0 3px 10px rgba(76,29,149,0.35)' }}>
-                              {ev.linkType === 'rsvp' ? 'ลงชื่อ' : 'เข้าผ่าน Zoom'}
+                              {getEventLinkLabel(ev)}
                             </div>
                           )}
                         </div>
