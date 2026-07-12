@@ -613,6 +613,18 @@ export default function TraineeDashboard({
                 + เพิ่มเทรนเนอร์
               </button>
 
+              <button
+                type="button"
+                onClick={() => navigate(`/body-analysis/${queryId}`)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eff6ff',
+                  padding: '0.75rem', borderRadius: '12px', border: '1px solid #3b82f6',
+                  color: '#2563eb', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer', width: '100%'
+                }}
+              >
+                📸 อ่านค่าร่างกาย
+              </button>
+
               <div style={{ display: 'flex', gap: '0.5rem', width: '100%', alignItems: 'stretch' }}>
                 <button 
                   type="button"
