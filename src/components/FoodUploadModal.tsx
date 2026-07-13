@@ -263,10 +263,16 @@ export default function FoodUploadModal({ traineeId, trainerIds, onClose }: { tr
         }
       }
 
+      const params = new URLSearchParams(window.location.search);
+      const isQuickUpload = params.get('action') === 'uploadFood' || params.get('action') === 'upload-food';
+
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
         onClose();
+        if (isQuickUpload && liff.isInClient()) {
+          liff.closeWindow();
+        }
       }, 1500);
       
     } catch (err) {
