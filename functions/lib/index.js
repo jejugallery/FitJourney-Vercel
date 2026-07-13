@@ -88,7 +88,7 @@ const getMediaVideoLoopUrl = (url) => {
 // generateICS Cloud Function has been removed as it is now generated client-side
 // analyzeFood, analyzePaymentSlip, and analyzeBodyMetrics Cloud Functions have been removed as Gemini API is now called directly client-side
 exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async (req, res) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     const host = (req.headers.host && !req.headers.host.includes('cloudfunctions.net')) ? req.headers.host : 'fitjourneythailand.web.app';
     const origin = host.startsWith('localhost') ? `http://${host}` : `https://${host}`;
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -147,6 +147,89 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                 eventId = text.replace('✍️ ลงชื่อเข้าร่วมกิจกรรม ', '').trim();
                 isRsvpAction = true;
             }
+            else if (text.trim() === 'ส่งอาหาร') {
+                const foodFlexMessage = {
+                    type: 'flex',
+                    altText: 'FitJourney: ได้เวลาส่งภาพอาหารแล้ว 📸',
+                    contents: {
+                        type: 'bubble',
+                        hero: {
+                            type: 'image',
+                            url: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=600&auto=format&fit=crop',
+                            size: 'full',
+                            aspectRatio: '20:13',
+                            aspectMode: 'cover'
+                        },
+                        body: {
+                            type: 'box',
+                            layout: 'vertical',
+                            spacing: 'md',
+                            contents: [
+                                {
+                                    type: 'text',
+                                    text: 'FitJourney Food Tracker',
+                                    weight: 'bold',
+                                    size: 'xs',
+                                    color: '#a855f7'
+                                },
+                                {
+                                    type: 'text',
+                                    text: 'ได้เวลาบันทึกมื้ออาหารแล้ว! 🍽️',
+                                    weight: 'bold',
+                                    size: 'xl',
+                                    color: '#1e293b',
+                                    wrap: true
+                                },
+                                {
+                                    type: 'text',
+                                    text: 'อย่าลืมอัปโหลดภาพอาหารของคุณวันนี้ เพื่อให้เทรนเนอร์ช่วยตรวจและวิเคราะห์โภชนาการแบบเรียลไทม์กันนะคะ',
+                                    size: 'sm',
+                                    color: '#64748b',
+                                    wrap: true
+                                }
+                            ]
+                        },
+                        footer: {
+                            type: 'box',
+                            layout: 'vertical',
+                            spacing: 'sm',
+                            contents: [
+                                {
+                                    type: 'box',
+                                    layout: 'vertical',
+                                    backgroundColor: '#7c3aed',
+                                    cornerRadius: '30px',
+                                    paddingAll: '10px',
+                                    action: {
+                                        type: 'uri',
+                                        label: 'ส่งภาพอาหาร 📸',
+                                        uri: 'https://liff.line.me/2010284484-jvUDlx0u?action=upload-food'
+                                    },
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: 'ส่งภาพอาหาร 📸',
+                                            color: '#ffffff',
+                                            weight: 'bold',
+                                            size: 'sm',
+                                            align: 'center'
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                };
+                if (replyToken && LINE_CHANNEL_ACCESS_TOKEN) {
+                    try {
+                        await axios_1.default.post('https://api.line.me/v2/bot/message/reply', { replyToken, messages: [foodFlexMessage] }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } });
+                    }
+                    catch (err) {
+                        console.error('[Webhook] Remind food upload reply error:', ((_d = err.response) === null || _d === void 0 ? void 0 : _d.data) || err.message);
+                    }
+                }
+                continue;
+            }
         }
         // RSVP Handler
         if (isRsvpAction && eventId && userId && replyToken && LINE_CHANNEL_ACCESS_TOKEN) {
@@ -158,7 +241,7 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                     await axios_1.default.post('https://api.line.me/v2/bot/message/reply', { replyToken, messages: [{ type: 'text', text: 'คุณลงชื่อแล้วครับ ✅' }] }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } });
                 }
                 catch (err) {
-                    console.error('[RSVP] Already signed up reply error:', ((_d = err.response) === null || _d === void 0 ? void 0 : _d.data) || err.message);
+                    console.error('[RSVP] Already signed up reply error:', ((_e = err.response) === null || _e === void 0 ? void 0 : _e.data) || err.message);
                 }
                 continue;
             }
@@ -173,7 +256,7 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                 pictureUrl = profileRes.data.pictureUrl || '';
             }
             catch (e) {
-                console.warn('[RSVP] profile fetch failed:', ((_e = e.response) === null || _e === void 0 ? void 0 : _e.data) || e.message);
+                console.warn('[RSVP] profile fetch failed:', ((_f = e.response) === null || _f === void 0 ? void 0 : _f.data) || e.message);
             }
             // Save RSVP
             await rsvpRef.set({
@@ -202,7 +285,7 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                     const isSameDay = evData.startDatetimeIso && evData.endDatetimeIso &&
                         evData.startDatetimeIso.substring(0, 10) === evData.endDatetimeIso.substring(0, 10);
                     const endPart = isSameDay
-                        ? ((_f = evData.endDatetimeDisplay) === null || _f === void 0 ? void 0 : _f.split(',')[1]) || evData.endDatetimeDisplay || ''
+                        ? ((_g = evData.endDatetimeDisplay) === null || _g === void 0 ? void 0 : _g.split(',')[1]) || evData.endDatetimeDisplay || ''
                         : evData.endDatetimeDisplay || '';
                     evDatetimeString = (evData.datetime || '') + (evData.endDatetimeDisplay ? ` - ${endPart}` : '');
                 }
@@ -450,13 +533,13 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                 await axios_1.default.post('https://api.line.me/v2/bot/message/reply', { replyToken, messages: [rsvpFlexMessage] }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } });
             }
             catch (err) {
-                console.error('[RSVP] Send reply Flex message error:', ((_g = err.response) === null || _g === void 0 ? void 0 : _g.data) || err.message);
+                console.error('[RSVP] Send reply Flex message error:', ((_h = err.response) === null || _h === void 0 ? void 0 : _h.data) || err.message);
             }
             continue;
         }
         // Other postback handlers
         if (event.type === 'postback') {
-            const data = ((_h = event.postback) === null || _h === void 0 ? void 0 : _h.data) || '';
+            const data = ((_j = event.postback) === null || _j === void 0 ? void 0 : _j.data) || '';
             let responseText = 'ขอบคุณที่กดปุ่มครับ 👍';
             if (data === 'action=check_status')
                 responseText = 'กำลังตรวจสอบสถานะให้ครับ...';
@@ -467,7 +550,7 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                     await axios_1.default.post('https://api.line.me/v2/bot/message/reply', { replyToken, messages: [{ type: 'text', text: responseText }] }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } });
                 }
                 catch (err) {
-                    console.error('Error replying postback to LINE:', ((_j = err.response) === null || _j === void 0 ? void 0 : _j.data) || err.message);
+                    console.error('Error replying postback to LINE:', ((_k = err.response) === null || _k === void 0 ? void 0 : _k.data) || err.message);
                 }
             }
         }

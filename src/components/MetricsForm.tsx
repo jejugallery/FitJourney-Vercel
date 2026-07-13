@@ -238,6 +238,13 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
   const [showAddTrainerModal, setShowAddTrainerModal] = useState(false);
   const [showFoodHistoryModal, setShowFoodHistoryModal] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('action') === 'uploadFood' || params.get('action') === 'upload-food') {
+      setShowUploadModal(true);
+    }
+  }, []);
+
 
 
 

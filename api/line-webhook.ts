@@ -102,6 +102,91 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (text.startsWith('✍️ ลงชื่อเข้าร่วมกิจกรรม ')) {
         eventId = text.replace('✍️ ลงชื่อเข้าร่วมกิจกรรม ', '').trim();
         isRsvpAction = true;
+      } else if (text.trim() === 'ส่งอาหาร') {
+        const foodFlexMessage = {
+          type: 'flex',
+          altText: 'FitJourney: ได้เวลาส่งภาพอาหารแล้ว 📸',
+          contents: {
+            type: 'bubble',
+            hero: {
+              type: 'image',
+              url: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=600&auto=format&fit=crop',
+              size: 'full',
+              aspectRatio: '20:13',
+              aspectMode: 'cover'
+            },
+            body: {
+              type: 'box',
+              layout: 'vertical',
+              spacing: 'md',
+              contents: [
+                {
+                  type: 'text',
+                  text: 'FitJourney Food Tracker',
+                  weight: 'bold',
+                  size: 'xs',
+                  color: '#a855f7'
+                },
+                {
+                  type: 'text',
+                  text: 'ได้เวลาบันทึกมื้ออาหารแล้ว! 🍽️',
+                  weight: 'bold',
+                  size: 'xl',
+                  color: '#1e293b',
+                  wrap: true
+                },
+                {
+                  type: 'text',
+                  text: 'อย่าลืมอัปโหลดภาพอาหารของคุณวันนี้ เพื่อให้เทรนเนอร์ช่วยตรวจและวิเคราะห์โภชนาการแบบเรียลไทม์กันนะคะ',
+                  size: 'sm',
+                  color: '#64748b',
+                  wrap: true
+                }
+              ]
+            },
+            footer: {
+              type: 'box',
+              layout: 'vertical',
+              spacing: 'sm',
+              contents: [
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  backgroundColor: '#7c3aed',
+                  cornerRadius: '30px',
+                  paddingAll: '10px',
+                  action: {
+                    type: 'uri',
+                    label: 'ส่งภาพอาหาร 📸',
+                    uri: 'https://liff.line.me/2010284484-jvUDlx0u?action=upload-food'
+                  },
+                  contents: [
+                    {
+                      type: 'text',
+                      text: 'ส่งภาพอาหาร 📸',
+                      color: '#ffffff',
+                      weight: 'bold',
+                      size: 'sm',
+                      align: 'center'
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        };
+
+        if (replyToken && LINE_CHANNEL_ACCESS_TOKEN) {
+          try {
+            await axios.post('https://api.line.me/v2/bot/message/reply',
+              { replyToken, messages: [foodFlexMessage] },
+              { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } }
+            );
+          } catch (err: any) {
+            console.error('[Webhook] Remind food upload reply error:', err.response?.data || err.message);
+          }
+        }
+        continue;
       }
     }
 
