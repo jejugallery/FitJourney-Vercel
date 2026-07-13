@@ -178,7 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               type: 'image',
               url: 'https://i.postimg.cc/QMzCQFzk/login.png',
               size: 'full',
-              aspectRatio: '1000:618',
+              aspectRatio: '5:3',
               aspectMode: 'cover',
               action: {
                 type: 'uri',

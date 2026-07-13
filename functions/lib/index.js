@@ -213,7 +213,7 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                             type: 'image',
                             url: 'https://i.postimg.cc/QMzCQFzk/login.png',
                             size: 'full',
-                            aspectRatio: '1000:618',
+                            aspectRatio: '5:3',
                             aspectMode: 'cover',
                             action: {
                                 type: 'uri',
