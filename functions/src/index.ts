@@ -130,65 +130,37 @@ export const lineWebhook = functions.region('asia-southeast1').https.onRequest(a
       } else if (text.trim().includes('ส่งอาหาร')) {
         const foodFlexMessage = {
           type: 'flex',
-          altText: 'FitJourney: ได้เวลาส่งภาพอาหารแล้ว 📸',
+          altText: '🍽️ วันนี้ส่งอาหารหรือยังน้าาาา ? 🥗🍳',
           contents: {
             type: 'bubble',
             hero: {
               type: 'image',
-              url: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=600&auto=format&fit=crop',
+              url: 'https://i.postimg.cc/ZntzdHMG/image.png',
               size: 'full',
-              aspectRatio: '20:13',
+              aspectRatio: '16:9',
               aspectMode: 'cover'
-            },
-            body: {
-              type: 'box',
-              layout: 'vertical',
-              spacing: 'md',
-              contents: [
-                {
-                  type: 'text',
-                  text: 'FitJourney Food Tracker',
-                  weight: 'bold',
-                  size: 'xs',
-                  color: '#a855f7'
-                },
-                {
-                  type: 'text',
-                  text: 'ได้เวลาบันทึกมื้ออาหารแล้ว! 🍽️',
-                  weight: 'bold',
-                  size: 'xl',
-                  color: '#1e293b',
-                  wrap: true
-                },
-                {
-                  type: 'text',
-                  text: 'อย่าลืมอัปโหลดภาพอาหารของคุณวันนี้ เพื่อให้เทรนเนอร์ช่วยตรวจและวิเคราะห์โภชนาการแบบเรียลไทม์กันนะคะ',
-                  size: 'sm',
-                  color: '#64748b',
-                  wrap: true
-                }
-              ]
             },
             footer: {
               type: 'box',
               layout: 'vertical',
               spacing: 'sm',
+              backgroundColor: '#bcd78d',
               contents: [
                 {
                   type: 'box',
                   layout: 'vertical',
-                  backgroundColor: '#7c3aed',
+                  backgroundColor: '#fd9b06',
                   cornerRadius: '30px',
                   paddingAll: '10px',
                   action: {
                     type: 'uri',
-                    label: 'ส่งภาพอาหาร 📸',
+                    label: 'ลงทะเบียนเลย',
                     uri: 'https://liff.line.me/2010284484-jvUDlx0u?action=upload-food'
                   },
                   contents: [
                     {
                       type: 'text',
-                      text: 'ส่งภาพอาหาร 📸',
+                      text: 'ส่งเลยตอนนี้',
                       color: '#ffffff',
                       weight: 'bold',
                       size: 'sm',
@@ -196,7 +168,8 @@ export const lineWebhook = functions.region('asia-southeast1').https.onRequest(a
                     }
                   ]
                 }
-              ]
+              ],
+              flex: 0
             }
           }
         };
