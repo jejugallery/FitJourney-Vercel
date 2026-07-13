@@ -176,7 +176,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             type: 'bubble',
             hero: {
               type: 'image',
-              url: `${origin}/login-banner.png`,
+              url: 'https://i.postimg.cc/QMzCQFzk/login.png',
               size: 'full',
               aspectRatio: '1000:618',
               aspectMode: 'cover',

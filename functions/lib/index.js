@@ -211,7 +211,7 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                         type: 'bubble',
                         hero: {
                             type: 'image',
-                            url: `${origin}/login-banner.png`,
+                            url: 'https://i.postimg.cc/QMzCQFzk/login.png',
                             size: 'full',
                             aspectRatio: '1000:618',
                             aspectMode: 'cover',
