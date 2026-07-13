@@ -127,7 +127,7 @@ export const lineWebhook = functions.region('asia-southeast1').https.onRequest(a
       if (text.startsWith('✍️ ลงชื่อเข้าร่วมกิจกรรม ')) {
         eventId = text.replace('✍️ ลงชื่อเข้าร่วมกิจกรรม ', '').trim();
         isRsvpAction = true;
-      } else if (text.trim() === 'ส่งอาหาร') {
+      } else if (text.trim().includes('ส่งอาหาร')) {
         const foodFlexMessage = {
           type: 'flex',
           altText: 'FitJourney: ได้เวลาส่งภาพอาหารแล้ว 📸',
