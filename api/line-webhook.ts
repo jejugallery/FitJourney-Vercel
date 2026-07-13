@@ -294,18 +294,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           } else if (shareLinkType === 'calendar') {
             buttonLabel = 'เพิ่มลงบนปฏิทิน 📅';
             if (!evData.button_color) buttonColor = '#3b82f6';
-            const calendarParams = new URLSearchParams({
-              name: (evData.name || 'กิจกรรม').substring(0, 100),
-              startDatetimeIso: evData.start_datetime_iso || '',
-              endDatetimeIso: evData.end_datetime_iso || '',
-              description: (evData.description || '').substring(0, 150),
-              location: (evData.location || '').substring(0, 150),
-              openExternalBrowser: '1',
-            });
             buttonAction = {
               type: 'uri',
               label: buttonLabel,
-              uri: `https://fitjourneythailand.web.app/download-ics?${calendarParams.toString()}`
+              uri: `https://fitjourneythailand.web.app/download-ics?eventId=${eventId}&openExternalBrowser=1`
             };
           }
 

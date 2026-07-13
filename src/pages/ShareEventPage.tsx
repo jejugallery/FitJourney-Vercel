@@ -440,18 +440,10 @@ export default function ShareEventPage() {
             } else if (shareLinkType === 'calendar') {
               buttonLabel = 'เพิ่มลงบนปฏิทิน 📅';
               if (!eventData.buttonColor) buttonColor = '#3b82f6';
-              const calendarParams = new URLSearchParams({
-                name: (eventData.name || 'กิจกรรม').substring(0, 100),
-                startDatetimeIso: eventData.startDatetimeIso || '',
-                endDatetimeIso: eventData.endDatetimeIso || '',
-                description: (eventData.description || '').substring(0, 150),
-                location: (eventData.location || '').substring(0, 150),
-                openExternalBrowser: '1',
-              });
               buttonAction = {
                 type: 'uri',
                 label: buttonLabel,
-                uri: `https://fitjourneythailand.web.app/download-ics?${calendarParams.toString()}`
+                uri: `https://fitjourneythailand.web.app/download-ics?eventId=${eventId || ''}&openExternalBrowser=1`
               };
             }
 

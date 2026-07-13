@@ -1,19 +1,48 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { downloadICS } from '../utils/icsHelper';
+import { eventsApi } from '../utils/api';
 
 export default function DownloadICSPage() {
   const [searchParams] = useSearchParams();
   const [downloaded, setDownloaded] = useState(false);
   const [error, setError] = useState('');
+  const [eventDetails, setEventDetails] = useState<any>(null);
+  const [fetching, setFetching] = useState(false);
 
-  const name = searchParams.get('name') || 'กิจกรรม';
-  const startDatetimeIso = searchParams.get('startDatetimeIso') || '';
-  const endDatetimeIso = searchParams.get('endDatetimeIso') || '';
-  const description = searchParams.get('description') || '';
-  const location = searchParams.get('location') || '';
+  const eventId = searchParams.get('eventId') || '';
+
+  const name = eventDetails?.name || searchParams.get('name') || 'กิจกรรม';
+  const startDatetimeIso = eventDetails?.startDatetimeIso || searchParams.get('startDatetimeIso') || '';
+  const endDatetimeIso = eventDetails?.endDatetimeIso || searchParams.get('endDatetimeIso') || '';
+  const description = eventDetails?.description || searchParams.get('description') || '';
+  const location = eventDetails?.location || searchParams.get('location') || '';
+
+  useEffect(() => {
+    if (eventId) {
+      const fetchEvent = async () => {
+        setFetching(true);
+        try {
+          const ev = await eventsApi.get(eventId);
+          if (ev) {
+            setEventDetails(ev);
+            setError('');
+          } else {
+            setError('ไม่พบกิจกรรมที่ระบุ');
+          }
+        } catch (err: any) {
+          console.error(err);
+          setError('ไม่สามารถดึงข้อมูลกิจกรรมได้: ' + (err.message || err));
+        } finally {
+          setFetching(false);
+        }
+      };
+      fetchEvent();
+    }
+  }, [eventId]);
 
   const triggerDownload = () => {
+    if (fetching) return;
     if (!startDatetimeIso) {
       setError('ไม่พบวันเวลาเริ่มต้นของกิจกรรม');
       return;
@@ -35,12 +64,14 @@ export default function DownloadICSPage() {
   };
 
   useEffect(() => {
-    // Auto-trigger download on mount
-    const timer = setTimeout(() => {
-      triggerDownload();
-    }, 800); // Small delay to let page mount and animate smoothly
-    return () => clearTimeout(timer);
-  }, [startDatetimeIso]);
+    if (startDatetimeIso) {
+      // Auto-trigger download on mount or when data is loaded
+      const timer = setTimeout(() => {
+        triggerDownload();
+      }, 800); // Small delay to let page mount and animate smoothly
+      return () => clearTimeout(timer);
+    }
+  }, [startDatetimeIso, fetching]);
 
   useEffect(() => {
     if (downloaded) {
@@ -55,6 +86,13 @@ export default function DownloadICSPage() {
       return () => clearTimeout(timer);
     }
   }, [downloaded]);
+
+  const getStatusText = () => {
+    if (error) return 'เกิดข้อผิดพลาด';
+    if (fetching) return 'กำลังดึงข้อมูลกิจกรรม...';
+    if (downloaded) return 'เตรียมไฟล์เรียบร้อย!';
+    return 'กำลังเตรียมไฟล์ปฏิทิน...';
+  };
 
   return (
     <div style={{
@@ -103,19 +141,21 @@ export default function DownloadICSPage() {
 
         {/* Status Text */}
         <h2 style={{ fontSize: '1.4rem', margin: '0 0 12px 0', fontWeight: 700, color: '#1e1b4b' }}>
-          {error ? 'เกิดข้อผิดพลาด' : downloaded ? 'เตรียมไฟล์เรียบร้อย!' : 'กำลังเตรียมไฟล์ปฏิทิน...'}
+          {getStatusText()}
         </h2>
 
         <p style={{ fontSize: '0.95rem', color: '#475569', margin: '0 0 28px 0', lineHeight: 1.5 }}>
           {error 
             ? error 
-            : downloaded 
-              ? 'ระบบเริ่มดาวน์โหลดไฟล์แล้ว หน้านี้จะปิดลงโดยอัตโนมัติ (หากหน้านี้ไม่ปิดตัวลง สามารถกดปิดแท็บหรือกดปุ่มปิดด้านล่างได้ทันที)' 
-              : `กำลังสร้างไฟล์ .ics สำหรับกิจกรรม "${name}"`}
+            : fetching
+              ? 'กรุณารอสักครู่ ระบบกำลังเรียกข้อมูลปฏิทินของกิจกรรมนี้...'
+              : downloaded 
+                ? 'ระบบเริ่มดาวน์โหลดไฟล์แล้ว หน้านี้จะปิดลงโดยอัตโนมัติ (หากหน้านี้ไม่ปิดตัวลง สามารถกดปิดแท็บหรือกดปุ่มปิดด้านล่างได้ทันที)' 
+                : `กำลังสร้างไฟล์ .ics สำหรับกิจกรรม "${name}"`}
         </p>
 
         {/* Details card */}
-        {!error && (
+        {!error && !fetching && (
           <div style={{
             background: 'rgba(255, 255, 255, 0.6)',
             borderRadius: '16px',

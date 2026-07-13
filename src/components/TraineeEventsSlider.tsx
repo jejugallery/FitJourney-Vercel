@@ -132,14 +132,7 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
   }, [userId]);
 
   const handleAddToCalendar = (ev: any) => {
-    const params = new URLSearchParams({
-      name: ev.name || 'กิจกรรม',
-      startDatetimeIso: ev.startDatetimeIso || '',
-      endDatetimeIso: ev.endDatetimeIso || '',
-      description: ev.description || '',
-      location: ev.location || '',
-    });
-    const url = `${window.location.origin}/download-ics?${params.toString()}`;
+    const url = `${window.location.origin}/download-ics?eventId=${ev.id || ''}&openExternalBrowser=1`;
     if ((window as any).liff && (window as any).liff.openWindow) {
       (window as any).liff.openWindow({ url, external: true });
     } else {
@@ -343,20 +336,22 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
 
       // Fetch RSVPs
       let rsvpList: any[] = [];
-      try {
-        const rsvpsList = await eventRsvpsApi.list(ev.id);
-        rsvpList = rsvpsList.map((r: any) => ({
-          userId: r.userId || r.user_id || '',
-          displayName: r.displayName || r.display_name || 'ผู้เข้าร่วม',
-          pictureUrl: r.pictureUrl || r.picture_url || '',
-          joinedAt: r.joinedAt || r.joined_at || '',
-          registeredBy: r.registeredBy || r.registered_by || ''
-        }));
-      } catch (rsvpErr) {
-        console.error("Error fetching RSVPs for share:", rsvpErr);
+      if (ev.linkType === 'rsvp') {
+        try {
+          const rsvpsList = await eventRsvpsApi.list(ev.id);
+          rsvpList = rsvpsList.map((r: any) => ({
+            userId: r.userId || r.user_id || '',
+            displayName: r.displayName || r.display_name || 'ผู้เข้าร่วม',
+            pictureUrl: r.pictureUrl || r.picture_url || '',
+            joinedAt: r.joinedAt || r.joined_at || '',
+            registeredBy: r.registeredBy || r.registered_by || ''
+          }));
+        } catch (rsvpErr) {
+          console.error("Error fetching RSVPs for share:", rsvpErr);
+        }
       }
 
-      if (rsvpList.length > 0) {
+      if (ev.linkType === 'rsvp' && rsvpList.length > 0) {
         const rsvpContents = rsvpList.map((r: any, index: number) => ({
           type: 'box',
           layout: 'horizontal',
@@ -497,18 +492,10 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
         } else if (shareLinkType === 'calendar') {
           buttonLabel = 'เพิ่มลงบนปฏิทิน 📅';
           if (!ev.buttonColor) buttonColor = '#3b82f6';
-          const calendarParams = new URLSearchParams({
-            name: (ev.name || 'กิจกรรม').substring(0, 100),
-            startDatetimeIso: ev.startDatetimeIso || '',
-            endDatetimeIso: ev.endDatetimeIso || '',
-            description: (ev.description || '').substring(0, 150),
-            location: (ev.location || '').substring(0, 150),
-            openExternalBrowser: '1',
-          });
           buttonAction = {
             type: 'uri',
             label: buttonLabel,
-            uri: `https://fitjourneythailand.web.app/download-ics?${calendarParams.toString()}`
+            uri: `https://fitjourneythailand.web.app/download-ics?eventId=${ev.id || ''}&openExternalBrowser=1`
           };
         }
 

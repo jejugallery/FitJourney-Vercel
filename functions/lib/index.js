@@ -333,18 +333,10 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                     buttonLabel = 'เพิ่มลงบนปฏิทิน 📅';
                     if (!(evData === null || evData === void 0 ? void 0 : evData.buttonColor))
                         buttonColor = '#3b82f6';
-                    const calendarParams = new URLSearchParams({
-                        name: ((evData === null || evData === void 0 ? void 0 : evData.name) || 'กิจกรรม').substring(0, 100),
-                        startDatetimeIso: (evData === null || evData === void 0 ? void 0 : evData.startDatetimeIso) || '',
-                        endDatetimeIso: (evData === null || evData === void 0 ? void 0 : evData.endDatetimeIso) || '',
-                        description: ((evData === null || evData === void 0 ? void 0 : evData.description) || '').substring(0, 150),
-                        location: ((evData === null || evData === void 0 ? void 0 : evData.location) || '').substring(0, 150),
-                        openExternalBrowser: '1',
-                    });
                     buttonAction = {
                         type: 'uri',
                         label: buttonLabel,
-                        uri: `https://fitjourneythailand.web.app/download-ics?${calendarParams.toString()}`
+                        uri: `https://fitjourneythailand.web.app/download-ics?eventId=${eventId}&openExternalBrowser=1`
                     };
                 }
                 if (buttonLabel && buttonAction) {
