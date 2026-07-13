@@ -207,7 +207,6 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
             }
             const eventName = (evData === null || evData === void 0 ? void 0 : evData.name) || 'กิจกรรม';
             const eventInvitationColor = (evData === null || evData === void 0 ? void 0 : evData.invitationColor) || '#6d28d9';
-            const eventButtonColor = (evData === null || evData === void 0 ? void 0 : evData.buttonColor) || '#6d28d9';
             const badgeTextColor = eventInvitationColor.trim().toUpperCase() === '#FFE600' ? '#334155' : '#ffffff';
             // Build Hero Element (Image or Video)
             let heroElement = null;
@@ -267,11 +266,122 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                     { type: 'text', text: r.displayName || 'ผู้เข้าร่วม', size: 'sm', color: '#1e293b', flex: 1, wrap: false }
                 ]
             }));
+            // Construct the dynamic footer button based on linkType
+            const shareLinkType = (evData === null || evData === void 0 ? void 0 : evData.linkType) || 'none';
+            const shareLinkUrl = (evData === null || evData === void 0 ? void 0 : evData.linkUrl) || '';
+            const shareLinkLabel = (evData === null || evData === void 0 ? void 0 : evData.linkLabel) || '';
+            let footerElement = null;
+            if (shareLinkType !== 'none') {
+                let buttonLabel = '';
+                let buttonColor = (evData === null || evData === void 0 ? void 0 : evData.buttonColor) || '#ef4444';
+                let buttonAction = null;
+                const formatExternalUrl = (url) => {
+                    const trimmed = url.trim();
+                    return trimmed.includes('?') ? `${trimmed}&openExternalBrowser=1` : `${trimmed}?openExternalBrowser=1`;
+                };
+                if (shareLinkType === 'zoom') {
+                    buttonLabel = 'เข้าผ่าน Zoom';
+                    if (!(evData === null || evData === void 0 ? void 0 : evData.buttonColor))
+                        buttonColor = '#2d8cff';
+                    buttonAction = {
+                        type: 'uri',
+                        label: buttonLabel,
+                        uri: formatExternalUrl(shareLinkUrl)
+                    };
+                }
+                else if (shareLinkType === 'register') {
+                    buttonLabel = 'ลงทะเบียน';
+                    if (!(evData === null || evData === void 0 ? void 0 : evData.buttonColor))
+                        buttonColor = '#22c55e';
+                    buttonAction = {
+                        type: 'uri',
+                        label: buttonLabel,
+                        uri: formatExternalUrl(shareLinkUrl)
+                    };
+                }
+                else if (shareLinkType === 'details') {
+                    buttonLabel = 'ดูรายละเอียด';
+                    if (!(evData === null || evData === void 0 ? void 0 : evData.buttonColor))
+                        buttonColor = '#FFE600';
+                    buttonAction = {
+                        type: 'uri',
+                        label: buttonLabel,
+                        uri: formatExternalUrl(shareLinkUrl)
+                    };
+                }
+                else if (shareLinkType === 'custom') {
+                    buttonLabel = shareLinkLabel.trim();
+                    if (!(evData === null || evData === void 0 ? void 0 : evData.buttonColor))
+                        buttonColor = '#FF416C';
+                    buttonAction = {
+                        type: 'uri',
+                        label: buttonLabel,
+                        uri: formatExternalUrl(shareLinkUrl)
+                    };
+                }
+                else if (shareLinkType === 'rsvp') {
+                    buttonLabel = 'ลงชื่อเข้าร่วม ✍️';
+                    if (!(evData === null || evData === void 0 ? void 0 : evData.buttonColor))
+                        buttonColor = '#6d28d9';
+                    buttonAction = {
+                        type: 'uri',
+                        label: 'ลงชื่อเข้าร่วม',
+                        uri: `https://liff.line.me/2010284484-JPGd3KXg?action=rsvp&eventId=${eventId}&v=${Date.now()}`
+                    };
+                }
+                else if (shareLinkType === 'calendar') {
+                    buttonLabel = 'เพิ่มลงบนปฏิทิน 📅';
+                    if (!(evData === null || evData === void 0 ? void 0 : evData.buttonColor))
+                        buttonColor = '#3b82f6';
+                    const calendarParams = new URLSearchParams({
+                        name: ((evData === null || evData === void 0 ? void 0 : evData.name) || 'กิจกรรม').substring(0, 100),
+                        startDatetimeIso: (evData === null || evData === void 0 ? void 0 : evData.startDatetimeIso) || '',
+                        endDatetimeIso: (evData === null || evData === void 0 ? void 0 : evData.endDatetimeIso) || '',
+                        description: ((evData === null || evData === void 0 ? void 0 : evData.description) || '').substring(0, 150),
+                        location: ((evData === null || evData === void 0 ? void 0 : evData.location) || '').substring(0, 150),
+                        openExternalBrowser: '1',
+                    });
+                    buttonAction = {
+                        type: 'uri',
+                        label: buttonLabel,
+                        uri: `https://fitjourneythailand.web.app/download-ics?${calendarParams.toString()}`
+                    };
+                }
+                if (buttonLabel && buttonAction) {
+                    const isYellow = buttonColor.trim().toUpperCase() === '#FFE600';
+                    footerElement = {
+                        type: 'box',
+                        layout: 'vertical',
+                        spacing: 'sm',
+                        contents: [
+                            {
+                                type: 'box',
+                                layout: 'vertical',
+                                backgroundColor: buttonColor,
+                                cornerRadius: '30px',
+                                paddingAll: '10px',
+                                action: buttonAction,
+                                contents: [
+                                    {
+                                        type: 'text',
+                                        text: buttonLabel,
+                                        color: isYellow ? '#334155' : '#ffffff',
+                                        weight: 'bold',
+                                        size: 'sm',
+                                        align: 'center'
+                                    }
+                                ]
+                            }
+                        ],
+                        flex: 0
+                    };
+                }
+            }
             // Build Flex Message (same structure as event invitation + RSVP list section)
             const rsvpFlexMessage = {
                 type: 'flex',
                 altText: `✍️ รายชื่อผู้ลงชื่อ: ${eventName}`,
-                contents: Object.assign(Object.assign({ type: 'bubble' }, (heroElement ? { hero: heroElement } : {})), { body: {
+                contents: Object.assign(Object.assign(Object.assign({ type: 'bubble' }, (heroElement ? { hero: heroElement } : {})), { body: {
                         type: 'box',
                         layout: 'vertical',
                         paddingAll: '16px',
@@ -327,47 +437,20 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                                     ]
                                 }
                             ] : []),
-                            { type: 'separator', margin: 'lg' },
-                            {
-                                type: 'box',
-                                layout: 'vertical',
-                                margin: 'lg',
-                                contents: [
-                                    { type: 'text', text: `✍️ รายชื่อผู้ลงชื่อ (${rsvpList.length} คน)`, weight: 'bold', size: 'sm', color: '#6d28d9' },
-                                    ...rsvpContents
-                                ]
-                            }
+                            ...((evData === null || evData === void 0 ? void 0 : evData.linkType) === 'rsvp' && rsvpList.length > 0 ? [
+                                { type: 'separator', margin: 'lg' },
+                                {
+                                    type: 'box',
+                                    layout: 'vertical',
+                                    margin: 'lg',
+                                    contents: [
+                                        { type: 'text', text: `✍️ รายชื่อผู้ลงชื่อ (${rsvpList.length} คน)`, weight: 'bold', size: 'sm', color: '#6d28d9' },
+                                        ...rsvpContents
+                                    ]
+                                }
+                            ] : [])
                         ]
-                    }, footer: {
-                        type: 'box',
-                        layout: 'vertical',
-                        spacing: 'sm',
-                        flex: 0,
-                        contents: [
-                            {
-                                type: 'box',
-                                layout: 'vertical',
-                                backgroundColor: eventButtonColor,
-                                cornerRadius: '30px',
-                                paddingAll: '10px',
-                                action: {
-                                    type: 'uri',
-                                    label: 'ลงชื่อเข้าร่วม',
-                                    uri: `https://liff.line.me/2010284484-JPGd3KXg?action=rsvp&eventId=${eventId}&v=${Date.now()}`
-                                },
-                                contents: [
-                                    {
-                                        type: 'text',
-                                        text: 'ลงชื่อเข้าร่วม ✍️',
-                                        color: '#ffffff',
-                                        weight: 'bold',
-                                        size: 'sm',
-                                        align: 'center'
-                                    }
-                                ]
-                            }
-                        ]
-                    } })
+                    } }), (footerElement ? { footer: footerElement } : {}))
             };
             try {
                 await axios_1.default.post('https://api.line.me/v2/bot/message/reply', { replyToken, messages: [rsvpFlexMessage] }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } });

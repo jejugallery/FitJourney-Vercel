@@ -286,14 +286,16 @@ export default function ShareEventPage() {
 
           // Fetch RSVPs
           let rsvpList: any[] = [];
-          try {
-            const rsvpsList = await eventRsvpsApi.list(eventId);
-            rsvpList = rsvpsList.map(normalizeRsvp);
-          } catch (rsvpErr) {
-            console.error("Error fetching RSVPs for share:", rsvpErr);
+          if (eventData.linkType === 'rsvp') {
+            try {
+              const rsvpsList = await eventRsvpsApi.list(eventId);
+              rsvpList = rsvpsList.map(normalizeRsvp);
+            } catch (rsvpErr) {
+              console.error("Error fetching RSVPs for share:", rsvpErr);
+            }
           }
 
-          if (rsvpList.length > 0) {
+          if (eventData.linkType === 'rsvp' && rsvpList.length > 0) {
             const rsvpContents = rsvpList.map((r: any, index: number) => ({
               type: 'box',
               layout: 'horizontal',

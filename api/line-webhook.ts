@@ -172,7 +172,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         const eventName = evData.name || 'กิจกรรม';
         const eventInvitationColor = evData.invitation_color || '#6d28d9';
-        const eventButtonColor = evData.button_color || '#6d28d9';
         const badgeTextColor = eventInvitationColor.trim().toUpperCase() === '#FFE600' ? '#334155' : '#ffffff';
 
         // Build Hero Element (Image or Video)
@@ -234,6 +233,112 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             { type: 'text', text: r.display_name || 'ผู้เข้าร่วม', size: 'sm', color: '#1e293b', flex: 1, wrap: false }
           ]
         }));
+
+        // Construct the dynamic footer button based on link_type
+        const shareLinkType = evData.link_type || 'none';
+        const shareLinkUrl = evData.link_url || '';
+        const shareLinkLabel = evData.link_label || '';
+
+        let footerElement: any = null;
+
+        if (shareLinkType !== 'none') {
+          let buttonLabel = '';
+          let buttonColor = evData.button_color || '#ef4444';
+          let buttonAction: any = null;
+
+          const formatExternalUrl = (url: string) => {
+            const trimmed = url.trim();
+            return trimmed.includes('?') ? `${trimmed}&openExternalBrowser=1` : `${trimmed}?openExternalBrowser=1`;
+          };
+
+          if (shareLinkType === 'zoom') {
+            buttonLabel = 'เข้าผ่าน Zoom';
+            if (!evData.button_color) buttonColor = '#2d8cff';
+            buttonAction = {
+              type: 'uri',
+              label: buttonLabel,
+              uri: formatExternalUrl(shareLinkUrl)
+            };
+          } else if (shareLinkType === 'register') {
+            buttonLabel = 'ลงทะเบียน';
+            if (!evData.button_color) buttonColor = '#22c55e';
+            buttonAction = {
+              type: 'uri',
+              label: buttonLabel,
+              uri: formatExternalUrl(shareLinkUrl)
+            };
+          } else if (shareLinkType === 'details') {
+            buttonLabel = 'ดูรายละเอียด';
+            if (!evData.button_color) buttonColor = '#FFE600';
+            buttonAction = {
+              type: 'uri',
+              label: buttonLabel,
+              uri: formatExternalUrl(shareLinkUrl)
+            };
+          } else if (shareLinkType === 'custom') {
+            buttonLabel = shareLinkLabel.trim();
+            if (!evData.button_color) buttonColor = '#FF416C';
+            buttonAction = {
+              type: 'uri',
+              label: buttonLabel,
+              uri: formatExternalUrl(shareLinkUrl)
+            };
+          } else if (shareLinkType === 'rsvp') {
+            buttonLabel = 'ลงชื่อเข้าร่วม ✍️';
+            if (!evData.button_color) buttonColor = '#6d28d9';
+            buttonAction = {
+              type: 'uri',
+              label: 'ลงชื่อเข้าร่วม',
+              uri: `https://liff.line.me/2010284484-JPGd3KXg?action=rsvp&eventId=${eventId}&v=${Date.now()}`
+            };
+          } else if (shareLinkType === 'calendar') {
+            buttonLabel = 'เพิ่มลงบนปฏิทิน 📅';
+            if (!evData.button_color) buttonColor = '#3b82f6';
+            const calendarParams = new URLSearchParams({
+              name: (evData.name || 'กิจกรรม').substring(0, 100),
+              startDatetimeIso: evData.start_datetime_iso || '',
+              endDatetimeIso: evData.end_datetime_iso || '',
+              description: (evData.description || '').substring(0, 150),
+              location: (evData.location || '').substring(0, 150),
+              openExternalBrowser: '1',
+            });
+            buttonAction = {
+              type: 'uri',
+              label: buttonLabel,
+              uri: `https://fitjourneythailand.web.app/download-ics?${calendarParams.toString()}`
+            };
+          }
+
+          if (buttonLabel && buttonAction) {
+            const isYellow = buttonColor.trim().toUpperCase() === '#FFE600';
+            footerElement = {
+              type: 'box',
+              layout: 'vertical',
+              spacing: 'sm',
+              contents: [
+                {
+                  type: 'box',
+                  layout: 'vertical',
+                  backgroundColor: buttonColor,
+                  cornerRadius: '30px',
+                  paddingAll: '10px',
+                  action: buttonAction,
+                  contents: [
+                    {
+                      type: 'text',
+                      text: buttonLabel,
+                      color: isYellow ? '#334155' : '#ffffff',
+                      weight: 'bold',
+                      size: 'sm',
+                      align: 'center'
+                    }
+                  ]
+                }
+              ],
+              flex: 0
+            };
+          }
+        }
 
         // Build Flex Message (same structure as event invitation + RSVP list section)
         const rsvpFlexMessage = {
@@ -298,48 +403,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     ]
                   }
                 ] : []),
-                { type: 'separator', margin: 'lg' },
-                {
-                  type: 'box',
-                  layout: 'vertical',
-                  margin: 'lg',
-                  contents: [
-                    { type: 'text', text: `✍️ รายชื่อผู้ลงชื่อ (${rsvpList.length} คน)`, weight: 'bold', size: 'sm', color: '#6d28d9' },
-                    ...rsvpContents
-                  ]
-                }
+                ...(evData.link_type === 'rsvp' && rsvpList.length > 0 ? [
+                  { type: 'separator', margin: 'lg' },
+                  {
+                    type: 'box',
+                    layout: 'vertical',
+                    margin: 'lg',
+                    contents: [
+                      { type: 'text', text: `✍️ รายชื่อผู้ลงชื่อ (${rsvpList.length} คน)`, weight: 'bold', size: 'sm', color: '#6d28d9' },
+                      ...rsvpContents
+                    ]
+                  }
+                ] : [])
               ]
             },
-            footer: {
-              type: 'box',
-              layout: 'vertical',
-              spacing: 'sm',
-              flex: 0,
-              contents: [
-                {
-                  type: 'box',
-                  layout: 'vertical',
-                  backgroundColor: eventButtonColor,
-                  cornerRadius: '30px',
-                  paddingAll: '10px',
-                  action: {
-                    type: 'uri',
-                    label: 'ลงชื่อเข้าร่วม',
-                    uri: `https://liff.line.me/2010284484-JPGd3KXg?action=rsvp&eventId=${eventId}&v=${Date.now()}`
-                  },
-                  contents: [
-                    {
-                      type: 'text',
-                      text: 'ลงชื่อเข้าร่วม ✍️',
-                      color: '#ffffff',
-                      weight: 'bold',
-                      size: 'sm',
-                      align: 'center'
-                    }
-                  ]
-                }
-              ]
-            }
+            ...(footerElement ? { footer: footerElement } : {})
           }
         };
 
