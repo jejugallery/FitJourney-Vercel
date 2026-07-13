@@ -53,6 +53,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'GET') {
+    if (req.query.check === 'env') {
+      return res.status(200).json({
+        hasAccessToken: !!process.env.LINE_CHANNEL_ACCESS_TOKEN,
+        hasChannelSecret: !!process.env.LINE_CHANNEL_SECRET,
+        accessTokenLength: process.env.LINE_CHANNEL_ACCESS_TOKEN?.length || 0,
+        channelSecretLength: process.env.LINE_CHANNEL_SECRET?.length || 0,
+      });
+    }
     return res.status(200).send('FitJourney LINE Webhook is running.');
   }
 
