@@ -1255,7 +1255,7 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
           buttonAction = {
             type: 'uri',
             label: buttonLabel,
-            uri: `https://fitjourneythailand.web.app/download-ics?eventId=${ev.id || ''}&openExternalBrowser=1`
+            uri: `${window.location.origin}/download-ics?eventId=${ev.id || ''}&openExternalBrowser=1`
           };
         }
 

@@ -61,6 +61,9 @@ const getMediaVideoLoopUrl = (url: string | null | undefined): string => {
 // analyzeFood, analyzePaymentSlip, and analyzeBodyMetrics Cloud Functions have been removed as Gemini API is now called directly client-side
 
 export const lineWebhook = functions.region('asia-southeast1').https.onRequest(async (req, res) => {
+  const host = (req.headers.host && !req.headers.host.includes('cloudfunctions.net')) ? req.headers.host : 'fitjourneythailand.web.app';
+  const origin = host.startsWith('localhost') ? `http://${host}` : `https://${host}`;
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
 
@@ -319,7 +322,7 @@ export const lineWebhook = functions.region('asia-southeast1').https.onRequest(a
           buttonAction = {
             type: 'uri',
             label: buttonLabel,
-            uri: `https://fitjourneythailand.web.app/download-ics?eventId=${eventId}&openExternalBrowser=1`
+            uri: `${origin}/download-ics?eventId=${eventId}&openExternalBrowser=1`
           };
         }
 

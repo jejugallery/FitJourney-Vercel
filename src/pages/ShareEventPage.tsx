@@ -443,7 +443,7 @@ export default function ShareEventPage() {
               buttonAction = {
                 type: 'uri',
                 label: buttonLabel,
-                uri: `https://fitjourneythailand.web.app/download-ics?eventId=${eventId || ''}&openExternalBrowser=1`
+                uri: `${window.location.origin}/download-ics?eventId=${eventId || ''}&openExternalBrowser=1`
               };
             }
 

@@ -495,7 +495,7 @@ export default function TraineeEventsSlider({ userId }: TraineeEventsSliderProps
           buttonAction = {
             type: 'uri',
             label: buttonLabel,
-            uri: `https://fitjourneythailand.web.app/download-ics?eventId=${ev.id || ''}&openExternalBrowser=1`
+            uri: `${window.location.origin}/download-ics?eventId=${ev.id || ''}&openExternalBrowser=1`
           };
         }
 

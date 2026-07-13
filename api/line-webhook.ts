@@ -40,6 +40,9 @@ const getMediaVideoLoopUrl = (url: string | null | undefined): string => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const host = req.headers.host || 'fitjourneythailand.web.app';
+  const origin = host.startsWith('localhost') ? `http://${host}` : `https://${host}`;
+
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
@@ -297,7 +300,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             buttonAction = {
               type: 'uri',
               label: buttonLabel,
-              uri: `https://fitjourneythailand.web.app/download-ics?eventId=${eventId}&openExternalBrowser=1`
+              uri: `${origin}/download-ics?eventId=${eventId}&openExternalBrowser=1`
             };
           }
 
