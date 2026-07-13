@@ -88,7 +88,7 @@ const getMediaVideoLoopUrl = (url) => {
 // generateICS Cloud Function has been removed as it is now generated client-side
 // analyzeFood, analyzePaymentSlip, and analyzeBodyMetrics Cloud Functions have been removed as Gemini API is now called directly client-side
 exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async (req, res) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
     const host = (req.headers.host && !req.headers.host.includes('cloudfunctions.net')) ? req.headers.host : 'fitjourneythailand.web.app';
     const origin = host.startsWith('localhost') ? `http://${host}` : `https://${host}`;
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -203,6 +203,36 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                 }
                 continue;
             }
+            else if (text.trim().includes('เข้าสู่ระบบ')) {
+                const loginFlexMessage = {
+                    type: 'flex',
+                    altText: 'FitJourney: เข้าสู่ระบบ 🔑',
+                    contents: {
+                        type: 'bubble',
+                        hero: {
+                            type: 'image',
+                            url: `${origin}/login-banner.png`,
+                            size: 'full',
+                            aspectRatio: '1000:618',
+                            aspectMode: 'cover',
+                            action: {
+                                type: 'uri',
+                                label: 'เข้าสู่ระบบ',
+                                uri: 'https://liff.line.me/2010284484-jvUDlx0u'
+                            }
+                        }
+                    }
+                };
+                if (replyToken && LINE_CHANNEL_ACCESS_TOKEN) {
+                    try {
+                        await axios_1.default.post('https://api.line.me/v2/bot/message/reply', { replyToken, messages: [loginFlexMessage] }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } });
+                    }
+                    catch (err) {
+                        console.error('[Webhook] Login reply error:', ((_e = err.response) === null || _e === void 0 ? void 0 : _e.data) || err.message);
+                    }
+                }
+                continue;
+            }
         }
         // RSVP Handler
         if (isRsvpAction && eventId && userId && replyToken && LINE_CHANNEL_ACCESS_TOKEN) {
@@ -214,7 +244,7 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                     await axios_1.default.post('https://api.line.me/v2/bot/message/reply', { replyToken, messages: [{ type: 'text', text: 'คุณลงชื่อแล้วครับ ✅' }] }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } });
                 }
                 catch (err) {
-                    console.error('[RSVP] Already signed up reply error:', ((_e = err.response) === null || _e === void 0 ? void 0 : _e.data) || err.message);
+                    console.error('[RSVP] Already signed up reply error:', ((_f = err.response) === null || _f === void 0 ? void 0 : _f.data) || err.message);
                 }
                 continue;
             }
@@ -229,7 +259,7 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                 pictureUrl = profileRes.data.pictureUrl || '';
             }
             catch (e) {
-                console.warn('[RSVP] profile fetch failed:', ((_f = e.response) === null || _f === void 0 ? void 0 : _f.data) || e.message);
+                console.warn('[RSVP] profile fetch failed:', ((_g = e.response) === null || _g === void 0 ? void 0 : _g.data) || e.message);
             }
             // Save RSVP
             await rsvpRef.set({
@@ -258,7 +288,7 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                     const isSameDay = evData.startDatetimeIso && evData.endDatetimeIso &&
                         evData.startDatetimeIso.substring(0, 10) === evData.endDatetimeIso.substring(0, 10);
                     const endPart = isSameDay
-                        ? ((_g = evData.endDatetimeDisplay) === null || _g === void 0 ? void 0 : _g.split(',')[1]) || evData.endDatetimeDisplay || ''
+                        ? ((_h = evData.endDatetimeDisplay) === null || _h === void 0 ? void 0 : _h.split(',')[1]) || evData.endDatetimeDisplay || ''
                         : evData.endDatetimeDisplay || '';
                     evDatetimeString = (evData.datetime || '') + (evData.endDatetimeDisplay ? ` - ${endPart}` : '');
                 }
@@ -506,13 +536,13 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                 await axios_1.default.post('https://api.line.me/v2/bot/message/reply', { replyToken, messages: [rsvpFlexMessage] }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } });
             }
             catch (err) {
-                console.error('[RSVP] Send reply Flex message error:', ((_h = err.response) === null || _h === void 0 ? void 0 : _h.data) || err.message);
+                console.error('[RSVP] Send reply Flex message error:', ((_j = err.response) === null || _j === void 0 ? void 0 : _j.data) || err.message);
             }
             continue;
         }
         // Other postback handlers
         if (event.type === 'postback') {
-            const data = ((_j = event.postback) === null || _j === void 0 ? void 0 : _j.data) || '';
+            const data = ((_k = event.postback) === null || _k === void 0 ? void 0 : _k.data) || '';
             let responseText = 'ขอบคุณที่กดปุ่มครับ 👍';
             if (data === 'action=check_status')
                 responseText = 'กำลังตรวจสอบสถานะให้ครับ...';
@@ -523,7 +553,7 @@ exports.lineWebhook = functions.region('asia-southeast1').https.onRequest(async 
                     await axios_1.default.post('https://api.line.me/v2/bot/message/reply', { replyToken, messages: [{ type: 'text', text: responseText }] }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } });
                 }
                 catch (err) {
-                    console.error('Error replying postback to LINE:', ((_k = err.response) === null || _k === void 0 ? void 0 : _k.data) || err.message);
+                    console.error('Error replying postback to LINE:', ((_l = err.response) === null || _l === void 0 ? void 0 : _l.data) || err.message);
                 }
             }
         }

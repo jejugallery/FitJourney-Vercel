@@ -185,6 +185,38 @@ export const lineWebhook = functions.region('asia-southeast1').https.onRequest(a
           }
         }
         continue;
+      } else if (text.trim().includes('เข้าสู่ระบบ')) {
+        const loginFlexMessage = {
+          type: 'flex',
+          altText: 'FitJourney: เข้าสู่ระบบ 🔑',
+          contents: {
+            type: 'bubble',
+            hero: {
+              type: 'image',
+              url: `${origin}/login-banner.png`,
+              size: 'full',
+              aspectRatio: '1000:618',
+              aspectMode: 'cover',
+              action: {
+                type: 'uri',
+                label: 'เข้าสู่ระบบ',
+                uri: 'https://liff.line.me/2010284484-jvUDlx0u'
+              }
+            }
+          }
+        };
+
+        if (replyToken && LINE_CHANNEL_ACCESS_TOKEN) {
+          try {
+            await axios.post('https://api.line.me/v2/bot/message/reply',
+              { replyToken, messages: [loginFlexMessage] },
+              { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } }
+            );
+          } catch (err: any) {
+            console.error('[Webhook] Login reply error:', err.response?.data || err.message);
+          }
+        }
+        continue;
       }
     }
 
