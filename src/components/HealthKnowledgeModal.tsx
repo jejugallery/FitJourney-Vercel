@@ -203,7 +203,34 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
     }
   };
 
+  // Handle image load error for list items (independent of form state)
+  const handleListImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const currentSrc = img.src;
+    
+    // Extract YouTube ID from the current src URL
+    const videoIdMatch = currentSrc.match(/\/vi\/([a-zA-Z0-9_-]{11})\//);
+    const videoId = videoIdMatch ? videoIdMatch[1] : null;
+    
+    if (!videoId) return;
+    
+    // Try different quality levels in order
+    if (currentSrc.includes('maxresdefault')) {
+      img.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    } else if (currentSrc.includes('hqdefault')) {
+      img.src = `https://img.youtube.com/vi/${videoId}/sddefault.jpg`;
+    } else if (currentSrc.includes('sddefault')) {
+      img.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+    } else if (currentSrc.includes('mqdefault')) {
+      img.src = `https://img.youtube.com/vi/${videoId}/default.jpg`;
+    } else if (currentSrc.includes('default')) {
+      // If all attempts fail, hide the image
+      img.style.display = 'none';
+    }
+  };
+
   const extractYoutubeId = (url: string): string | null => {
+    if (!url) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
@@ -211,28 +238,44 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
 
   // Generate YouTube thumbnail URL with fallback options
   const getYoutubeThumbnailUrl = (videoId: string): string => {
-    // Try maxresdefault first (highest quality), then fallback to hqdefault
-    // This ensures we always have a valid thumbnail even if maxresdefault doesn't exist
+    // Start with maxresdefault (highest quality)
+    // The handleImageError function will automatically fallback to lower quality if this fails
     return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+  };
+
+  // Helper function to extract YouTube video ID from URL
+  const extractYoutubeIdFromUrl = (url: string): string | null => {
+    const match = url.match(/\/vi\/([a-zA-Z0-9_-]{11})\//);
+    return match ? match[1] : null;
   };
 
   // Handle image load error and fallback to lower quality thumbnail
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    const videoId = extractYoutubeId(videoUrl);
+    const currentSrc = img.src;
     
-    if (videoId && !img.src.includes('hqdefault')) {
+    // Extract YouTube ID from the current src URL (e.g., https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg)
+    const videoIdMatch = currentSrc.match(/\/vi\/([a-zA-Z0-9_-]{11})\//);
+    const videoId = videoIdMatch ? videoIdMatch[1] : null;
+    
+    if (!videoId) return; // If we can't extract the ID, stop trying
+    
+    // Try different quality levels in order
+    if (currentSrc.includes('maxresdefault')) {
       // Fallback to hqdefault if maxresdefault fails
       img.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-    } else if (videoId && !img.src.includes('sddefault')) {
+    } else if (currentSrc.includes('hqdefault')) {
       // Fallback to sddefault if hqdefault fails
       img.src = `https://img.youtube.com/vi/${videoId}/sddefault.jpg`;
-    } else if (videoId && !img.src.includes('mqdefault')) {
+    } else if (currentSrc.includes('sddefault')) {
       // Fallback to mqdefault if sddefault fails
       img.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-    } else if (videoId && !img.src.includes('default')) {
+    } else if (currentSrc.includes('mqdefault')) {
       // Final fallback to default thumbnail
       img.src = `https://img.youtube.com/vi/${videoId}/default.jpg`;
+    } else if (currentSrc.includes('default')) {
+      // If even default fails, use a placeholder
+      img.style.display = 'none';
     }
   };
 
@@ -907,7 +950,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                               src={item.videoThumbnailUrl} 
                               alt="Video Cover"
                               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                              onError={handleImageError}
+                              onError={handleListImageError}
                             />
                           </div>
 
@@ -994,7 +1037,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                             src={item.videoThumbnailUrl} 
                             alt="Video Thumbnail"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            onError={handleImageError}
+                            onError={handleListImageError}
                           />
                         </div>
 
