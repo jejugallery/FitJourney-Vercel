@@ -449,6 +449,13 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
         return;
       }
 
+      // ดึง URL ของภาพปกปัจจุบันจากหน้าจอ (เผื่อมีการ Fallback ไปแล้ว)
+      let currentThumbnailUrl = item.videoThumbnailUrl;
+      const imgElement = document.querySelector(`#knowledge-item-${item.id} img`) as HTMLImageElement;
+      if (imgElement && imgElement.src) {
+        currentThumbnailUrl = imgElement.src;
+      }
+
       const knowledgeLiffUrl = item.category === 'business'
         ? LIFF_URLS.SHARE_KNOWLEDGE
         : LIFF_URLS.SHARE_LINK;
@@ -483,7 +490,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
             } : {}),
             hero: {
               type: "image",
-              url: item.videoThumbnailUrl || "https://i.ytimg.com/vi/placeholder/maxresdefault.jpg",
+              url: currentThumbnailUrl || "https://i.ytimg.com/vi/placeholder/maxresdefault.jpg",
               size: "full",
               aspectRatio: "16:9",
               aspectMode: "cover",
@@ -618,11 +625,11 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                 size: "full",
                 aspectRatio: "9:16",
                 aspectMode: "cover",
-                url: item.videoThumbnailUrl || "https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png"
+                url: currentThumbnailUrl || "https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png"
               },
               aspectRatio: "9:16",
               url: item.videoUrl,
-              previewUrl: item.videoThumbnailUrl || "https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png"
+              previewUrl: currentThumbnailUrl || "https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png"
             },
             footer: {
               type: "box",
