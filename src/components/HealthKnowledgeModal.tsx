@@ -243,12 +243,6 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
     return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
   };
 
-  // Helper function to extract YouTube video ID from URL
-  const extractYoutubeIdFromUrl = (url: string): string | null => {
-    const match = url.match(/\/vi\/([a-zA-Z0-9_-]{11})\//);
-    return match ? match[1] : null;
-  };
-
   // Handle image load error and fallback to lower quality thumbnail
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
