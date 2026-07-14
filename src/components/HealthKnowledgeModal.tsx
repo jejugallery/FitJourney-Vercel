@@ -195,7 +195,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
     // ดึง thumbnail จาก YouTube URL ปัจจุบัน
     const videoId = extractYoutubeId(videoUrl);
     if (videoId) {
-      setCoverPreview(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`);
+      setCoverPreview(getYoutubeThumbnailUrl(videoId));
     } else if (editingItem) {
       setCoverPreview(editingItem.videoThumbnailUrl || '');
     } else {
@@ -209,11 +209,38 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
     return (match && match[2].length === 11) ? match[2] : null;
   };
 
+  // Generate YouTube thumbnail URL with fallback options
+  const getYoutubeThumbnailUrl = (videoId: string): string => {
+    // Try maxresdefault first (highest quality), then fallback to hqdefault
+    // This ensures we always have a valid thumbnail even if maxresdefault doesn't exist
+    return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+  };
+
+  // Handle image load error and fallback to lower quality thumbnail
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const videoId = extractYoutubeId(videoUrl);
+    
+    if (videoId && !img.src.includes('hqdefault')) {
+      // Fallback to hqdefault if maxresdefault fails
+      img.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    } else if (videoId && !img.src.includes('sddefault')) {
+      // Fallback to sddefault if hqdefault fails
+      img.src = `https://img.youtube.com/vi/${videoId}/sddefault.jpg`;
+    } else if (videoId && !img.src.includes('mqdefault')) {
+      // Fallback to mqdefault if sddefault fails
+      img.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+    } else if (videoId && !img.src.includes('default')) {
+      // Final fallback to default thumbnail
+      img.src = `https://img.youtube.com/vi/${videoId}/default.jpg`;
+    }
+  };
+
   const handleYoutubeUrlChange = async (url: string) => {
     setVideoUrl(url);
     const videoId = extractYoutubeId(url);
     if (videoId) {
-      const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      const thumbUrl = getYoutubeThumbnailUrl(videoId);
       setCoverPreview(thumbUrl);
       setCoverFile(null);
       setCoverUploadedManually(false);
@@ -880,6 +907,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                               src={item.videoThumbnailUrl} 
                               alt="Video Cover"
                               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={handleImageError}
                             />
                           </div>
 
@@ -966,6 +994,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                             src={item.videoThumbnailUrl} 
                             alt="Video Thumbnail"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={handleImageError}
                           />
                         </div>
 
@@ -1201,6 +1230,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                           src={coverPreview}
                           alt="Cover Preview"
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={handleImageError}
                         />
                         {/* Overlay hint */}
                         <div style={{
