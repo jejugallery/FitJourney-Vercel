@@ -346,7 +346,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
     setTitle(item.title);
     setVideoUrl(item.videoUrl);
     setCoverFile(null);
-    setCoverPreview(item.imageUrl || '');
+    setCoverPreview(item.videoThumbnailUrl || '');
     setCoverUploadedManually(false);
     setCategory(item.category || 'health');
     setPromoText(item.promoText || '');
@@ -385,7 +385,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
 
     setUploading(true);
     try {
-      let finalVideoThumbnailUrl = editingItem ? editingItem.imageUrl : '';
+      let finalVideoThumbnailUrl = editingItem ? editingItem.videoThumbnailUrl : '';
 
       if (coverFile) {
         // Upload cover image to ImgBB (ทั้ง business และ health)
@@ -400,7 +400,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
         await healthKnowledgesApi.update(editingItem.id, {
           title: title.trim(),
           videoUrl: videoUrl.trim(),
-          imageUrl: finalVideoThumbnailUrl,
+          videoThumbnailUrl: finalVideoThumbnailUrl,
           category: category,
           promoText: category === 'business' ? promoText.trim() : '',
           isChallenge: category === 'business' ? isChallenge : false,
@@ -411,7 +411,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
         const newKnowledge = await healthKnowledgesApi.create({
           title: title.trim(),
           videoUrl: videoUrl.trim(),
-          imageUrl: finalVideoThumbnailUrl,
+          videoThumbnailUrl: finalVideoThumbnailUrl,
           createdBy: userId,
           category: category,
           promoText: category === 'business' ? promoText.trim() : '',
@@ -450,7 +450,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
       }
 
       // ดึง URL ของภาพปกปัจจุบันจากหน้าจอ (เผื่อมีการ Fallback ไปแล้ว)
-      let currentThumbnailUrl = item.imageUrl;
+      let currentThumbnailUrl = item.videoThumbnailUrl;
       const imgElement = document.querySelector(`#knowledge-item-${item.id} img`) as HTMLImageElement;
       if (imgElement && imgElement.src) {
         currentThumbnailUrl = imgElement.src;
@@ -755,7 +755,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
               boxShadow: '0 8px 20px rgba(0,0,0,0.12)'
             }}>
               <img
-                src={sharingItem.imageUrl}
+                src={sharingItem.videoThumbnailUrl}
                 alt={sharingItem.title}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -948,7 +948,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                             }}
                           >
                             <img 
-                              src={item.imageUrl} 
+                              src={item.videoThumbnailUrl} 
                               alt="Video Cover"
                               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                               onError={handleListImageError}
@@ -1035,7 +1035,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                           }}
                         >
                           <img 
-                            src={item.imageUrl} 
+                            src={item.videoThumbnailUrl} 
                             alt="Video Thumbnail"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             onError={handleListImageError}

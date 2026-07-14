@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS health_knowledges (
   title TEXT NOT NULL,
   category TEXT,
   video_url TEXT,
-  image_url TEXT,
+  video_thumbnail_url TEXT,
   description TEXT,
   is_challenge BOOLEAN DEFAULT FALSE,
   created_by TEXT,

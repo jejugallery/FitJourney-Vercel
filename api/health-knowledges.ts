@@ -32,8 +32,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         title,
         category,
         videoUrl,
-        imageUrl,
         videoThumbnailUrl,
+        imageUrl,
         description,
         isChallenge,
         createdBy,
@@ -44,13 +44,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const knowledgeId = crypto.randomBytes(10).toString('hex');
-      const finalImageUrl = imageUrl || videoThumbnailUrl || '';
+      const finalVideoThumbnailUrl = videoThumbnailUrl || imageUrl || '';
 
       await sql`
         INSERT INTO health_knowledges (
-          id, title, category, video_url, image_url, description, is_challenge, created_by
+          id, title, category, video_url, video_thumbnail_url, description, is_challenge, created_by
         ) VALUES (
-          ${knowledgeId}, ${title}, ${category || ''}, ${videoUrl || ''}, ${finalImageUrl}, 
+          ${knowledgeId}, ${title}, ${category || ''}, ${videoUrl || ''}, ${finalVideoThumbnailUrl}, 
           ${description || ''}, ${isChallenge || false}, ${createdBy || ''}
         )
       `;
@@ -68,20 +68,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         title,
         category,
         videoUrl,
-        imageUrl,
         videoThumbnailUrl,
+        imageUrl,
         description,
         isChallenge,
       } = req.body;
 
-      const finalImageUrl = imageUrl || videoThumbnailUrl;
+      const finalVideoThumbnailUrl = videoThumbnailUrl !== undefined ? videoThumbnailUrl : imageUrl;
 
       const result = await sql`
         UPDATE health_knowledges SET
           title = COALESCE(${title}, title),
           category = COALESCE(${category}, category),
           video_url = COALESCE(${videoUrl}, video_url),
-          image_url = COALESCE(${finalImageUrl}, image_url),
+          video_thumbnail_url = COALESCE(${finalVideoThumbnailUrl}, video_thumbnail_url),
           description = COALESCE(${description}, description),
           is_challenge = COALESCE(${isChallenge}, is_challenge)
         WHERE id = ${knowledgeId}
