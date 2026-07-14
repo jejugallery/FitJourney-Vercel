@@ -1286,24 +1286,6 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                           📷 คลิกเพื่อเปลี่ยนภาพปก
                         </div>
                       </div>
-                      {/* Display cover image URL */}
-                      {coverPreview && (
-                        <div style={{
-                          marginTop: '8px', padding: '8px 12px',
-                          background: '#f0f9ff', border: '1px solid #0099ff',
-                          borderRadius: '8px', fontSize: '0.75rem', color: '#0066cc',
-                          wordBreak: 'break-all', lineHeight: '1.4',
-                          display: 'flex', alignItems: 'flex-start', gap: '8px'
-                        }}>
-                          <span style={{ flexShrink: 0, marginTop: '2px' }}>🔗</span>
-                          <div>
-                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>URL ของรูปภาพปก:</div>
-                            <div style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: '#0066cc', opacity: 0.8 }}>
-                              {coverPreview}
-                            </div>
-                          </div>
-                        </div>
-                      )}
                       {/* Reset to YouTube thumbnail button (only when uploaded manually and YouTube ID exists) */}
                       {coverUploadedManually && extractYoutubeId(videoUrl) && (
                         <button
