@@ -1181,7 +1181,11 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                     <div>
                       <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', color: '#475569', fontSize: '0.9rem' }}>
                         ภาพปกของคลิป
-                        {coverUploadedManually && <span style={{ color: '#FF416C', marginLeft: '6px', fontSize: '0.8rem' }}>📷 ภาพที่อัพโหลด</span>}
+                        {coverUploadedManually ? (
+                          <span style={{ color: '#FF416C', marginLeft: '6px', fontSize: '0.8rem' }}>📷 ภาพที่อัพโหลด (ImgBB)</span>
+                        ) : (
+                          <span style={{ color: '#0066cc', marginLeft: '6px', fontSize: '0.8rem' }}>🎬 ดึงจาก YouTube</span>
+                        )}
                       </label>
                       <div
                         onClick={() => !uploading && coverFileInputRef.current?.click()}
@@ -1215,14 +1219,23 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                           onClick={handleResetCoverToYoutube}
                           disabled={uploading}
                           style={{
-                            marginTop: '6px', padding: '6px 12px',
-                            background: '#f1f5f9', color: '#475569',
-                            border: '1px solid #cbd5e1', borderRadius: '8px',
-                            fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: '4px'
+                            marginTop: '8px', padding: '8px 14px',
+                            background: '#e0f2fe', color: '#0066cc',
+                            border: '1px solid #0099ff', borderRadius: '8px',
+                            fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#0099ff';
+                            e.currentTarget.style.color = '#fff';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#e0f2fe';
+                            e.currentTarget.style.color = '#0066cc';
                           }}
                         >
-                          ↩️ ใช้ภาพจาก YouTube
+                          🎬 ใช้ภาพจาก YouTube
                         </button>
                       )}
                     </div>
@@ -1230,6 +1243,7 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                     <div>
                       <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', color: '#475569', fontSize: '0.9rem' }}>
                         ภาพปกของคลิป
+                        <span style={{ color: '#0066cc', marginLeft: '6px', fontSize: '0.8rem' }}>🎬 จะดึงจาก YouTube โดยอัตโนมัติ</span>
                       </label>
                       <div
                         onClick={() => !uploading && coverFileInputRef.current?.click()}
@@ -1238,14 +1252,24 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                           border: '2px dashed #cbd5e1', backgroundColor: '#f8fafc',
                           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                           gap: '8px', cursor: uploading ? 'not-allowed' : 'pointer',
-                          color: '#94a3b8'
+                          color: '#94a3b8',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#0099ff';
+                          e.currentTarget.style.backgroundColor = '#f0f9ff';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = '#cbd5e1';
+                          e.currentTarget.style.backgroundColor = '#f8fafc';
                         }}
                       >
-                        <div style={{ fontSize: '2rem' }}>📸</div>
+                        <div style={{ fontSize: '2rem' }}>📷</div>
                         <div style={{ fontWeight: 'bold', color: '#64748b', fontSize: '0.9rem' }}>
-                          คลิกเพื่ออัพโหลดภาพปก
+                          คลิกเพื่ออัพโหลดภาพปกเอง (ทางเลือก)
                         </div>
-                        <div style={{ fontSize: '0.75rem' }}>รองรับ PNG, JPG, JPEG (ไม่เกิน 5MB)</div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>รองรับ PNG, JPG, JPEG (ไม่เกิน 5MB)</div>
+                        <div style={{ fontSize: '0.7rem', color: '#0066cc', marginTop: '4px', fontWeight: '500' }}>💡 หากไม่อัพโหลด จะใช้ภาพจาก YouTube โดยอัตโนมัติ</div>
                       </div>
                     </div>
                   )}
