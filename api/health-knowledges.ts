@@ -33,6 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         category,
         videoUrl,
         imageUrl,
+        videoThumbnailUrl,
         description,
         isChallenge,
         createdBy,
@@ -43,12 +44,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const knowledgeId = crypto.randomBytes(10).toString('hex');
+      const finalImageUrl = imageUrl || videoThumbnailUrl || '';
 
       await sql`
         INSERT INTO health_knowledges (
           id, title, category, video_url, image_url, description, is_challenge, created_by
         ) VALUES (
-          ${knowledgeId}, ${title}, ${category || ''}, ${videoUrl || ''}, ${imageUrl || ''}, 
+          ${knowledgeId}, ${title}, ${category || ''}, ${videoUrl || ''}, ${finalImageUrl}, 
           ${description || ''}, ${isChallenge || false}, ${createdBy || ''}
         )
       `;
@@ -67,16 +69,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         category,
         videoUrl,
         imageUrl,
+        videoThumbnailUrl,
         description,
         isChallenge,
       } = req.body;
+
+      const finalImageUrl = imageUrl || videoThumbnailUrl;
 
       const result = await sql`
         UPDATE health_knowledges SET
           title = COALESCE(${title}, title),
           category = COALESCE(${category}, category),
           video_url = COALESCE(${videoUrl}, video_url),
-          image_url = COALESCE(${imageUrl}, image_url),
+          image_url = COALESCE(${finalImageUrl}, image_url),
           description = COALESCE(${description}, description),
           is_challenge = COALESCE(${isChallenge}, is_challenge)
         WHERE id = ${knowledgeId}
