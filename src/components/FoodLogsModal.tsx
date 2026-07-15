@@ -5,6 +5,7 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import FoodNutritionCard, { parseNutrition } from './FoodNutritionCard';
 import { useLiff } from '../context/LiffContext';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
+import liff from '@line/liff';
 
 export default function FoodLogsModal({ traineeId, onClose }: { traineeId: string, onClose: () => void }) {
   const { profile } = useLiff();
@@ -366,22 +367,14 @@ export default function FoodLogsModal({ traineeId, onClose }: { traineeId: strin
               gap: '8px',
               boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
             }} 
-            onClick={async () => {
+            onClick={() => {
               if (!fullscreenImage) return;
-              try {
-                const response = await fetch(fullscreenImage);
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `food-image-${Date.now()}.jpg`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-              } catch (err) {
-                console.error('Download failed:', err);
-                // Fallback for direct link
+              if (liff.isInClient()) {
+                liff.openWindow({
+                  url: fullscreenImage,
+                  external: true
+                });
+              } else {
                 window.open(fullscreenImage, '_blank');
               }
             }}

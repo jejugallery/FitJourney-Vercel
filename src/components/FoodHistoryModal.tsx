@@ -504,21 +504,14 @@ export default function FoodHistoryModal({ targetId, onClose }: FoodHistoryModal
               gap: '8px',
               boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
             }} 
-            onClick={async () => {
+            onClick={() => {
               if (!fullscreenImage) return;
-              try {
-                const response = await fetch(fullscreenImage);
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `food-image-${Date.now()}.jpg`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-              } catch (err) {
-                console.error('Download failed:', err);
+              if (liff.isInClient()) {
+                liff.openWindow({
+                  url: fullscreenImage,
+                  external: true
+                });
+              } else {
                 window.open(fullscreenImage, '_blank');
               }
             }}
