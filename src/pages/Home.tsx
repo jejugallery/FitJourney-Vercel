@@ -1066,7 +1066,7 @@ export default function Home({ isRecordOnly = false }: { isRecordOnly?: boolean 
             isRecordOnly={isRecordOnly}
             initialTraineeName={selectedTraineeForForm} 
             adminData={adminData}
-            isSuperadmin={isRealSuperadmin}
+
             onViewStats={(id, nickname) => {
               if (id) setViewingTraineeId(id);
               if (nickname) {

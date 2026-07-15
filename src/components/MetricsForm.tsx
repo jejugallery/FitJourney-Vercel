@@ -16,11 +16,10 @@ interface MetricsFormProps {
   initialTraineeName?: string;
   adminData?: any;
   onViewStats?: (id?: string, nickname?: string) => void;
-  isSuperadmin?: boolean;
   isRecordOnly?: boolean;
 }
 
-export default function MetricsForm({ initialTraineeName = '', adminData, onViewStats, isSuperadmin = false, isRecordOnly = false }: MetricsFormProps) {
+export default function MetricsForm({ initialTraineeName = '', adminData, onViewStats, isRecordOnly = false }: MetricsFormProps) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
