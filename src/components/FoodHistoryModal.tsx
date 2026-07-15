@@ -483,6 +483,49 @@ export default function FoodHistoryModal({ targetId, onClose }: FoodHistoryModal
       {fullscreenImage && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 160000, display: 'flex', justifyContent: 'center', alignItems: 'center', touchAction: 'none' }}>
           <button style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: '#fff', fontSize: '2.5rem', cursor: 'pointer', zIndex: 160001 }} onClick={() => setFullscreenImage(null)}>&times;</button>
+          
+          <button 
+            style={{ 
+              position: 'absolute', 
+              bottom: '40px', 
+              left: '50%', 
+              transform: 'translateX(-50%)',
+              background: '#3b82f6', 
+              border: 'none', 
+              color: '#fff', 
+              padding: '12px 24px',
+              borderRadius: '30px',
+              fontSize: '1rem', 
+              fontWeight: 'bold',
+              cursor: 'pointer', 
+              zIndex: 160001,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+            }} 
+            onClick={async () => {
+              if (!fullscreenImage) return;
+              try {
+                const response = await fetch(fullscreenImage);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `food-image-${Date.now()}.jpg`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+              } catch (err) {
+                console.error('Download failed:', err);
+                window.open(fullscreenImage, '_blank');
+              }
+            }}
+          >
+            📥 ดาวน์โหลดรูปภาพ
+          </button>
+
           <TransformWrapper initialScale={1} minScale={1} maxScale={5} centerOnInit={true} centerZoomedOut={true}>
             <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh' }} contentStyle={{ width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <img src={fullscreenImage} alt="Fullscreen Food" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
