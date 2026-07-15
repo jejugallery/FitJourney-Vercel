@@ -1409,7 +1409,7 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
           </div>
         ) : (
           <>
-            {isSuperadmin && ((formData.name === '__SELF__') ||
+            {((formData.name === '__SELF__') ||
               (formData.name !== '' &&
                formData.name !== '__NEW_TRAINEE__' &&
                selectedTrainee &&
