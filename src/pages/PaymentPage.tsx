@@ -269,11 +269,11 @@ export default function PaymentPage() {
         // fallbacks for compatibility with any direct/legacy API responses.
         let paymentsList = paymentsListRaw
           .map((p: any) => ({
-            userId: p.userId ?? p.user_id,
-            displayName: p.displayName ?? p.display_name,
-            pictureUrl: p.pictureUrl ?? p.picture_url,
-            slipUrl: p.slipUrl ?? p.slip_url,
-            submittedAt: p.submittedAt ?? p.submitted_at,
+            userId: p.userId || p.user_id,
+            displayName: p.displayName || p.display_name || p.userName || p.user_name || p.name || 'ผู้ชำระเงิน',
+            pictureUrl: p.pictureUrl || p.picture_url || '',
+            slipUrl: p.slipUrl || p.slip_url || '',
+            submittedAt: p.submittedAt || p.submitted_at || null,
             friends: p.friends || [],
             slips: p.slips || []
           }))
@@ -285,7 +285,7 @@ export default function PaymentPage() {
         paymentsList = paymentsList.filter(p => p.userId !== profile.userId);
         paymentsList.push({
           userId: profile.userId,
-          displayName: profile.displayName,
+          displayName: profile.displayName || 'ผู้ชำระเงิน',
           pictureUrl: profile.pictureUrl || '',
           slipUrl,
           submittedAt: new Date().toISOString(),
@@ -303,15 +303,17 @@ export default function PaymentPage() {
         // Expand payments to include friends
         const expandedList: any[] = [];
         for (const p of paymentsList) {
+          const payerName = p.displayName || 'ผู้ชำระเงิน';
+          const payerPic = p.pictureUrl || '';
           expandedList.push({
-            displayName: p.displayName,
-            pictureUrl: p.pictureUrl,
+            displayName: payerName,
+            pictureUrl: payerPic,
             isFriend: false
           });
           if (p.friends && Array.isArray(p.friends)) {
             for (const friendName of p.friends) {
               expandedList.push({
-                displayName: `${friendName} (${p.displayName})`,
+                displayName: `${friendName} (${payerName})`,
                 pictureUrl: '',
                 isFriend: true
               });

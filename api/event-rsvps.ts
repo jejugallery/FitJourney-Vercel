@@ -37,7 +37,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (req.method === 'POST') {
-      const { eventId, userId, displayName, pictureUrl } = req.body;
+      const {
+        eventId: bodyEventId,
+        event_id: bodyEventIdSnake,
+        userId: bodyUserId,
+        user_id: bodyUserIdSnake,
+        displayName: bodyDisplayName,
+        display_name: bodyDisplayNameSnake,
+        userName: bodyUserName,
+        user_name: bodyUserNameSnake,
+        name: bodyName,
+        pictureUrl: bodyPictureUrl,
+        picture_url: bodyPictureUrlSnake,
+      } = req.body || {};
+
+      const eventId = bodyEventId || bodyEventIdSnake || req.query.eventId;
+      const userId = bodyUserId || bodyUserIdSnake || req.query.userId;
+      const displayName = bodyDisplayName || bodyDisplayNameSnake || bodyUserName || bodyUserNameSnake || bodyName || '';
+      const pictureUrl = bodyPictureUrl || bodyPictureUrlSnake || '';
 
       if (!eventId || !userId) {
         return res.status(400).json({ error: 'eventId and userId are required' });
@@ -62,10 +79,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Use upsert to handle duplicate join requests
       const result = await sql`
         INSERT INTO event_rsvps (event_id, user_id, display_name, picture_url, joined_at)
-        VALUES (${eventId}, ${userId}, ${displayName || ''}, ${pictureUrl || ''}, CURRENT_TIMESTAMP)
+        VALUES (${eventId}, ${userId}, ${displayName}, ${pictureUrl}, CURRENT_TIMESTAMP)
         ON CONFLICT (event_id, user_id) DO UPDATE SET
-          display_name = COALESCE(EXCLUDED.display_name, event_rsvps.display_name),
-          picture_url = COALESCE(EXCLUDED.picture_url, event_rsvps.picture_url)
+          display_name = COALESCE(NULLIF(EXCLUDED.display_name, ''), event_rsvps.display_name),
+          picture_url = COALESCE(NULLIF(EXCLUDED.picture_url, ''), event_rsvps.picture_url)
         RETURNING *
       `;
 

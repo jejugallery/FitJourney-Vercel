@@ -97,9 +97,9 @@ function BillingItem({ billing, role, creators, onNavigatePay, onUpdateStatus }:
     try {
       const pList = await billingPaymentsApi.list(billing.id);
       pList.sort((a: any, b: any) => {
-        const tA = a.submitted_at ? new Date(a.submitted_at).getTime() : 0;
-        const tB = b.submitted_at ? new Date(b.submitted_at).getTime() : 0;
-        return tB - tA;
+        const timeA = (a.submittedAt || a.submitted_at) ? new Date(a.submittedAt || a.submitted_at).getTime() : 0;
+        const timeB = (b.submittedAt || b.submitted_at) ? new Date(b.submittedAt || b.submitted_at).getTime() : 0;
+        return timeB - timeA;
       });
 
       // Expand friends array into individual entries
@@ -107,9 +107,13 @@ function BillingItem({ billing, role, creators, onNavigatePay, onUpdateStatus }:
       pList.forEach((p: any, pIdx: number) => {
         const payerSlipUrl = p.slips && p.slips.length > 0 ? p.slips[0].slipUrl : (p.slipUrl || p.slip_url);
         const payerSlipId = p.slips && p.slips.length > 0 ? p.slips[0].slipId : (p.slipId || p.slip_id);
+        const payerName = p.displayName || p.display_name || p.userName || p.user_name || p.name || 'ผู้ใช้';
+        const payerPic = p.pictureUrl || p.picture_url || '';
 
         expanded.push({
           ...p,
+          displayName: payerName,
+          pictureUrl: payerPic,
           slipUrl: payerSlipUrl,
           slipId: payerSlipId,
           uniqueKey: (p.userId || p.user_id) ? `${p.userId || p.user_id}-payer-${pIdx}` : `payer-${pIdx}`,
@@ -128,7 +132,7 @@ function BillingItem({ billing, role, creators, onNavigatePay, onUpdateStatus }:
               slipUrl: friendSlipUrl,
               slipId: friendSlipId,
               uniqueKey: (p.userId || p.user_id) ? `${p.userId || p.user_id}-friend-${fIdx}-${pIdx}` : `friend-${fIdx}-${pIdx}`,
-              displayName: `${friendName} (${p.displayName || p.display_name})`,
+              displayName: `${friendName} (${payerName})`,
               pictureUrl: '', // Friend doesn't have profile pic
               isFriend: true
             });
@@ -160,25 +164,27 @@ function BillingItem({ billing, role, creators, onNavigatePay, onUpdateStatus }:
       // Fetch latest payments
       const paymentsList = await billingPaymentsApi.list(billing.id);
 
-      // Sort payments ascending by submitted_at (oldest first)
+      // Sort payments ascending by submitted_at/submittedAt (oldest first)
       paymentsList.sort((a: any, b: any) => {
-        const timeA = a.submitted_at ? new Date(a.submitted_at).getTime() : Date.now();
-        const timeB = b.submitted_at ? new Date(b.submitted_at).getTime() : Date.now();
+        const timeA = (a.submittedAt || a.submitted_at) ? new Date(a.submittedAt || a.submitted_at).getTime() : Date.now();
+        const timeB = (b.submittedAt || b.submitted_at) ? new Date(b.submittedAt || b.submitted_at).getTime() : Date.now();
         return timeA - timeB;
       });
 
       // Expand friends array
       const expandedList: any[] = [];
       for (const p of paymentsList) {
+        const payerName = p.displayName || p.display_name || p.userName || p.user_name || p.name || 'ผู้ชำระเงิน';
+        const payerPic = p.pictureUrl || p.picture_url || '';
         expandedList.push({
-          displayName: p.display_name,
-          pictureUrl: p.picture_url,
+          displayName: payerName,
+          pictureUrl: payerPic,
           isFriend: false
         });
         if (p.friends && Array.isArray(p.friends)) {
           for (const friendName of p.friends) {
             expandedList.push({
-              displayName: `${friendName} (${p.display_name})`,
+              displayName: `${friendName} (${payerName})`,
               pictureUrl: '',
               isFriend: true
             });

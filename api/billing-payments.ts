@@ -42,17 +42,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'POST') {
       const {
         billingId: bodyBillingId,
+        billing_id: bodyBillingIdSnake,
         userId: bodyUserId,
-        displayName,
-        pictureUrl,
-        slipUrl,
-        slipId,
+        user_id: bodyUserIdSnake,
+        displayName: bodyDisplayName,
+        display_name: bodyDisplayNameSnake,
+        userName: bodyUserName,
+        user_name: bodyUserNameSnake,
+        name: bodyName,
+        pictureUrl: bodyPictureUrl,
+        picture_url: bodyPictureUrlSnake,
+        slipUrl: bodySlipUrl,
+        slip_url: bodySlipUrlSnake,
+        slipId: bodySlipId,
+        slip_id: bodySlipIdSnake,
         friends,
         slips,
-      } = req.body;
+      } = req.body || {};
 
-      const targetBillingId = bodyBillingId || billingId;
-      const targetUserId = bodyUserId || userId;
+      const targetBillingId = bodyBillingId || bodyBillingIdSnake || billingId;
+      const targetUserId = bodyUserId || bodyUserIdSnake || userId;
+      const displayName = bodyDisplayName || bodyDisplayNameSnake || bodyUserName || bodyUserNameSnake || bodyName || '';
+      const pictureUrl = bodyPictureUrl || bodyPictureUrlSnake || '';
+      const slipUrl = bodySlipUrl || bodySlipUrlSnake || '';
+      const slipId = bodySlipId || bodySlipIdSnake || null;
 
       if (!targetBillingId || !targetUserId) {
         return res.status(400).json({ error: 'billingId and userId are required' });
@@ -67,12 +80,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           billing_id, user_id, display_name, picture_url, slip_url, 
           slip_id, friends, slips, submitted_at
         ) VALUES (
-          ${targetBillingId}, ${targetUserId}, ${displayName || ''}, ${pictureUrl || ''}, ${slipUrl || ''}, 
-          ${slipId || null}, ${friendsJson}::jsonb, ${slipsJson}::jsonb, CURRENT_TIMESTAMP
+          ${targetBillingId}, ${targetUserId}, ${displayName}, ${pictureUrl}, ${slipUrl}, 
+          ${slipId}, ${friendsJson}::jsonb, ${slipsJson}::jsonb, CURRENT_TIMESTAMP
         )
         ON CONFLICT (billing_id, user_id) DO UPDATE SET
-          display_name = COALESCE(EXCLUDED.display_name, billing_payments.display_name),
-          picture_url = COALESCE(EXCLUDED.picture_url, billing_payments.picture_url),
+          display_name = COALESCE(NULLIF(EXCLUDED.display_name, ''), billing_payments.display_name),
+          picture_url = COALESCE(NULLIF(EXCLUDED.picture_url, ''), billing_payments.picture_url),
           slip_url = EXCLUDED.slip_url,
           slip_id = EXCLUDED.slip_id,
           friends = EXCLUDED.friends,
