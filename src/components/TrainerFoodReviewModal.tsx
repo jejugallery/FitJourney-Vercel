@@ -592,7 +592,7 @@ export default function TrainerFoodReviewModal({ trainerId, initialTraineeId, on
   ]
 }`;
 
-      const res = await fetchGeminiWithFallback(['gemini-3.1-flash-lite', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemma-4-26b-a4b-it'], [
+      const res = await fetchGeminiWithFallback(['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemma-4-26b-a4b-it'], [
         {
           parts: [
             { text: prompt },
