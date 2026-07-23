@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supplementCoursesApi } from '../../utils/api';
 import { openCoursePdfExternal } from './openCoursePdf';
+import { formatCourseItemPriceQuantity } from './courseDetailDisplay';
 import type { CourseTrainee, SavedSupplementCourse } from './types';
 
 interface Props { trainees: CourseTrainee[]; refreshKey: number; normalizeCourse: (raw: any) => SavedSupplementCourse; }
@@ -27,8 +28,8 @@ export default function SupplementCourseHistory({ trainees, refreshKey, normaliz
   if (active) return <section className="supplement-screen">
     <div className="supplement-screen-header"><button type="button" className="supplement-back" onClick={() => setActive(null)}>←</button><div><h3>รายละเอียดคอร์ส</h3><p>{new Date(active.createdAt).toLocaleString('th-TH')}</p></div></div>
     <div className="supplement-person-card"><span>ลูกเทรน</span><b>{active.traineeName}</b><small>เทรนเนอร์ {active.trainerName}</small></div>
-    <div className="supplement-snapshot-list">{active.items.map(item => <article key={item.id} className="supplement-snapshot-card"><img src={item.imageUrl} alt="" /><div className="supplement-card-copy"><b>{item.supplementName}</b><small>{item.contentQuantity} {item.contentUnit} · จำนวน {item.packageQuantity}</small><span>฿{money(item.grossAmount)} · ลด ฿{money(item.discountAmount)}</span></div><strong>฿{money(item.netAmount)}</strong></article>)}</div>
-    <div className="supplement-total"><div><span>ยอดก่อนส่วนลด</span><b>฿{money(active.subtotal)}</b></div><div><span>ส่วนลดรวม</span><b className="supplement-discount-text">-฿{money(active.discountTotal)}</b></div><div className="grand"><span>รวมสุทธิ</span><b>฿{money(active.total)}</b></div>{Number(active.cashbackAmount || 0) > 0 && <div className="supplement-cashback-row"><span>ได้เงินคืนภายหลัง ({Number(active.cashbackPercent)}%)</span><b>฿{money(active.cashbackAmount)}</b></div>}<button className="supplement-action supplement-action-primary" onClick={download} disabled={downloading}>{downloading ? 'กำลังเปิดหน้าดาวน์โหลด...' : 'ดาวน์โหลด PDF'}</button></div>
+    <div className="supplement-snapshot-list">{active.items.map(item => <article key={item.id} className="supplement-snapshot-card"><img src={item.imageUrl} alt="" /><div className="supplement-card-copy"><b>{item.supplementName}</b><small>{item.contentQuantity} {item.contentUnit}</small><span>{formatCourseItemPriceQuantity(item.unitPrice, item.packageQuantity)}</span>{Number(item.discountAmount || 0) > 0 && <span className="supplement-item-discount">ลด ฿{money(item.discountAmount)}</span>}</div><strong>฿{money(item.netAmount)}</strong></article>)}</div>
+    <div className="supplement-total"><div><span>ยอดก่อนส่วนลด</span><b>฿{money(active.subtotal)}</b></div>{Number(active.discountTotal || 0) > 0 && <div><span>ส่วนลดรวม</span><b className="supplement-discount-text">-฿{money(active.discountTotal)}</b></div>}<div className="grand"><span>รวมสุทธิ</span><b>฿{money(active.total)}</b></div>{Number(active.cashbackAmount || 0) > 0 && <div className="supplement-cashback-row"><span>ได้เงินคืนภายหลัง ({Number(active.cashbackPercent)}%)</span><b>฿{money(active.cashbackAmount)}</b></div>}<button className="supplement-action supplement-action-primary" onClick={download} disabled={downloading}>{downloading ? 'กำลังเปิดหน้าดาวน์โหลด...' : 'ดาวน์โหลด PDF'}</button></div>
   </section>;
 
   return <div>
