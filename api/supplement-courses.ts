@@ -8,6 +8,7 @@ import { CASHBACK_PERCENTAGES, calculateCourseCashback, calculateCourseLine } fr
 import type { DiscountType } from '../src/features/supplements/types.js';
 import { getUniqueSupplementIds } from './_supplement-course-lines.js';
 import { createPdfToken, hashPdfToken } from './_supplement-pdf-token.js';
+import { getLinkedTraineeIds } from './_linked-trainees.js';
 
 const DISCOUNTS = new Set(['none', 'percent_10', 'percent_15', 'fixed_100', 'fixed_500', 'custom']);
 const CASHBACKS = new Set<number>(CASHBACK_PERCENTAGES);
@@ -65,15 +66,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'GET') {
       const id = typeof req.query.id === 'string' ? req.query.id : '';
       if (id) {
-        const rows = await sql`SELECT * FROM supplement_courses WHERE id = ${id} AND trainer_id = ${actor.userId}`;
+        const rows = await sql`SELECT * FROM supplement_courses WHERE id = ${id}`;
         if (!rows.length) throw new HttpError(404, 'ไม่พบประวัติคอร์ส');
+        await requireLinkedTrainee(actor.userId, rows[0].trainee_id);
         return res.status(200).json({ ...rows[0], items: await courseItems(id) });
       }
       const traineeId = typeof req.query.traineeId === 'string' ? req.query.traineeId : '';
       if (traineeId) await requireLinkedTrainee(actor.userId, traineeId);
-      const rows = traineeId
-        ? await sql`SELECT *, (SELECT COUNT(*)::int FROM supplement_course_items i WHERE i.course_id = c.id) AS item_count FROM supplement_courses c WHERE trainer_id = ${actor.userId} AND trainee_id = ${traineeId} ORDER BY created_at DESC`
-        : await sql`SELECT *, (SELECT COUNT(*)::int FROM supplement_course_items i WHERE i.course_id = c.id) AS item_count FROM supplement_courses c WHERE trainer_id = ${actor.userId} ORDER BY created_at DESC`;
+      let rows;
+      if (traineeId) {
+        rows = await sql`SELECT *, (SELECT COUNT(*)::int FROM supplement_course_items i WHERE i.course_id = c.id) AS item_count FROM supplement_courses c WHERE trainee_id = ${traineeId} ORDER BY created_at DESC`;
+      } else {
+        const linkedTraineeIds = await getLinkedTraineeIds(actor.userId);
+        if (!linkedTraineeIds.length) return res.status(200).json([]);
+        const linkedIdsJson = JSON.stringify(linkedTraineeIds);
+        rows = await sql`
+          SELECT *, (SELECT COUNT(*)::int FROM supplement_course_items i WHERE i.course_id = c.id) AS item_count
+          FROM supplement_courses c
+          WHERE trainee_id IN (SELECT jsonb_array_elements_text(${linkedIdsJson}::jsonb))
+          ORDER BY created_at DESC
+        `;
+      }
       return res.status(200).json(rows);
     }
 
@@ -81,8 +94,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const action = typeof req.query.action === 'string' ? req.query.action : '';
       if (action === 'pdf-token') {
         const courseId = String(req.body?.courseId || '');
-        const courses = await sql`SELECT id FROM supplement_courses WHERE id = ${courseId} AND trainer_id = ${actor.userId}`;
+        const courses = await sql`SELECT id, trainee_id FROM supplement_courses WHERE id = ${courseId}`;
         if (!courses.length) throw new HttpError(404, 'ไม่พบประวัติคอร์ส');
+        await requireLinkedTrainee(actor.userId, courses[0].trainee_id);
         const token = createPdfToken();
         await sql`DELETE FROM supplement_course_pdf_tokens WHERE expires_at <= CURRENT_TIMESTAMP`;
         await sql`

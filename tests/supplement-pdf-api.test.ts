@@ -13,8 +13,8 @@ test('public PDF token lookup happens before trainer authentication', () => {
   assert.match(api, /Cache-Control', 'no-store/);
 });
 
-test('PDF token creation verifies trainer course ownership', () => {
+test('PDF token creation verifies linked trainee access', () => {
   assert.match(api, /action === 'pdf-token'/);
-  assert.match(api, /trainer_id = \$\{actor\.userId\}/);
+  assert.match(api, /requireLinkedTrainee\(actor\.userId, courses\[0\]\.trainee_id\)/);
   assert.match(api, /supplement_course_pdf_tokens/);
 });
