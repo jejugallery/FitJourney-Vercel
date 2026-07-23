@@ -1058,6 +1058,13 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
             }}
           />
         )}
+        {showSupplementCourseModal && (
+          <SupplementCourseModal
+            onClose={() => setShowSupplementCourseModal(false)}
+            isSuperadmin={reactiveAdminData?.status === 'superadmin'}
+            trainees={trainees.filter(t => t?.userId).map(t => ({ userId: t.userId, nickname: t.nickname || t.lineName || 'ลูกเทรน', pictureUrl: t.pictureUrl }))}
+          />
+        )}
         </>
       );
     }
@@ -1861,13 +1868,6 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
             setShowAddTrainerModal(false);
             window.location.reload();
           }}
-        />
-      )}
-      {showSupplementCourseModal && (
-        <SupplementCourseModal
-          onClose={() => setShowSupplementCourseModal(false)}
-          isSuperadmin={reactiveAdminData?.status === 'superadmin'}
-          trainees={trainees.filter(t => t?.userId).map(t => ({ userId: t.userId, nickname: t.nickname || t.lineName || 'ลูกเทรน', pictureUrl: t.pictureUrl }))}
         />
       )}
     </>
