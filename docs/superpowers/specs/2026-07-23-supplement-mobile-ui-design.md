@@ -72,6 +72,7 @@ The product `<select>` and global `.btn-primary` share a horizontal flex row. Th
 ## Responsive Behavior
 
 - Mobile is the default layout.
+- Center the modal within the app viewport with a 12-pixel outer gutter and rounded corners on all sides; scroll only the modal content when it exceeds the available height.
 - Tap targets are at least 44 pixels high.
 - No horizontal scrolling is required within the course form.
 - At wider widths, picker cards may use two columns and product controls may use available horizontal space, without changing interaction behavior.
