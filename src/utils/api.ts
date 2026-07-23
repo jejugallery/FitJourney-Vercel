@@ -1,6 +1,5 @@
 // Frontend API Service Layer for FitJourney Vercel + Neon Migration
-
-
+import liff from '@line/liff';
 
 function toCamel(s: string): string {
   return s.replace(/([-_][a-z])/ig, ($1) => {
@@ -27,10 +26,17 @@ function toCamelCaseKeys(obj: any): any {
 
 // Generic fetch wrapper
 async function request<T = any>(url: string, options?: RequestInit): Promise<T> {
+  let accessToken: string | null = null;
+  try {
+    accessToken = liff.getAccessToken();
+  } catch {
+    accessToken = null;
+  }
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...(options?.headers || {}),
     },
   });
@@ -139,4 +145,19 @@ export const knowledgeNotesApi = {
   list: (knowledgeId: string) => request<any[]>(`/api/knowledge-notes?knowledgeId=${knowledgeId}`),
   create: (data: { knowledgeId: string; userId: string; displayName: string; pictureUrl: string; note: string }) => 
     request<any>('/api/knowledge-notes', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+// 12. Supplement catalog
+export const supplementsApi = {
+  list: (includeArchived = false) => request<any[]>(`/api/supplements${includeArchived ? '?includeArchived=true' : ''}`),
+  create: (data: any) => request<any>('/api/supplements', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => request<any>(`/api/supplements?id=${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) }),
+  archive: (id: string) => request<any>(`/api/supplements?id=${encodeURIComponent(id)}`, { method: 'DELETE' }),
+};
+
+// 13. Trainer-owned supplement courses
+export const supplementCoursesApi = {
+  list: (traineeId?: string) => request<any[]>(`/api/supplement-courses${traineeId ? `?traineeId=${encodeURIComponent(traineeId)}` : ''}`),
+  get: (id: string) => request<any>(`/api/supplement-courses?id=${encodeURIComponent(id)}`),
+  create: (data: any) => request<any>('/api/supplement-courses', { method: 'POST', body: JSON.stringify(data) }),
 };

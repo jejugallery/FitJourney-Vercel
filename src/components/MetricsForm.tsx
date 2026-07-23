@@ -10,6 +10,7 @@ import FoodUploadModal from './FoodUploadModal';
 import FoodLogsModal from './FoodLogsModal';
 import AddTrainerModal from './AddTrainerModal';
 import FoodHistoryModal from './FoodHistoryModal';
+import SupplementCourseModal from './SupplementCourseModal';
 
 
 interface MetricsFormProps {
@@ -236,6 +237,7 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
   const [showLogsModal, setShowLogsModal] = useState(false);
   const [showAddTrainerModal, setShowAddTrainerModal] = useState(false);
   const [showFoodHistoryModal, setShowFoodHistoryModal] = useState(false);
+  const [showSupplementCourseModal, setShowSupplementCourseModal] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -869,6 +871,17 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
                   )}
                 </div>
                 
+                {!isEditingTrainerName && reactiveAdminData?.docId && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSupplementCourseModal(true)}
+                    style={{ background: '#fff1f4', border: '1px solid #ffb3c2', borderRadius: '10px', minHeight: '36px', cursor: 'pointer', fontSize: '0.82rem', color: '#e11d48', padding: '0.35rem 0.65rem', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}
+                    title="จัดคอร์สอาหารเสริม"
+                  >
+                    จัดคอร์ส
+                  </button>
+                )}
+
                 {!isEditingTrainerName && reactiveAdminData?.docId && (
                   <button 
                     type="button"
@@ -1848,6 +1861,13 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
             setShowAddTrainerModal(false);
             window.location.reload();
           }}
+        />
+      )}
+      {showSupplementCourseModal && (
+        <SupplementCourseModal
+          onClose={() => setShowSupplementCourseModal(false)}
+          isSuperadmin={reactiveAdminData?.status === 'superadmin'}
+          trainees={trainees.filter(t => t?.userId).map(t => ({ userId: t.userId, nickname: t.nickname || t.lineName || 'ลูกเทรน', pictureUrl: t.pictureUrl }))}
         />
       )}
     </>
