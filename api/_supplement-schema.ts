@@ -8,7 +8,7 @@ export function ensureSupplementSchema() {
       await sql`CREATE TABLE IF NOT EXISTS supplements (
         id TEXT PRIMARY KEY, name TEXT NOT NULL, image_url TEXT NOT NULL,
         price NUMERIC(12,2) NOT NULL CHECK (price >= 0), content_quantity INTEGER NOT NULL CHECK (content_quantity > 0),
-        content_unit TEXT NOT NULL CHECK (content_unit IN ('เม็ด','ช้อน','ซอง','ใบ')), is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        content_unit TEXT NOT NULL CHECK (content_unit IN ('เม็ด','ช้อน','ซอง','ใบ','ชิ้น')), is_active BOOLEAN NOT NULL DEFAULT TRUE,
         created_by TEXT NOT NULL, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_by TEXT NOT NULL, updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         archived_by TEXT, archived_at TIMESTAMP WITH TIME ZONE
@@ -35,7 +35,7 @@ export function ensureSupplementSchema() {
       await sql`ALTER TABLE supplements DROP CONSTRAINT IF EXISTS supplements_price_check`;
       await sql`ALTER TABLE supplements ADD CONSTRAINT supplements_price_check CHECK (price >= 0)`;
       await sql`ALTER TABLE supplements DROP CONSTRAINT IF EXISTS supplements_content_unit_check`;
-      await sql`ALTER TABLE supplements ADD CONSTRAINT supplements_content_unit_check CHECK (content_unit IN ('เม็ด','ช้อน','ซอง','ใบ'))`;
+      await sql`ALTER TABLE supplements ADD CONSTRAINT supplements_content_unit_check CHECK (content_unit IN ('เม็ด','ช้อน','ซอง','ใบ','ชิ้น'))`;
     })().catch(error => { schemaPromise = null; throw error; });
   }
   return schemaPromise;

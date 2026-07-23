@@ -1,4 +1,4 @@
-const UNITS = new Set(['เม็ด', 'ช้อน', 'ซอง', 'ใบ']);
+const UNITS = new Set(['เม็ด', 'ช้อน', 'ซอง', 'ใบ', 'ชิ้น']);
 
 export class SupplementInputError extends Error {
   status = 400;

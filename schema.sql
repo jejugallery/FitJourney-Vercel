@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS supplements (
   image_url TEXT NOT NULL,
   price NUMERIC(12, 2) NOT NULL CHECK (price >= 0),
   content_quantity INTEGER NOT NULL CHECK (content_quantity > 0),
-  content_unit TEXT NOT NULL CHECK (content_unit IN ('เม็ด', 'ช้อน', 'ซอง', 'ใบ')),
+  content_unit TEXT NOT NULL CHECK (content_unit IN ('เม็ด', 'ช้อน', 'ซอง', 'ใบ', 'ชิ้น')),
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_by TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -206,4 +206,4 @@ ALTER TABLE supplements DROP CONSTRAINT IF EXISTS supplements_preice_check;
 ALTER TABLE supplements DROP CONSTRAINT IF EXISTS supplements_price_check;
 ALTER TABLE supplements ADD CONSTRAINT supplements_price_check CHECK (price >= 0);
 ALTER TABLE supplements DROP CONSTRAINT IF EXISTS supplements_content_unit_check;
-ALTER TABLE supplements ADD CONSTRAINT supplements_content_unit_check CHECK (content_unit IN ('เม็ด', 'ช้อน', 'ซอง', 'ใบ'));
+ALTER TABLE supplements ADD CONSTRAINT supplements_content_unit_check CHECK (content_unit IN ('เม็ด', 'ช้อน', 'ซอง', 'ใบ', 'ชิ้น'));
