@@ -26,9 +26,15 @@ export function ensureSupplementSchema() {
         discount_type TEXT NOT NULL, discount_value NUMERIC(12,2) NOT NULL, gross_amount NUMERIC(12,2) NOT NULL,
         discount_amount NUMERIC(12,2) NOT NULL, net_amount NUMERIC(12,2) NOT NULL, sort_order INTEGER NOT NULL
       )`;
+      await sql`CREATE TABLE IF NOT EXISTS supplement_course_pdf_tokens (
+        token_hash TEXT PRIMARY KEY, course_id TEXT NOT NULL REFERENCES supplement_courses(id) ON DELETE CASCADE,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+      )`;
       await sql`CREATE INDEX IF NOT EXISTS idx_supplement_courses_trainer_created ON supplement_courses (trainer_id, created_at DESC)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_supplement_courses_trainee ON supplement_courses (trainer_id, trainee_id, created_at DESC)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_supplement_course_items_course ON supplement_course_items (course_id, sort_order)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_supplement_course_pdf_tokens_expires ON supplement_course_pdf_tokens (expires_at)`;
       await sql`ALTER TABLE supplement_courses ADD COLUMN IF NOT EXISTS cashback_percent NUMERIC(5,2) NOT NULL DEFAULT 0`;
       await sql`ALTER TABLE supplement_courses ADD COLUMN IF NOT EXISTS cashback_amount NUMERIC(12,2) NOT NULL DEFAULT 0`;
       await sql`ALTER TABLE supplements DROP CONSTRAINT IF EXISTS supplements_preice_check`;

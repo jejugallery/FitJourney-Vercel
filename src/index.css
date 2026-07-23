@@ -251,6 +251,14 @@ h1, h2, h3, h4, h5, h6 {
 .supplement-image-preview img { width: 76px; height: 76px; border-radius: 12px; object-fit: cover; }
 @media (max-width: 360px) { .supplement-course-controls { grid-template-columns: 1fr; } .supplement-course-controls .supplement-stepper { width: 120px; } }
 @media (min-width: 700px) { .supplement-modal-backdrop { padding: 20px; } .supplement-modal { width: min(760px,100%); max-height: 90vh; padding: 24px; } .supplement-picker-grid,.supplement-catalog-grid { grid-template-columns: 1fr 1fr; } .supplement-total { width: min(390px,100%); margin-left: auto; } }
+.supplement-pdf-page { min-height: 100vh; display: grid; place-items: center; box-sizing: border-box; padding: 22px; background: linear-gradient(145deg,#fff1f4,#f8fafc); }
+.supplement-pdf-panel { width: min(420px,100%); box-sizing: border-box; padding: 28px 22px; border: 1px solid #ffe0e7; border-radius: 22px; background: #fff; box-shadow: 0 18px 50px rgba(15,23,42,.12); text-align: center; }
+.supplement-pdf-panel h1 { margin: 14px 0 8px; color: #1e293b; font-size: 1.35rem; }
+.supplement-pdf-panel p { color: #64748b; line-height: 1.55; }
+.supplement-pdf-icon { width: 68px; height: 68px; display: grid; place-items: center; margin: auto; border-radius: 18px; background: linear-gradient(135deg,#ff416c,#ff4b2b); color: #fff; font-weight: 900; }
+.supplement-pdf-course { display: flex; flex-direction: column; gap: 4px; margin: 20px 0; padding: 14px; border-radius: 14px; background: #fff7f8; color: #1e293b; }
+.supplement-pdf-course span,.supplement-pdf-course small { color: #64748b; font-size: .82rem; }
+.supplement-pdf-error { padding: 12px; border-radius: 12px; background: #fff1f2; color: #be123c !important; }
 
 .form-group {
   display: flex;

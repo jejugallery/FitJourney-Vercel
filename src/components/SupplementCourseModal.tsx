@@ -3,7 +3,6 @@ import { supplementsApi } from '../utils/api';
 import SupplementCatalogPanel from '../features/supplements/SupplementCatalogPanel';
 import SupplementCourseForm from '../features/supplements/SupplementCourseForm';
 import SupplementCourseHistory from '../features/supplements/SupplementCourseHistory';
-import { downloadSupplementCoursePdf } from '../features/supplements/coursePdf';
 import type { CourseTrainee, SavedSupplementCourse, Supplement } from '../features/supplements/types';
 
 interface Props { onClose: () => void; trainees: CourseTrainee[]; isSuperadmin: boolean; }
@@ -21,7 +20,7 @@ export default function SupplementCourseModal({ onClose, trainees, isSuperadmin 
   const load = useCallback(async () => { setLoading(true); setError(''); try { setSupplements(numbers(await supplementsApi.list(isSuperadmin))); } catch (err: any) { setError(err.message || 'โหลดข้อมูลไม่สำเร็จ'); } finally { setLoading(false); } }, [isSuperadmin]);
   useEffect(() => { load(); const previous = document.body.style.overflow; document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = previous; }; }, [load]);
   const normalizeCourse = useCallback((raw: any) => numbers(raw) as SavedSupplementCourse, []);
-  const saved = async (raw: any) => { const course = normalizeCourse(raw); setHistoryKey(key => key + 1); try { await downloadSupplementCoursePdf(course); } catch { alert('บันทึกคอร์สแล้ว แต่สร้าง PDF ไม่สำเร็จ สามารถดาวน์โหลดใหม่จากประวัติได้'); } };
+  const saved = async () => { setHistoryKey(key => key + 1); };
 
   return <div className="supplement-modal-backdrop" onClick={onClose}><div className="supplement-modal" onClick={event => event.stopPropagation()}><button type="button" className="supplement-close" onClick={onClose}>✕</button><h2 style={{ margin: '0 45px 14px 0' }}>จัดคอร์สอาหารเสริม</h2>
     <div className="supplement-tabs"><button className={tab === 'course' ? 'active' : ''} onClick={() => setTab('course')}>จัดคอร์ส</button><button className={tab === 'history' ? 'active' : ''} onClick={() => setTab('history')}>ประวัติคอร์ส</button>{isSuperadmin && <button className={tab === 'catalog' ? 'active' : ''} onClick={() => setTab('catalog')}>คลังอาหารเสริม</button>}</div>

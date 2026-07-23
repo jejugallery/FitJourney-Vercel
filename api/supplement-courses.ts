@@ -7,6 +7,7 @@ import supplementsHandler from './_supplements-handler.js';
 import { CASHBACK_PERCENTAGES, calculateCourseCashback, calculateCourseLine } from '../src/features/supplements/pricing.js';
 import type { DiscountType } from '../src/features/supplements/types.js';
 import { getUniqueSupplementIds } from './_supplement-course-lines.js';
+import { createPdfToken, hashPdfToken } from './_supplement-pdf-token.js';
 
 const DISCOUNTS = new Set(['none', 'percent_10', 'percent_15', 'fixed_100', 'fixed_500', 'custom']);
 const CASHBACKS = new Set<number>(CASHBACK_PERCENTAGES);
@@ -45,6 +46,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     await ensureSupplementSchema();
+    const pdfToken = typeof req.query.pdfToken === 'string' ? req.query.pdfToken : '';
+    if (req.method === 'GET' && pdfToken) {
+      res.setHeader('Cache-Control', 'no-store');
+      if (!/^[a-f0-9]{64}$/.test(pdfToken)) throw new HttpError(404, 'ลิงก์ดาวน์โหลดไม่ถูกต้องหรือหมดอายุแล้ว');
+      const tokenHash = hashPdfToken(pdfToken);
+      const rows = await sql`
+        SELECT c.* FROM supplement_course_pdf_tokens t
+        JOIN supplement_courses c ON c.id = t.course_id
+        WHERE t.token_hash = ${tokenHash} AND t.expires_at > CURRENT_TIMESTAMP
+      `;
+      if (!rows.length) throw new HttpError(404, 'ลิงก์ดาวน์โหลดไม่ถูกต้องหรือหมดอายุแล้ว');
+      return res.status(200).json({ ...rows[0], items: await courseItems(rows[0].id) });
+    }
+
     const actor = await requireTrainer(req);
 
     if (req.method === 'GET') {
@@ -63,6 +78,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (req.method === 'POST') {
+      const action = typeof req.query.action === 'string' ? req.query.action : '';
+      if (action === 'pdf-token') {
+        const courseId = String(req.body?.courseId || '');
+        const courses = await sql`SELECT id FROM supplement_courses WHERE id = ${courseId} AND trainer_id = ${actor.userId}`;
+        if (!courses.length) throw new HttpError(404, 'ไม่พบประวัติคอร์ส');
+        const token = createPdfToken();
+        await sql`DELETE FROM supplement_course_pdf_tokens WHERE expires_at <= CURRENT_TIMESTAMP`;
+        await sql`
+          INSERT INTO supplement_course_pdf_tokens (token_hash, course_id, expires_at)
+          VALUES (${token.tokenHash}, ${courseId}, ${token.expiresAt.toISOString()})
+        `;
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(201).json({ token: token.rawToken, expiresAt: token.expiresAt.toISOString() });
+      }
+
       const traineeId = String(req.body?.traineeId || '');
       const cashbackPercent = req.body?.cashbackPercent == null ? 3 : Number(req.body.cashbackPercent);
       const trainee = await requireLinkedTrainee(actor.userId, traineeId);

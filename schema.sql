@@ -193,12 +193,21 @@ CREATE TABLE IF NOT EXISTS supplement_course_items (
   sort_order INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS supplement_course_pdf_tokens (
+  token_hash TEXT PRIMARY KEY,
+  course_id TEXT NOT NULL REFERENCES supplement_courses(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_supplement_courses_trainer_created
   ON supplement_courses (trainer_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_supplement_courses_trainee
   ON supplement_courses (trainer_id, trainee_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_supplement_course_items_course
   ON supplement_course_items (course_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_supplement_course_pdf_tokens_expires
+  ON supplement_course_pdf_tokens (expires_at);
 
 ALTER TABLE supplement_courses ADD COLUMN IF NOT EXISTS cashback_percent NUMERIC(5, 2) NOT NULL DEFAULT 0;
 ALTER TABLE supplement_courses ADD COLUMN IF NOT EXISTS cashback_amount NUMERIC(12, 2) NOT NULL DEFAULT 0;
