@@ -10,3 +10,10 @@ export function createCourseDraftLine(supplement: Supplement): CourseDraftLine {
     discountValue: 0,
   };
 }
+
+export function countDraftLinesBySupplement(lines: CourseDraftLine[]): Record<string, number> {
+  return lines.reduce<Record<string, number>>((counts, line) => {
+    counts[line.supplementId] = (counts[line.supplementId] || 0) + 1;
+    return counts;
+  }, {});
+}
