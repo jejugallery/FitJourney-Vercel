@@ -36,3 +36,11 @@ test('cashback rounds to two decimal places', () => {
 test('cashback exposes exactly the approved percentage options', () => {
   assert.deepEqual([...CASHBACK_PERCENTAGES], [3, 6, 9, 12, 15, 18, 21]);
 });
+
+test('a free item stays free even when a discount is selected', () => {
+  assert.deepEqual(calculateCourseLine(0, 2, 'custom', 500), {
+    grossAmount: 0,
+    discountAmount: 0,
+    netAmount: 0,
+  });
+});
