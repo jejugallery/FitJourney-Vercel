@@ -6,6 +6,7 @@ import { ensureSupplementSchema } from './_supplement-schema.js';
 import supplementsHandler from './_supplements-handler.js';
 import { calculateCourseLine } from '../src/features/supplements/pricing.js';
 import type { DiscountType } from '../src/features/supplements/types.js';
+import { getUniqueSupplementIds } from './_supplement-course-lines.js';
 
 const DISCOUNTS = new Set(['none', 'percent_10', 'percent_15', 'fixed_100', 'fixed_500', 'custom']);
 
@@ -67,8 +68,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!draftLines.length) throw new HttpError(400, 'กรุณาเลือกอาหารเสริมอย่างน้อย 1 รายการ');
       if (draftLines.length > 50) throw new HttpError(400, 'รายการอาหารเสริมมากเกินไป');
 
-      const uniqueIds = [...new Set(draftLines.map((line: any) => String(line.supplementId || '')))];
-      if (uniqueIds.length !== draftLines.length || uniqueIds.some(id => !id)) throw new HttpError(400, 'รายการอาหารเสริมซ้ำหรือไม่ถูกต้อง');
+      const uniqueIds = getUniqueSupplementIds(draftLines);
+      if (uniqueIds.some(id => !id)) throw new HttpError(400, 'รายการอาหารเสริมไม่ถูกต้อง');
       const uniqueIdsJson = JSON.stringify(uniqueIds);
       const products = await sql`SELECT * FROM supplements WHERE id IN (SELECT jsonb_array_elements_text(${uniqueIdsJson}::jsonb)) AND is_active = TRUE`;
       if (products.length !== uniqueIds.length) throw new HttpError(409, 'มีอาหารเสริมที่ถูกลบ กรุณาโหลดรายการใหม่');

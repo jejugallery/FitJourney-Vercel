@@ -14,6 +14,7 @@ export interface Supplement {
 }
 
 export interface CourseDraftLine {
+  lineId: string;
   supplementId: string;
   supplement: Supplement;
   packageQuantity: number;
