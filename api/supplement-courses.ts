@@ -4,6 +4,8 @@ import { sql } from './_db.js';
 import { HttpError, requireLinkedTrainee, requireTrainer } from './_auth.js';
 import { ensureSupplementSchema } from './_supplement-schema.js';
 import supplementsHandler from './_supplements-handler.js';
+import { calculateCourseLine } from '../src/features/supplements/pricing.js';
+import type { DiscountType } from '../src/features/supplements/types.js';
 
 const DISCOUNTS = new Set(['none', 'percent_10', 'percent_15', 'fixed_100', 'fixed_500', 'custom']);
 
@@ -26,18 +28,6 @@ interface PricedItem {
 
 function money(value: number) {
   return Math.round(value * 100) / 100;
-}
-
-function priceLine(unitPrice: number, quantity: number, type: string, customValue: number) {
-  const gross = money(unitPrice * quantity);
-  let discount = 0;
-  if (type === 'percent_10') discount = money(gross * 0.10);
-  if (type === 'percent_15') discount = money(gross * 0.15);
-  if (type === 'fixed_100') discount = 100;
-  if (type === 'fixed_500') discount = 500;
-  if (type === 'custom') discount = Math.max(0, money(customValue));
-  discount = Math.min(gross, discount);
-  return { grossAmount: gross, discountAmount: discount, netAmount: money(gross - discount) };
 }
 
 async function courseItems(courseId: string) {
@@ -91,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const discountValue = Number(line.discountValue || 0);
         if (!Number.isInteger(quantity) || quantity <= 0) throw new HttpError(400, `จำนวนสินค้าแถวที่ ${index + 1} ไม่ถูกต้อง`);
         if (!DISCOUNTS.has(discountType) || !Number.isFinite(discountValue) || discountValue < 0) throw new HttpError(400, `ส่วนลดแถวที่ ${index + 1} ไม่ถูกต้อง`);
-        const priced = priceLine(Number(product.price), quantity, discountType, discountValue);
+        const priced = calculateCourseLine(Number(product.price), quantity, discountType as DiscountType, discountValue);
         return {
           id: crypto.randomBytes(10).toString('hex'), supplementId: product.id, supplementName: product.name,
           imageUrl: product.image_url, contentQuantity: Number(product.content_quantity), contentUnit: product.content_unit,

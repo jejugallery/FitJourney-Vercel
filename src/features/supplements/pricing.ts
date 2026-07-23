@@ -1,4 +1,4 @@
-import type { CourseDraftLine, DiscountType, PricedCourseLine } from './types';
+import type { CourseDraftLine, DiscountType, PricedCourseLine } from './types.js';
 
 const toSatang = (baht: number) => Math.round((Number(baht) || 0) * 100);
 const toBaht = (satang: number) => satang / 100;
@@ -9,14 +9,15 @@ export function calculateCourseLine(
   discountType: DiscountType,
   discountValue = 0,
 ): PricedCourseLine {
-  const gross = Math.max(0, toSatang(unitPrice)) * Math.max(0, Math.trunc(packageQuantity));
+  const unitPriceSatang = Math.max(0, toSatang(unitPrice));
+  const gross = unitPriceSatang * Math.max(0, Math.trunc(packageQuantity));
   let discount = 0;
-  if (discountType === 'percent_10') discount = Math.round(gross * 0.10);
-  if (discountType === 'percent_15') discount = Math.round(gross * 0.15);
+  if (discountType === 'percent_10') discount = Math.round(unitPriceSatang * 0.10);
+  if (discountType === 'percent_15') discount = Math.round(unitPriceSatang * 0.15);
   if (discountType === 'fixed_100') discount = 10000;
   if (discountType === 'fixed_500') discount = 50000;
   if (discountType === 'custom') discount = Math.max(0, toSatang(discountValue));
-  discount = Math.min(gross, discount);
+  discount = Math.min(unitPriceSatang, discount);
   return { grossAmount: toBaht(gross), discountAmount: toBaht(discount), netAmount: toBaht(gross - discount) };
 }
 
