@@ -1,7 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { sql } from './_db.js';
+import usedSlipsHandler from './_used-slips-handler.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.query.resource === 'used-slips') return usedSlipsHandler(req, res);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

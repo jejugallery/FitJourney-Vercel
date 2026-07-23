@@ -20,7 +20,7 @@ function validate(body: any) {
   return { name, imageUrl, price, contentQuantity, contentUnit };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function supplementsHandler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -51,7 +51,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const id = typeof req.query.id === 'string' ? req.query.id : '';
     if (!id) throw new HttpError(400, 'ไม่พบรหัสอาหารเสริม');
-
     if (req.method === 'PUT') {
       const item = validate(req.body);
       const rows = await sql`
@@ -63,7 +62,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!rows.length) throw new HttpError(404, 'ไม่พบอาหารเสริมที่ต้องการแก้ไข');
       return res.status(200).json(rows[0]);
     }
-
     if (req.method === 'DELETE') {
       const rows = await sql`
         UPDATE supplements SET is_active = FALSE, archived_by = ${actor.userId}, archived_at = CURRENT_TIMESTAMP,
@@ -73,7 +71,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!rows.length) throw new HttpError(404, 'ไม่พบอาหารเสริมที่ต้องการลบ');
       return res.status(200).json({ id, archived: true });
     }
-
     return res.status(405).json({ error: 'Method Not Allowed' });
   } catch (error: any) {
     const status = error instanceof HttpError ? error.status : 500;

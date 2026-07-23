@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/api/supplements", "destination": "/api/supplement-courses?resource=catalog" },
+    { "source": "/api/used-slips", "destination": "/api/billing-payments?resource=used-slips" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

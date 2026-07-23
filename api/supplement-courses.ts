@@ -3,6 +3,7 @@ import * as crypto from 'crypto';
 import { sql } from './_db.js';
 import { HttpError, requireLinkedTrainee, requireTrainer } from './_auth.js';
 import { ensureSupplementSchema } from './_supplement-schema.js';
+import supplementsHandler from './_supplements-handler.js';
 
 const DISCOUNTS = new Set(['none', 'percent_10', 'percent_15', 'fixed_100', 'fixed_500', 'custom']);
 
@@ -44,6 +45,7 @@ async function courseItems(courseId: string) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.query.resource === 'catalog') return supplementsHandler(req, res);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
