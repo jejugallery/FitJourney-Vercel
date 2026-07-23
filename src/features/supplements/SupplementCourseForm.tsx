@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { supplementCoursesApi } from '../../utils/api';
 import { calculateCourseLine, calculateCourseTotals } from './pricing';
 import { createCourseDraftLine } from './draftLines';
+import { filterCourseTrainees } from './traineeSearch';
 import type { CourseDraftLine, CourseTrainee, DiscountType, SavedSupplementCourse, Supplement } from './types';
 
 interface Props { trainees: CourseTrainee[]; supplements: Supplement[]; onSaved: (course: SavedSupplementCourse) => Promise<void>; }
@@ -10,11 +11,15 @@ const money = (value: number) => Number(value || 0).toLocaleString('th-TH', { mi
 
 export default function SupplementCourseForm({ trainees, supplements, onSaved }: Props) {
   const [traineeId, setTraineeId] = useState('');
+  const [traineeDropdownOpen, setTraineeDropdownOpen] = useState(false);
+  const [traineeSearch, setTraineeSearch] = useState('');
   const [lines, setLines] = useState<CourseDraftLine[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const totals = useMemo(() => calculateCourseTotals(lines), [lines]);
+  const selectedTrainee = trainees.find(trainee => trainee.userId === traineeId);
+  const filteredTrainees = useMemo(() => filterCourseTrainees(trainees, traineeSearch), [trainees, traineeSearch]);
   const available = useMemo(() => {
     const query = productSearch.trim().toLocaleLowerCase('th-TH');
     return supplements.filter(item => item.isActive && (!query || item.name.toLocaleLowerCase('th-TH').includes(query)));
@@ -47,7 +52,16 @@ export default function SupplementCourseForm({ trainees, supplements, onSaved }:
 
   return <div className="supplement-course-form">
     <label className="supplement-label">เลือกลูกเทรน *</label>
-    <select className="supplement-field" value={traineeId} onChange={e => setTraineeId(e.target.value)}><option value="">— เลือกลูกเทรน —</option>{trainees.map(t => <option key={t.userId} value={t.userId}>{t.nickname}</option>)}</select>
+    <div className="supplement-trainee-picker">
+      <button type="button" className={`supplement-trainee-trigger ${traineeDropdownOpen ? 'open' : ''}`} onClick={() => setTraineeDropdownOpen(open => !open)} aria-expanded={traineeDropdownOpen}>
+        <span className="supplement-trainee-value">{selectedTrainee ? <><span className="supplement-avatar">{selectedTrainee.pictureUrl ? <img src={selectedTrainee.pictureUrl} alt="" /> : '👤'}</span><b>{selectedTrainee.nickname}</b></> : <span className="placeholder">เลือกลูกเทรน</span>}</span>
+        <span className="supplement-trainee-chevron">▼</span>
+      </button>
+      {traineeDropdownOpen && <><button type="button" className="supplement-trainee-overlay" aria-label="ปิดรายการลูกเทรน" onClick={() => { setTraineeDropdownOpen(false); setTraineeSearch(''); }} /><div className="supplement-trainee-panel">
+        <div className="supplement-trainee-search-wrap"><span>🔍</span><input value={traineeSearch} onChange={e => setTraineeSearch(e.target.value)} placeholder="ค้นหาลูกเทรน..." autoFocus /></div>
+        <div className="supplement-trainee-options">{!trainees.length ? <div className="supplement-trainee-empty">ยังไม่มีลูกเทรน</div> : !filteredTrainees.length ? <div className="supplement-trainee-empty">ไม่พบลูกเทรน</div> : filteredTrainees.map(trainee => <button type="button" key={trainee.userId} className={`supplement-trainee-option ${trainee.userId === traineeId ? 'selected' : ''}`} onClick={() => { setTraineeId(trainee.userId); setTraineeDropdownOpen(false); setTraineeSearch(''); }}><span className="supplement-avatar">{trainee.pictureUrl ? <img src={trainee.pictureUrl} alt="" /> : '👤'}</span><span>{trainee.nickname}</span>{trainee.userId === traineeId && <strong>✓</strong>}</button>)}</div>
+      </div></>}
+    </div>
     <button type="button" className="supplement-action supplement-action-primary supplement-picker-trigger" onClick={() => setPickerOpen(true)} disabled={!availableCount}>＋ {availableCount ? 'เลือกอาหารเสริม' : 'ยังไม่มีอาหารเสริมในคลัง'}</button>
     {!lines.length && <div className="supplement-state">ยังไม่มีรายการอาหารเสริม<br /><small>แตะ “เลือกอาหารเสริม” เพื่อเริ่มจัดคอร์ส</small></div>}
     <div className="supplement-course-list">{lines.map(line => { const price = calculateCourseLine(line.supplement.price, line.packageQuantity, line.discountType, line.discountValue); return <article key={line.lineId} className="supplement-course-card">
