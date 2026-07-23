@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CASHBACK_PERCENTAGES, calculateCashback, calculateCourseLine } from '../src/features/supplements/pricing.ts';
+import { CASHBACK_PERCENTAGES, calculateCashback, calculateCourseCashback, calculateCourseLine, isCashbackEligibleName } from '../src/features/supplements/pricing.ts';
 
 test('percentage discount applies to one unit when quantity is greater than one', () => {
   assert.deepEqual(calculateCourseLine(1000, 3, 'percent_10'), {
@@ -34,7 +34,7 @@ test('cashback rounds to two decimal places', () => {
 });
 
 test('cashback exposes exactly the approved percentage options', () => {
-  assert.deepEqual([...CASHBACK_PERCENTAGES], [3, 6, 9, 12, 15, 18, 21]);
+  assert.deepEqual([...CASHBACK_PERCENTAGES], [0, 3, 6, 9, 12, 15, 18, 21]);
 });
 
 test('a free item stays free even when a discount is selected', () => {
@@ -43,4 +43,24 @@ test('a free item stays free even when a discount is selected', () => {
     discountAmount: 0,
     netAmount: 0,
   });
+});
+
+test('application-form products are excluded from cashback eligibility', () => {
+  assert.equal(isCashbackEligibleName('Vitamin C'), true);
+  assert.equal(isCashbackEligibleName('ใบสมัคร MEMBER'), false);
+  assert.equal(isCashbackEligibleName('แพ็กเกจ ใบสมัคร ABO พิเศษ'), false);
+});
+
+test('course cashback uses only eligible line net amounts', () => {
+  const lines = [
+    { name: 'Vitamin C', netAmount: 1000 },
+    { name: 'ใบสมัคร MEMBER', netAmount: 500 },
+    { name: 'Protein', netAmount: 900 },
+  ];
+  assert.equal(calculateCourseCashback(lines, 6), 114);
+  assert.equal(calculateCourseCashback(lines, 0), 0);
+});
+
+test('application-only courses have no cashback', () => {
+  assert.equal(calculateCourseCashback([{ name: 'ใบสมัคร ABO', netAmount: 2500 }], 21), 0);
 });

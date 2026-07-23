@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { supplementCoursesApi } from '../../utils/api';
-import { CASHBACK_PERCENTAGES, calculateCashback, calculateCourseLine, calculateCourseTotals } from './pricing';
+import { CASHBACK_PERCENTAGES, calculateCourseCashback, calculateCourseLine, calculateCourseTotals } from './pricing';
 import { createCourseDraftLine } from './draftLines';
 import { filterCourseTrainees } from './traineeSearch';
 import { displayProductPrice } from './priceDisplay';
@@ -20,7 +20,10 @@ export default function SupplementCourseForm({ trainees, supplements, onSaved }:
   const [saving, setSaving] = useState(false);
   const [cashbackPercent, setCashbackPercent] = useState(3);
   const totals = useMemo(() => calculateCourseTotals(lines), [lines]);
-  const cashbackAmount = useMemo(() => calculateCashback(totals.total, cashbackPercent), [totals.total, cashbackPercent]);
+  const cashbackAmount = useMemo(() => calculateCourseCashback(lines.map(line => ({
+    name: line.supplement.name,
+    netAmount: calculateCourseLine(line.supplement.price, line.packageQuantity, line.discountType, line.discountValue).netAmount,
+  })), cashbackPercent), [lines, cashbackPercent]);
   const selectedTrainee = trainees.find(trainee => trainee.userId === traineeId);
   const filteredTrainees = useMemo(() => filterCourseTrainees(trainees, traineeSearch), [trainees, traineeSearch]);
   const available = useMemo(() => {
@@ -74,6 +77,6 @@ export default function SupplementCourseForm({ trainees, supplements, onSaved }:
       {line.discountType === 'custom' && <label className="supplement-control-block"><span className="supplement-control-label">กำหนดส่วนลด (บาท)</span><input className="supplement-field" type="number" min="0" step="0.01" value={line.discountValue} onChange={e => change(line.lineId, { discountValue: Number(e.target.value) })} /></label>}
       <div className="supplement-line-summary"><span><small>ก่อนลด</small>฿{money(price.grossAmount)}</span><span className="discount"><small>ส่วนลด</small>-฿{money(price.discountAmount)}</span><strong><small>สุทธิ</small>฿{money(price.netAmount)}</strong></div>
     </article>; })}</div>
-    {!!lines.length && <div className="supplement-total"><div><span>ยอดก่อนส่วนลด</span><b>฿{money(totals.subtotal)}</b></div><div><span>ส่วนลดรวม</span><b className="supplement-discount-text">-฿{money(totals.discountTotal)}</b></div><div className="grand"><span>รวมสุทธิ</span><b>฿{money(totals.total)}</b></div><label className="supplement-cashback-control"><span>เปอร์เซ็นต์ได้เงินคืน</span><select className="supplement-field" value={cashbackPercent} onChange={e => setCashbackPercent(Number(e.target.value))}>{CASHBACK_PERCENTAGES.map(percent => <option key={percent} value={percent}>{percent}%</option>)}</select></label><div className="supplement-cashback-row"><span>ได้เงินคืนภายหลัง ({cashbackPercent}%)</span><b>฿{money(cashbackAmount)}</b></div><button type="button" className="supplement-action supplement-action-primary" onClick={save} disabled={saving}>{saving ? 'กำลังบันทึก...' : 'บันทึกและดาวน์โหลด PDF'}</button></div>}
+    {!!lines.length && <div className="supplement-total"><div><span>ยอดก่อนส่วนลด</span><b>฿{money(totals.subtotal)}</b></div><div><span>ส่วนลดรวม</span><b className="supplement-discount-text">-฿{money(totals.discountTotal)}</b></div><div className="grand"><span>รวมสุทธิ</span><b>฿{money(totals.total)}</b></div><label className="supplement-cashback-control"><span>เปอร์เซ็นต์ได้เงินคืน</span><select className="supplement-field" value={cashbackPercent} onChange={e => setCashbackPercent(Number(e.target.value))}>{CASHBACK_PERCENTAGES.map(percent => <option key={percent} value={percent}>{percent}%</option>)}</select></label>{cashbackAmount > 0 && <div className="supplement-cashback-row"><span>ได้เงินคืนภายหลัง ({cashbackPercent}%)</span><b>฿{money(cashbackAmount)}</b></div>}<button type="button" className="supplement-action supplement-action-primary" onClick={save} disabled={saving}>{saving ? 'กำลังบันทึก...' : 'บันทึกและดาวน์โหลด PDF'}</button></div>}
   </div>;
 }

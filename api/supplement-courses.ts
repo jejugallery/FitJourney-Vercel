@@ -4,7 +4,7 @@ import { sql } from './_db.js';
 import { HttpError, requireLinkedTrainee, requireTrainer } from './_auth.js';
 import { ensureSupplementSchema } from './_supplement-schema.js';
 import supplementsHandler from './_supplements-handler.js';
-import { CASHBACK_PERCENTAGES, calculateCashback, calculateCourseLine } from '../src/features/supplements/pricing.js';
+import { CASHBACK_PERCENTAGES, calculateCourseCashback, calculateCourseLine } from '../src/features/supplements/pricing.js';
 import type { DiscountType } from '../src/features/supplements/types.js';
 import { getUniqueSupplementIds } from './_supplement-course-lines.js';
 
@@ -98,7 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const subtotal = money(items.reduce((sum, item) => sum + item.grossAmount, 0));
       const discountTotal = money(items.reduce((sum, item) => sum + item.discountAmount, 0));
       const total = money(items.reduce((sum, item) => sum + item.netAmount, 0));
-      const cashbackAmount = calculateCashback(total, cashbackPercent);
+      const cashbackAmount = calculateCourseCashback(items.map(item => ({ name: item.supplementName, netAmount: item.netAmount })), cashbackPercent);
       const courseId = crypto.randomBytes(10).toString('hex');
       const itemsJson = JSON.stringify(items);
       const inserted = await sql`
