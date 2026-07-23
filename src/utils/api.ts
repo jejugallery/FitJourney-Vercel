@@ -160,6 +160,7 @@ export const supplementCoursesApi = {
   list: (traineeId?: string) => request<any[]>(`/api/supplement-courses${traineeId ? `?traineeId=${encodeURIComponent(traineeId)}` : ''}`),
   get: (id: string) => request<any>(`/api/supplement-courses?id=${encodeURIComponent(id)}`),
   create: (data: any) => request<any>('/api/supplement-courses', { method: 'POST', body: JSON.stringify(data) }),
+  delete: (id: string) => request<any>(`/api/supplement-courses?id=${encodeURIComponent(id)}`, { method: 'DELETE' }),
   createPdfToken: (courseId: string) => request<{ token: string; expiresAt: string }>('/api/supplement-courses?action=pdf-token', { method: 'POST', body: JSON.stringify({ courseId }) }),
   getByPdfToken: (token: string) => request<any>(`/api/supplement-courses?pdfToken=${encodeURIComponent(token)}`),
 };

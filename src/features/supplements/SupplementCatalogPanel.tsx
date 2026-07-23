@@ -3,6 +3,7 @@ import { supplementsApi } from '../../utils/api';
 import { uploadToImgBB } from '../../utils/mediaHelper';
 import type { ContentUnit, Supplement } from './types';
 import { displayProductPrice } from './priceDisplay';
+import { orderSupplementProducts } from './productOrder';
 
 interface Props { supplements: Supplement[]; onRefresh: () => Promise<void>; }
 const emptyForm = { name: '', price: '', contentQuantity: '', contentUnit: 'เม็ด' as ContentUnit, imageUrl: '' };
@@ -16,7 +17,11 @@ export default function SupplementCatalogPanel({ supplements, onRefresh }: Props
   const [preview, setPreview] = useState('');
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const filtered = useMemo(() => { const query = search.trim().toLocaleLowerCase('th-TH'); return supplements.filter(item => !query || item.name.toLocaleLowerCase('th-TH').includes(query)); }, [supplements, search]);
+  const filtered = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase('th-TH');
+    const matches = supplements.filter(item => !query || item.name.toLocaleLowerCase('th-TH').includes(query));
+    return orderSupplementProducts(matches, item => item.name, item => item.price);
+  }, [supplements, search]);
 
   const reset = () => { setForm(emptyForm); setEditing(null); setFile(null); setPreview(''); setView('list'); if (fileRef.current) fileRef.current.value = ''; };
   const create = () => { setEditing(null); setForm(emptyForm); setFile(null); setPreview(''); setView('form'); };

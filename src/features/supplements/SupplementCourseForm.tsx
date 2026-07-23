@@ -4,6 +4,7 @@ import { CASHBACK_PERCENTAGES, calculateCourseCashback, calculateCourseLine, cal
 import { countDraftLinesBySupplement, createCourseDraftLine } from './draftLines';
 import { filterCourseTrainees } from './traineeSearch';
 import { displayProductPrice } from './priceDisplay';
+import { orderSupplementProducts } from './productOrder';
 import type { CourseDraftLine, CourseTrainee, DiscountType, SavedSupplementCourse, Supplement } from './types';
 
 interface Props { trainees: CourseTrainee[]; supplements: Supplement[]; onSaved: (course: SavedSupplementCourse) => Promise<void>; }
@@ -28,10 +29,12 @@ export default function SupplementCourseForm({ trainees, supplements, onSaved }:
   const filteredTrainees = useMemo(() => filterCourseTrainees(trainees, traineeSearch), [trainees, traineeSearch]);
   const available = useMemo(() => {
     const query = productSearch.trim().toLocaleLowerCase('th-TH');
-    return supplements.filter(item => item.isActive && (!query || item.name.toLocaleLowerCase('th-TH').includes(query)));
+    const matches = supplements.filter(item => item.isActive && (!query || item.name.toLocaleLowerCase('th-TH').includes(query)));
+    return orderSupplementProducts(matches, item => item.name, item => item.price);
   }, [supplements, productSearch]);
   const availableCount = supplements.filter(item => item.isActive).length;
   const selectedCounts = useMemo(() => countDraftLinesBySupplement(lines), [lines]);
+  const orderedLines = useMemo(() => orderSupplementProducts(lines, line => line.supplement.name, line => line.supplement.price), [lines]);
 
   const add = (supplement: Supplement) => {
     setLines(current => [...current, createCourseDraftLine(supplement)]);
@@ -69,7 +72,7 @@ export default function SupplementCourseForm({ trainees, supplements, onSaved }:
     </div>
     <button type="button" className="supplement-action supplement-action-primary supplement-picker-trigger" onClick={() => setPickerOpen(true)} disabled={!availableCount}>＋ {availableCount ? 'เลือกอาหารเสริม' : 'ยังไม่มีอาหารเสริมในคลัง'}</button>
     {!lines.length && <div className="supplement-state">ยังไม่มีรายการอาหารเสริม<br /><small>แตะ “เลือกอาหารเสริม” เพื่อเริ่มจัดคอร์ส</small></div>}
-    <div className="supplement-course-list">{lines.map(line => { const price = calculateCourseLine(line.supplement.price, line.packageQuantity, line.discountType, line.discountValue); return <article key={line.lineId} className="supplement-course-card supplement-course-card-compact">
+    <div className="supplement-course-list">{orderedLines.map(line => { const price = calculateCourseLine(line.supplement.price, line.packageQuantity, line.discountType, line.discountValue); return <article key={line.lineId} className="supplement-course-card supplement-course-card-compact">
       <div className="supplement-card-head"><img src={line.supplement.imageUrl} alt="" /><div className="supplement-card-copy"><b>{line.supplement.name}</b><small>{line.supplement.contentQuantity} {line.supplement.contentUnit}</small><span>{displayProductPrice(line.supplement.price)} / ชิ้น</span></div><button type="button" onClick={() => setLines(current => current.filter(item => item.lineId !== line.lineId))} className="supplement-icon-danger" aria-label={`ลบ ${line.supplement.name}`}>✕</button></div>
       <div className="supplement-course-controls"><div className="supplement-control-block"><span className="supplement-control-label">จำนวน</span><div className="supplement-stepper"><button type="button" onClick={() => change(line.lineId, { packageQuantity: Math.max(1, line.packageQuantity - 1) })} disabled={line.packageQuantity <= 1}>−</button><strong>{line.packageQuantity}</strong><button type="button" onClick={() => change(line.lineId, { packageQuantity: line.packageQuantity + 1 })}>＋</button></div></div>
       <label className="supplement-control-block"><span className="supplement-control-label">ส่วนลด (1 ชิ้น)</span><select className="supplement-field" value={line.discountType} onChange={e => change(line.lineId, { discountType: e.target.value as DiscountType, discountValue: 0 })}>{discounts.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div>

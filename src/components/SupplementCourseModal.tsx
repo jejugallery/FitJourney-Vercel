@@ -5,13 +5,13 @@ import SupplementCourseForm from '../features/supplements/SupplementCourseForm';
 import SupplementCourseHistory from '../features/supplements/SupplementCourseHistory';
 import type { CourseTrainee, SavedSupplementCourse, Supplement } from '../features/supplements/types';
 
-interface Props { onClose: () => void; trainees: CourseTrainee[]; isSuperadmin: boolean; }
+interface Props { onClose: () => void; trainees: CourseTrainee[]; isSuperadmin: boolean; currentTrainerId: string; }
 type Tab = 'course' | 'history' | 'catalog';
 
 const numberFields = ['price', 'contentQuantity', 'subtotal', 'discountTotal', 'total', 'cashbackPercent', 'cashbackAmount', 'unitPrice', 'packageQuantity', 'discountValue', 'grossAmount', 'discountAmount', 'netAmount', 'sortOrder'];
 const numbers = (obj: any): any => Array.isArray(obj) ? obj.map(numbers) : obj && typeof obj === 'object' ? Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, numberFields.includes(key) ? Number(value) : numbers(value)])) : obj;
 
-export default function SupplementCourseModal({ onClose, trainees, isSuperadmin }: Props) {
+export default function SupplementCourseModal({ onClose, trainees, isSuperadmin, currentTrainerId }: Props) {
   const [tab, setTab] = useState<Tab>('course');
   const [supplements, setSupplements] = useState<Supplement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +24,6 @@ export default function SupplementCourseModal({ onClose, trainees, isSuperadmin 
 
   return <div className="supplement-modal-backdrop" onClick={onClose}><div className="supplement-modal" onClick={event => event.stopPropagation()}><button type="button" className="supplement-close" onClick={onClose}>✕</button><h2 style={{ margin: '0 45px 14px 0' }}>จัดคอร์สอาหารเสริม</h2>
     <div className="supplement-tabs"><button className={tab === 'course' ? 'active' : ''} onClick={() => setTab('course')}>จัดคอร์ส</button><button className={tab === 'history' ? 'active' : ''} onClick={() => setTab('history')}>ประวัติคอร์ส</button>{isSuperadmin && <button className={tab === 'catalog' ? 'active' : ''} onClick={() => setTab('catalog')}>คลังอาหารเสริม</button>}</div>
-    {loading ? <p style={{ textAlign: 'center', padding: 30 }}>กำลังโหลด...</p> : error ? <div style={{ textAlign: 'center', padding: 30, color: '#dc2626' }}>{error}<br /><button onClick={load} style={{ marginTop: 10 }}>ลองใหม่</button></div> : tab === 'course' ? <SupplementCourseForm trainees={trainees} supplements={supplements.filter(item => item.isActive)} onSaved={saved} /> : tab === 'history' ? <SupplementCourseHistory trainees={trainees} refreshKey={historyKey} normalizeCourse={normalizeCourse} /> : <SupplementCatalogPanel supplements={supplements} onRefresh={load} />}
+    {loading ? <p style={{ textAlign: 'center', padding: 30 }}>กำลังโหลด...</p> : error ? <div style={{ textAlign: 'center', padding: 30, color: '#dc2626' }}>{error}<br /><button onClick={load} style={{ marginTop: 10 }}>ลองใหม่</button></div> : tab === 'course' ? <SupplementCourseForm trainees={trainees} supplements={supplements.filter(item => item.isActive)} onSaved={saved} /> : tab === 'history' ? <SupplementCourseHistory trainees={trainees} refreshKey={historyKey} normalizeCourse={normalizeCourse} currentTrainerId={currentTrainerId} /> : <SupplementCatalogPanel supplements={supplements} onRefresh={load} />}
   </div></div>;
 }

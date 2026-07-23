@@ -41,7 +41,7 @@ async function courseItems(courseId: string) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.query.resource === 'catalog') return supplementsHandler(req, res);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -62,6 +62,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const actor = await requireTrainer(req);
+
+    if (req.method === 'DELETE') {
+      const id = typeof req.query.id === 'string' ? req.query.id : '';
+      if (!id) throw new HttpError(400, 'ไม่พบรหัสคอร์ส');
+      const rows = await sql`DELETE FROM supplement_courses WHERE id = ${id} AND trainer_id = ${actor.userId} RETURNING id`;
+      if (!rows.length) throw new HttpError(404, 'ไม่พบคอร์สที่คุณสร้าง');
+      return res.status(200).json({ id, deleted: true });
+    }
 
     if (req.method === 'GET') {
       const id = typeof req.query.id === 'string' ? req.query.id : '';

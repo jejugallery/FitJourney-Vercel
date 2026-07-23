@@ -30,8 +30,8 @@ test('resolves unique trainee IDs through trainerIds ARRAY_CONTAINS', async () =
 
 test('course list and details authorize through linked trainee IDs', () => {
   assert.match(courseApi, /getLinkedTraineeIds\(actor\.userId\)/);
+  assert.match(courseApi, /SELECT \* FROM supplement_courses WHERE id = \$\{id\}/);
   assert.match(courseApi, /requireLinkedTrainee\(actor\.userId, rows\[0\]\.trainee_id\)/);
-  assert.doesNotMatch(courseApi, /WHERE id = \$\{id\} AND trainer_id = \$\{actor\.userId\}/);
 });
 
 test('PDF token issuance authorizes the course trainee instead of its creator', () => {

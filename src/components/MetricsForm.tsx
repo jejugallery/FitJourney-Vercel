@@ -1062,6 +1062,7 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
           <SupplementCourseModal
             onClose={() => setShowSupplementCourseModal(false)}
             isSuperadmin={reactiveAdminData?.status === 'superadmin'}
+            currentTrainerId={profile?.userId || ''}
             trainees={trainees.filter(t => t?.userId).map(t => ({ userId: t.userId, nickname: t.nickname || t.lineName || 'ลูกเทรน', pictureUrl: t.pictureUrl }))}
           />
         )}
