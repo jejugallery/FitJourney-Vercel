@@ -24,6 +24,16 @@ Exclude application-form products from supplement course cashback and allow trai
 - Apply the same hiding rule in the course form, course history details, history cards, and PDF.
 - The percentage dropdown remains visible in the course form so trainers can change 0% to another option.
 
+## PDF Item Ordering
+
+- PDF rows are grouped in this order:
+  1. Products whose names contain `ใบสมัคร`.
+  2. Paid products that are not application forms.
+  3. Free products that are not application forms.
+- An application-form product remains in the first group even when its price is 0.
+- Preserve the saved course order within each group.
+- This display ordering does not alter persisted item order or any totals.
+
 ## Persistence
 
 - Continue storing `cashback_percent` and `cashback_amount` in `supplement_courses`.
@@ -35,4 +45,5 @@ Exclude application-form products from supplement course cashback and allow trai
 - Test mixed normal and application-form lines.
 - Test a course containing only application-form lines.
 - Test the 0% option and the exact approved option list.
+- Test PDF item ordering, including a free application-form product.
 - Run all supplement tests, API TypeScript checking, and the production build.
