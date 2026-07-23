@@ -6,6 +6,23 @@ import { ensureSupplementSchema } from './_supplement-schema.js';
 
 const DISCOUNTS = new Set(['none', 'percent_10', 'percent_15', 'fixed_100', 'fixed_500', 'custom']);
 
+interface PricedItem {
+  id: string;
+  supplementId: string;
+  supplementName: string;
+  imageUrl: string;
+  contentQuantity: number;
+  contentUnit: string;
+  unitPrice: number;
+  packageQuantity: number;
+  discountType: string;
+  discountValue: number;
+  grossAmount: number;
+  discountAmount: number;
+  netAmount: number;
+  sortOrder: number;
+}
+
 function money(value: number) {
   return Math.round(value * 100) / 100;
 }
@@ -65,7 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (products.length !== uniqueIds.length) throw new HttpError(409, 'มีอาหารเสริมที่ถูกลบ กรุณาโหลดรายการใหม่');
       const productMap = new Map(products.map((product: any) => [product.id, product]));
 
-      const items = draftLines.map((line: any, index: number) => {
+      const items: PricedItem[] = draftLines.map((line: any, index: number) => {
         const product: any = productMap.get(String(line.supplementId));
         const quantity = Number(line.packageQuantity);
         const discountType = String(line.discountType || 'none');
