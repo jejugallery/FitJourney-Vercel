@@ -4,7 +4,7 @@ import { sql } from './_db.js';
 import { HttpError, requireSuperadmin, requireTrainer } from './_auth.js';
 import { ensureSupplementSchema } from './_supplement-schema.js';
 
-const UNITS = new Set(['เม็ด', 'ช้อน', 'ซอง']);
+const UNITS = new Set(['เม็ด', 'ช้อน', 'ซอง', 'ใบ']);
 
 function validate(body: any) {
   const name = String(body.name || '').trim();

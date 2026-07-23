@@ -32,6 +32,7 @@ export async function downloadSupplementCoursePdf(course: SavedSupplementCourse)
       <div style="display:flex;justify-content:space-between;padding:6px"><span>ยอดก่อนส่วนลด</span><b>฿${baht(course.subtotal)}</b></div>
       <div style="display:flex;justify-content:space-between;padding:6px;color:#dc2626"><span>ส่วนลดรวม</span><b>-฿${baht(course.discountTotal)}</b></div>
       <div style="display:flex;justify-content:space-between;padding:12px 8px;border-top:2px solid #ff416c;font-size:20px;color:#ff416c"><span>ยอดรวมสุทธิ</span><b>฿${baht(course.total)}</b></div>
+      ${Number(course.cashbackPercent || 0) > 0 ? `<div style="display:flex;justify-content:space-between;margin-top:8px;padding:10px;border-radius:8px;background:#ecfdf5;color:#047857"><span>ได้เงินคืนภายหลัง (${Number(course.cashbackPercent)}%)</span><b>฿${baht(course.cashbackAmount)}</b></div>` : ''}
     </div>`;
   document.body.appendChild(root);
   try {

@@ -4,11 +4,12 @@ import { sql } from './_db.js';
 import { HttpError, requireLinkedTrainee, requireTrainer } from './_auth.js';
 import { ensureSupplementSchema } from './_supplement-schema.js';
 import supplementsHandler from './_supplements-handler.js';
-import { calculateCourseLine } from '../src/features/supplements/pricing.js';
+import { CASHBACK_PERCENTAGES, calculateCashback, calculateCourseLine } from '../src/features/supplements/pricing.js';
 import type { DiscountType } from '../src/features/supplements/types.js';
 import { getUniqueSupplementIds } from './_supplement-course-lines.js';
 
 const DISCOUNTS = new Set(['none', 'percent_10', 'percent_15', 'fixed_100', 'fixed_500', 'custom']);
+const CASHBACKS = new Set<number>(CASHBACK_PERCENTAGES);
 
 interface PricedItem {
   id: string;
@@ -63,7 +64,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (req.method === 'POST') {
       const traineeId = String(req.body?.traineeId || '');
+      const cashbackPercent = req.body?.cashbackPercent == null ? 3 : Number(req.body.cashbackPercent);
       const trainee = await requireLinkedTrainee(actor.userId, traineeId);
+      if (!CASHBACKS.has(cashbackPercent)) throw new HttpError(400, 'เปอร์เซ็นต์ได้เงินคืนไม่ถูกต้อง');
       const draftLines = Array.isArray(req.body?.items) ? req.body.items : [];
       if (!draftLines.length) throw new HttpError(400, 'กรุณาเลือกอาหารเสริมอย่างน้อย 1 รายการ');
       if (draftLines.length > 50) throw new HttpError(400, 'รายการอาหารเสริมมากเกินไป');
@@ -95,12 +98,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const subtotal = money(items.reduce((sum, item) => sum + item.grossAmount, 0));
       const discountTotal = money(items.reduce((sum, item) => sum + item.discountAmount, 0));
       const total = money(items.reduce((sum, item) => sum + item.netAmount, 0));
+      const cashbackAmount = calculateCashback(total, cashbackPercent);
       const courseId = crypto.randomBytes(10).toString('hex');
       const itemsJson = JSON.stringify(items);
       const inserted = await sql`
         WITH new_course AS (
-          INSERT INTO supplement_courses (id, trainer_id, trainer_name, trainee_id, trainee_name, subtotal, discount_total, total)
-          VALUES (${courseId}, ${actor.userId}, ${actor.displayName}, ${trainee.userId}, ${trainee.nickname}, ${subtotal}, ${discountTotal}, ${total})
+          INSERT INTO supplement_courses (id, trainer_id, trainer_name, trainee_id, trainee_name, subtotal, discount_total, total, cashback_percent, cashback_amount)
+          VALUES (${courseId}, ${actor.userId}, ${actor.displayName}, ${trainee.userId}, ${trainee.nickname}, ${subtotal}, ${discountTotal}, ${total}, ${cashbackPercent}, ${cashbackAmount})
           RETURNING *
         ), input_items AS (
           SELECT * FROM jsonb_to_recordset(${itemsJson}::jsonb) AS x(

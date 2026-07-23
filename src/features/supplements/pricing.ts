@@ -3,6 +3,13 @@ import type { CourseDraftLine, DiscountType, PricedCourseLine } from './types.js
 const toSatang = (baht: number) => Math.round((Number(baht) || 0) * 100);
 const toBaht = (satang: number) => satang / 100;
 
+export const CASHBACK_PERCENTAGES = [3, 6, 9, 12, 15, 18, 21] as const;
+
+export function calculateCashback(finalNetTotal: number, cashbackPercent: number): number {
+  const totalSatang = Math.max(0, toSatang(finalNetTotal));
+  return toBaht(Math.round(totalSatang * Math.max(0, Number(cashbackPercent) || 0) / 100));
+}
+
 export function calculateCourseLine(
   unitPrice: number,
   packageQuantity: number,

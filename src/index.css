@@ -212,6 +212,8 @@ h1, h2, h3, h4, h5, h6 {
 .supplement-total { width: 100%; margin-top: 16px; padding: 15px; box-sizing: border-box; border-radius: 16px; background: #fff7f8; }
 .supplement-total > div { display: flex; justify-content: space-between; padding: 6px 0; }
 .supplement-total .grand { margin: 5px 0 12px; padding-top: 11px; border-top: 1px solid #ffc2cd; color: #ff416c; font-size: 1.15rem; }
+.supplement-cashback-control { display: grid; gap: 7px; margin: 4px 0 10px; color: #475569; font-size: .9rem; font-weight: 700; }
+.supplement-total > div.supplement-cashback-row { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: #ecfdf5; color: #047857; }
 .supplement-discount-text { color: #dc2626; }
 .supplement-history-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .supplement-history-top > div { display: flex; flex-direction: column; gap: 3px; }

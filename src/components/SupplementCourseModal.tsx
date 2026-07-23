@@ -9,7 +9,7 @@ import type { CourseTrainee, SavedSupplementCourse, Supplement } from '../featur
 interface Props { onClose: () => void; trainees: CourseTrainee[]; isSuperadmin: boolean; }
 type Tab = 'course' | 'history' | 'catalog';
 
-const numberFields = ['price', 'contentQuantity', 'subtotal', 'discountTotal', 'total', 'unitPrice', 'packageQuantity', 'discountValue', 'grossAmount', 'discountAmount', 'netAmount', 'sortOrder'];
+const numberFields = ['price', 'contentQuantity', 'subtotal', 'discountTotal', 'total', 'cashbackPercent', 'cashbackAmount', 'unitPrice', 'packageQuantity', 'discountValue', 'grossAmount', 'discountAmount', 'netAmount', 'sortOrder'];
 const numbers = (obj: any): any => Array.isArray(obj) ? obj.map(numbers) : obj && typeof obj === 'object' ? Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, numberFields.includes(key) ? Number(value) : numbers(value)])) : obj;
 
 export default function SupplementCourseModal({ onClose, trainees, isSuperadmin }: Props) {

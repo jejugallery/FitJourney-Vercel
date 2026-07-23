@@ -1,4 +1,4 @@
-export type ContentUnit = 'เม็ด' | 'ช้อน' | 'ซอง';
+export type ContentUnit = 'เม็ด' | 'ช้อน' | 'ซอง' | 'ใบ';
 export type DiscountType = 'none' | 'percent_10' | 'percent_15' | 'fixed_100' | 'fixed_500' | 'custom';
 
 export interface Supplement {
@@ -54,6 +54,8 @@ export interface SavedSupplementCourse {
   subtotal: number;
   discountTotal: number;
   total: number;
+  cashbackPercent: number;
+  cashbackAmount: number;
   createdAt: string;
   items: SavedCourseItem[];
 }

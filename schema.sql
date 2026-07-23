@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS supplements (
   image_url TEXT NOT NULL,
   price NUMERIC(12, 2) NOT NULL CHECK (price > 0),
   content_quantity INTEGER NOT NULL CHECK (content_quantity > 0),
-  content_unit TEXT NOT NULL CHECK (content_unit IN ('เม็ด', 'ช้อน', 'ซอง')),
+  content_unit TEXT NOT NULL CHECK (content_unit IN ('เม็ด', 'ช้อน', 'ซอง', 'ใบ')),
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_by TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -170,6 +170,8 @@ CREATE TABLE IF NOT EXISTS supplement_courses (
   subtotal NUMERIC(12, 2) NOT NULL,
   discount_total NUMERIC(12, 2) NOT NULL,
   total NUMERIC(12, 2) NOT NULL,
+  cashback_percent NUMERIC(5, 2) NOT NULL DEFAULT 0,
+  cashback_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -197,3 +199,8 @@ CREATE INDEX IF NOT EXISTS idx_supplement_courses_trainee
   ON supplement_courses (trainer_id, trainee_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_supplement_course_items_course
   ON supplement_course_items (course_id, sort_order);
+
+ALTER TABLE supplement_courses ADD COLUMN IF NOT EXISTS cashback_percent NUMERIC(5, 2) NOT NULL DEFAULT 0;
+ALTER TABLE supplement_courses ADD COLUMN IF NOT EXISTS cashback_amount NUMERIC(12, 2) NOT NULL DEFAULT 0;
+ALTER TABLE supplements DROP CONSTRAINT IF EXISTS supplements_content_unit_check;
+ALTER TABLE supplements ADD CONSTRAINT supplements_content_unit_check CHECK (content_unit IN ('เม็ด', 'ช้อน', 'ซอง', 'ใบ'));
