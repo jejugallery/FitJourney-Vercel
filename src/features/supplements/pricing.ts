@@ -5,6 +5,18 @@ const toBaht = (satang: number) => satang / 100;
 
 export const CASHBACK_PERCENTAGES = [0, 3, 6, 9, 12, 15, 18, 21] as const;
 
+export function calculateAutoCashbackPercent(totalNetAmount: number): number {
+  const score = (totalNetAmount - 900) / 3.23;
+  if (score >= 150000) return 21;
+  if (score >= 90000) return 18;
+  if (score >= 55000) return 15;
+  if (score >= 30000) return 12;
+  if (score >= 15000) return 9;
+  if (score >= 5000) return 6;
+  if (score >= 2500) return 3;
+  return 0;
+}
+
 export function calculateCashback(finalNetTotal: number, cashbackPercent: number): number {
   const totalSatang = Math.max(0, toSatang(finalNetTotal));
   return toBaht(Math.round(totalSatang * Math.max(0, Number(cashbackPercent) || 0) / 100));
