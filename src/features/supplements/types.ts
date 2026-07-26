@@ -1,5 +1,5 @@
 export type ContentUnit = 'เม็ด' | 'ช้อน' | 'ซอง' | 'ใบ' | 'ชิ้น';
-export type DiscountType = 'none' | 'percent_10' | 'percent_15' | 'fixed_100' | 'fixed_500' | 'custom';
+export type DiscountType = 'none' | 'percent_10' | 'percent_15' | 'fixed_100' | 'fixed_300' | 'fixed_500' | 'custom';
 
 export interface Supplement {
   id: string;

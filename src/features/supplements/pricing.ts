@@ -33,6 +33,7 @@ export function calculateCourseLine(
   if (discountType === 'percent_10') discount = Math.round(unitPriceSatang * 0.10);
   if (discountType === 'percent_15') discount = Math.round(unitPriceSatang * 0.15);
   if (discountType === 'fixed_100') discount = 10000;
+  if (discountType === 'fixed_300') discount = 30000;
   if (discountType === 'fixed_500') discount = 50000;
   if (discountType === 'custom') discount = Math.max(0, toSatang(discountValue));
   discount = Math.min(unitPriceSatang, discount);
