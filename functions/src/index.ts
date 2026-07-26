@@ -135,7 +135,7 @@ export const lineWebhook = functions.region('asia-southeast1').https.onRequest(a
             type: 'bubble',
             hero: {
               type: 'image',
-              url: 'https://i.postimg.cc/ZntzdHMG/image.png',
+              url: 'https://i.ibb.co/xqT269Z7/image.png',
               size: 'full',
               aspectRatio: '16:9',
               aspectMode: 'cover'
