@@ -10,7 +10,7 @@ import { getUniqueSupplementIds } from './_supplement-course-lines.js';
 import { createPdfToken, hashPdfToken } from './_supplement-pdf-token.js';
 import { getLinkedTraineeIds } from './_linked-trainees.js';
 
-const DISCOUNTS = new Set(['none', 'percent_10', 'percent_15', 'fixed_100', 'fixed_500', 'custom']);
+const DISCOUNTS = new Set(['none', 'percent_10', 'percent_15', 'fixed_100', 'fixed_300', 'fixed_500', 'custom']);
 const CASHBACKS = new Set<number>(CASHBACK_PERCENTAGES);
 
 interface PricedItem {
@@ -142,7 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           id: crypto.randomBytes(10).toString('hex'), supplementId: product.id, supplementName: product.name,
           imageUrl: product.image_url, contentQuantity: Number(product.content_quantity), contentUnit: product.content_unit,
           unitPrice: Number(product.price), packageQuantity: quantity, discountType,
-          discountValue: discountType === 'custom' ? discountValue : discountType.startsWith('percent') ? Number(discountType.slice(-2)) : discountType === 'fixed_100' ? 100 : discountType === 'fixed_500' ? 500 : 0,
+          discountValue: discountType === 'custom' ? discountValue : discountType.startsWith('percent') ? Number(discountType.slice(-2)) : discountType === 'fixed_100' ? 100 : discountType === 'fixed_300' ? 300 : discountType === 'fixed_500' ? 500 : 0,
           ...priced, sortOrder: index,
         };
       });
