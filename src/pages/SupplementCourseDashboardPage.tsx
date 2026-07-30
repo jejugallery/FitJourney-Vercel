@@ -4,7 +4,7 @@ import html2canvas from 'html2canvas';
 import type { SavedSupplementCourse } from '../features/supplements/types';
 import { supplementCoursesApi } from '../utils/api';
 import { orderSupplementProducts } from '../features/supplements/productOrder';
-import { formatCourseItemPriceQuantity } from '../features/supplements/courseDetailDisplay';
+
 
 const numberFields = new Set(['subtotal', 'discountTotal', 'total', 'cashbackPercent', 'cashbackAmount', 'contentQuantity', 'unitPrice', 'packageQuantity', 'discountValue', 'grossAmount', 'discountAmount', 'netAmount', 'sortOrder']);
 const normalize = (value: any): any => Array.isArray(value)
@@ -64,7 +64,7 @@ export default function SupplementCourseDashboardPage() {
 
   return (
     <main style={{ minHeight: '100vh', background: '#f1f5f9', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: '"Inter", "Google Sans", sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: '1100px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <div style={{ width: '100%', maxWidth: '1400px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#1e293b', fontWeight: 700 }}>Course Dashboard</h1>
         <button 
           onClick={downloadImage} 
@@ -85,7 +85,7 @@ export default function SupplementCourseDashboardPage() {
         </button>
       </div>
 
-      <div ref={dashboardRef} style={{ background: '#f8fafc', width: '100%', maxWidth: '1200px', borderRadius: '24px', padding: '32px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', position: 'relative', overflow: 'hidden', display: 'flex', gap: '40px', alignItems: 'stretch' }}>
+      <div ref={dashboardRef} style={{ background: '#f8fafc', width: '100%', maxWidth: '1400px', borderRadius: '24px', padding: '32px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', position: 'relative', overflow: 'hidden', display: 'flex', gap: '40px', alignItems: 'stretch' }}>
         
         {/* Left Column: Info & Totals */}
         <div style={{ flex: '0 0 380px', display: 'flex', flexDirection: 'column' }}>
@@ -102,29 +102,29 @@ export default function SupplementCourseDashboardPage() {
           </div>
 
           {/* Totals Section */}
-          <div style={{ background: 'linear-gradient(to bottom right, #1e293b, #0f172a)', borderRadius: '20px', padding: '24px', color: 'white', position: 'relative', overflow: 'hidden', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '20px', padding: '24px', position: 'relative', overflow: 'hidden', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ color: '#cbd5e1', fontSize: '0.95rem' }}>ยอดก่อนส่วนลด</span>
-              <span style={{ fontSize: '1.1rem' }}>฿{money(course.subtotal)}</span>
+              <span style={{ color: '#64748b', fontSize: '0.95rem' }}>ยอดก่อนส่วนลด</span>
+              <span style={{ fontSize: '1.1rem', color: '#1e293b', fontWeight: 600 }}>฿{money(course.subtotal)}</span>
             </div>
             {Number(course.discountTotal || 0) > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', color: '#fca5a5' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', color: '#ef4444' }}>
                 <span style={{ fontSize: '0.95rem' }}>ส่วนลดรวม</span>
                 <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>-฿{money(course.discountTotal)}</span>
               </div>
             )}
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.2)', margin: '16px 0' }}></div>
+            <div style={{ height: '1px', background: '#e2e8f0', margin: '16px 0' }}></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: Number(course.cashbackAmount || 0) > 0 ? '16px' : '0' }}>
-              <span style={{ color: '#f8fafc', fontSize: '1.1rem', fontWeight: 600 }}>ยอดรวมสุทธิ</span>
-              <span style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1, color: '#38bdf8' }}>฿{money(course.total)}</span>
+              <span style={{ color: '#0f172a', fontSize: '1.1rem', fontWeight: 700 }}>ยอดรวมสุทธิ</span>
+              <span style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1, color: '#2563eb' }}>฿{money(course.total)}</span>
             </div>
             
             {Number(course.cashbackAmount || 0) > 0 && (
-              <div style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '12px 16px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                <span style={{ color: '#6ee7b7', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '12px 16px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                <span style={{ color: '#059669', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
                   <span style={{ fontSize: '1.2rem' }}>💸</span> ได้เงินคืนภายหลัง ({Number(course.cashbackPercent)}%)
                 </span>
-                <span style={{ color: '#34d399', fontSize: '1.1rem', fontWeight: 700 }}>฿{money(course.cashbackAmount)}</span>
+                <span style={{ color: '#047857', fontSize: '1.1rem', fontWeight: 800 }}>฿{money(course.cashbackAmount)}</span>
               </div>
             )}
           </div>
@@ -137,15 +137,15 @@ export default function SupplementCourseDashboardPage() {
 
         {/* Right Column: Items List */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ margin: '0 0 20px', fontSize: '1.3rem', color: '#1e293b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>📦</span> รายการอาหารเสริมทั้งหมด
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', alignContent: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', alignContent: 'start' }}>
             {orderSupplementProducts(course.items, item => item.supplementName, item => item.unitPrice).map((item, idx) => (
               <div key={item.id || idx} style={{ display: 'flex', flexDirection: 'column', background: 'white', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                  <div style={{ width: '50px', height: '50px', borderRadius: '10px', overflow: 'hidden', background: '#f8fafc', flexShrink: 0, border: '1px solid #e2e8f0' }}>
+                  <div style={{ width: '50px', height: '50px', borderRadius: '10px', overflow: 'hidden', background: '#f8fafc', flexShrink: 0, border: '1px solid #e2e8f0', position: 'relative' }}>
                     {item.imageUrl ? <img src={item.imageUrl} alt={item.supplementName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1', fontSize: '1.2rem' }}>📦</div>}
+                    <div style={{ position: 'absolute', top: '0', right: '0', background: '#ef4444', color: 'white', fontSize: '0.8rem', fontWeight: 800, padding: '2px 6px', borderBottomLeftRadius: '8px', lineHeight: 1, boxShadow: '-2px 2px 4px rgba(0,0,0,0.2)' }}>
+                      x{item.packageQuantity}
+                    </div>
                   </div>
                   <div style={{ flex: 1 }}>
                     <h4 style={{ margin: '0 0 4px', fontSize: '1rem', color: '#1e293b', fontWeight: 700, lineHeight: 1.3 }}>{item.supplementName}</h4>
@@ -154,7 +154,7 @@ export default function SupplementCourseDashboardPage() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', borderTop: '1px dashed #e2e8f0', paddingTop: '12px' }}>
                   <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
-                    {formatCourseItemPriceQuantity(item.unitPrice, item.packageQuantity)}
+                    {Number(item.unitPrice || 0) === 0 ? 'ฟรี' : `฿${money(item.unitPrice)}`} / ชิ้น
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     {Number(item.discountAmount || 0) > 0 && (
