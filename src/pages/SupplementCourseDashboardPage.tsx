@@ -19,6 +19,7 @@ export default function SupplementCourseDashboardPage() {
   const [course, setCourse] = useState<SavedSupplementCourse | null>(null);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const token = searchParams.get('token') || '';
   const dashboardRef = useRef<HTMLDivElement>(null);
 
@@ -34,14 +35,41 @@ export default function SupplementCourseDashboardPage() {
     setDownloading(true);
     try {
       const canvas = await html2canvas(dashboardRef.current, { scale: 2, useCORS: true, backgroundColor: '#f8fafc' });
-      const link = document.createElement('a');
-      link.download = `Course_${course.traineeName}_${new Date(course.createdAt).toISOString().split('T')[0]}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      const dataUrl = canvas.toDataURL('image/png');
+      const fileName = `Course_${course.traineeName}.png`;
+
+      canvas.toBlob(async (blob) => {
+        let shared = false;
+        if (blob && navigator.share && navigator.canShare) {
+          const file = new File([blob], fileName, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({ files: [file], title: 'ใบสรุปคอร์ส' });
+              shared = true;
+            } catch (e) {
+              console.log('Share API failed or cancelled', e);
+            }
+          }
+        }
+
+        if (!shared) {
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+          if (isIOS) {
+            setPreviewImage(dataUrl);
+          } else {
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        }
+        setDownloading(false);
+      }, 'image/png');
     } catch (err) {
       console.error(err);
       alert('บันทึกรูปภาพไม่สำเร็จ กรุณาลองอีกครั้ง');
-    } finally {
       setDownloading(false);
     }
   };
@@ -208,6 +236,21 @@ export default function SupplementCourseDashboardPage() {
         </div>
 
       </div>
+
+      {previewImage && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ color: 'white', marginBottom: '16px', fontSize: '1.2rem', fontWeight: 600 }}>
+            👇 แตะค้างที่รูปภาพเพื่อบันทึก
+          </div>
+          <img src={previewImage} style={{ maxWidth: '100%', maxHeight: '75vh', borderRadius: '12px', objectFit: 'contain' }} alt="Course Preview" />
+          <button 
+            onClick={() => setPreviewImage(null)}
+            style={{ marginTop: '24px', background: 'white', color: '#1e293b', border: 'none', padding: '12px 24px', borderRadius: '8px', fontSize: '1rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+          >
+            ปิด
+          </button>
+        </div>
+      )}
     </main>
   );
 }
