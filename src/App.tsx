@@ -12,6 +12,7 @@ import PaymentPage from './pages/PaymentPage';
 import DownloadICSPage from './pages/DownloadICSPage';
 import BodyMetricsAnalysisPage from './pages/BodyMetricsAnalysisPage';
 import SupplementCoursePdfPage from './pages/SupplementCoursePdfPage';
+import SupplementCourseDashboardPage from './pages/SupplementCourseDashboardPage';
 import './index.css';
 
 function AuthenticatedRoutes() {
@@ -39,6 +40,7 @@ function AuthenticatedRoutes() {
 function App() {
   return <Router><Routes>
     <Route path="/supplement-course-pdf" element={<SupplementCoursePdfPage />} />
+    <Route path="/supplement-course-dashboard" element={<SupplementCourseDashboardPage />} />
     <Route path="*" element={<AuthenticatedRoutes />} />
   </Routes></Router>;
 }
