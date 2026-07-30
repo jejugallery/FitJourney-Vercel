@@ -244,11 +244,11 @@ export default function SupplementCourseDashboardPage() {
                     <span style={{ display: 'inline-block', background: '#f1f5f9', color: '#475569', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '6px', fontWeight: 500 }}>{item.contentQuantity} {item.contentUnit}</span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginTop: 'auto', borderTop: '1px dashed #e2e8f0', paddingTop: '12px', gap: '4px' }}>
-                  <div style={{ color: '#64748b', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                <div style={{ marginTop: 'auto' }}>
+                  <div style={{ color: '#64748b', fontSize: '0.85rem', whiteSpace: 'nowrap', paddingBottom: '12px' }}>
                     ฿{Math.round(Number(item.unitPrice || 0)).toLocaleString()} / ชิ้น
                   </div>
-                  <div>
+                  <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '12px', textAlign: 'right' }}>
                     {Number(item.discountAmount || 0) > 0 && (
                       <div style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 600, background: '#fef2f2', padding: '2px 6px', borderRadius: '4px', marginBottom: '4px', display: 'inline-block' }}>ลด ฿{Math.round(Number(item.discountAmount || 0)).toLocaleString()}</div>
                     )}

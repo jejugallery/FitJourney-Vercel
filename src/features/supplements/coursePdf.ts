@@ -78,9 +78,9 @@ export async function downloadSupplementCoursePdf(course: SavedSupplementCourse)
                 <span style="display: inline-block; background: #f1f5f9; color: #475569; font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; font-weight: 500;">${escapeHtml(item.contentQuantity)} ${escapeHtml(item.contentUnit)}</span>
               </div>
             </div>
-            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-top: auto; border-top: 1px dashed #e2e8f0; padding-top: 12px; gap: 4px;">
-              <div style="color: #64748b; font-size: 0.85rem; white-space: nowrap;">฿${Math.round(Number(item.unitPrice || 0)).toLocaleString()} / ชิ้น</div>
-              <div>
+            <div style="margin-top: auto;">
+              <div style="color: #64748b; font-size: 0.85rem; white-space: nowrap; padding-bottom: 12px;">฿${Math.round(Number(item.unitPrice || 0)).toLocaleString()} / ชิ้น</div>
+              <div style="border-top: 1px dashed #e2e8f0; padding-top: 12px; text-align: right;">
                 ${Number(item.discountAmount || 0) > 0 ? `<div style="font-size: 0.75rem; color: #ef4444; font-weight: 600; background: #fef2f2; padding: 2px 6px; border-radius: 4px; margin-bottom: 4px; display: inline-block;">ลด ฿${Math.round(Number(item.discountAmount || 0)).toLocaleString()}</div>` : ''}
                 <div style="font-size: 1.15rem; font-weight: 800; color: #0f172a; line-height: 1;">฿${Math.round(Number(item.netAmount || 0)).toLocaleString()}</div>
               </div>
