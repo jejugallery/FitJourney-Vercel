@@ -34,7 +34,24 @@ export default function SupplementCourseDashboardPage() {
     if (!course || !dashboardRef.current) return;
     setDownloading(true);
     try {
-      const canvas = await html2canvas(dashboardRef.current, { scale: 2, useCORS: true, backgroundColor: '#f8fafc' });
+      const el = dashboardRef.current;
+      const originalWidth = el.style.width;
+      const originalMaxWidth = el.style.maxWidth;
+      
+      // Force desktop width during capture to prevent mobile layout clipping
+      el.style.width = '1200px';
+      el.style.maxWidth = '1200px';
+
+      const canvas = await html2canvas(el, { 
+        scale: 2, 
+        useCORS: true, 
+        backgroundColor: '#f8fafc',
+        windowWidth: 1200
+      });
+
+      // Restore original styles
+      el.style.width = originalWidth;
+      el.style.maxWidth = originalMaxWidth;
       const dataUrl = canvas.toDataURL('image/png');
       const fileName = `Course_${course.traineeName}.png`;
 
