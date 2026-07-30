@@ -104,14 +104,12 @@ export async function downloadSupplementCoursePdf(course: SavedSupplementCourse)
               <div style="position: absolute; top: -1px; right: -1px; background: #10b981; color: white; font-size: 0.9rem; font-weight: 800; padding: 4px 10px; border-radius: 0 16px 0 16px; line-height: 1; box-shadow: -2px 2px 4px rgba(16,185,129,0.2);">
                 x${item.packageQuantity}
               </div>
-              <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding-right: 24px;">
-                <div style="width: 50px; height: 50px; border-radius: 10px; overflow: hidden; background: white; flex-shrink: 0; border: 1px solid #a7f3d0;">
-                  ${item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: cover;" />` : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #a7f3d0; font-size: 1.2rem;">📦</div>`}
+              <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                <div style="width: 100%; aspect-ratio: 1/1; max-width: 120px; border-radius: 12px; overflow: hidden; background: white; border: 1px solid #a7f3d0; margin-bottom: 16px;">
+                  ${item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;" />` : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #a7f3d0; font-size: 2rem;">📦</div>`}
                 </div>
-                <div style="flex: 1;">
-                  <h4 style="margin: 0 0 4px; font-size: 1rem; color: #064e3b; font-weight: 700; line-height: 1.3;">${escapeHtml(item.supplementName)}</h4>
-                  <span style="display: inline-block; background: white; color: #047857; font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; font-weight: 600; border: 1px solid #d1fae5;">${escapeHtml(item.contentQuantity)} ${escapeHtml(item.contentUnit)}</span>
-                </div>
+                <h4 style="margin: 0 0 8px; font-size: 1rem; color: #064e3b; font-weight: 700; line-height: 1.3;">${escapeHtml(item.supplementName)}</h4>
+                <span style="display: inline-block; background: white; color: #047857; font-size: 0.75rem; padding: 4px 10px; border-radius: 8px; font-weight: 600; border: 1px solid #d1fae5;">${escapeHtml(item.contentQuantity)} ${escapeHtml(item.contentUnit)}</span>
               </div>
             </div>
           `).join('')}

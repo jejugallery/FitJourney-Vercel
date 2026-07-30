@@ -288,14 +288,12 @@ export default function SupplementCourseDashboardPage() {
                       <div style={{ position: 'absolute', top: '-1px', right: '-1px', background: '#10b981', color: 'white', fontSize: '0.9rem', fontWeight: 800, padding: '4px 10px', borderRadius: '0 16px 0 16px', lineHeight: 1, boxShadow: '-2px 2px 4px rgba(16,185,129,0.2)' }}>
                         x{item.packageQuantity}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px', paddingRight: '24px' }}>
-                        <div style={{ width: '50px', height: '50px', borderRadius: '10px', overflow: 'hidden', background: 'white', flexShrink: 0, border: '1px solid #a7f3d0' }}>
-                          {item.imageUrl ? <img src={item.imageUrl} alt={item.supplementName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a7f3d0', fontSize: '1.2rem' }}>📦</div>}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                        <div style={{ width: '100%', aspectRatio: '1/1', maxWidth: '120px', borderRadius: '12px', overflow: 'hidden', background: 'white', border: '1px solid #a7f3d0', marginBottom: '16px' }}>
+                          {item.imageUrl ? <img src={item.imageUrl} alt={item.supplementName} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} crossOrigin="anonymous" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a7f3d0', fontSize: '2rem' }}>📦</div>}
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <h4 style={{ margin: '0 0 4px', fontSize: '1rem', color: '#064e3b', fontWeight: 700, lineHeight: 1.3 }}>{item.supplementName}</h4>
-                          <span style={{ display: 'inline-block', background: 'white', color: '#047857', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '6px', fontWeight: 600, border: '1px solid #d1fae5' }}>{item.contentQuantity} {item.contentUnit}</span>
-                        </div>
+                        <h4 style={{ margin: '0 0 8px', fontSize: '1rem', color: '#064e3b', fontWeight: 700, lineHeight: 1.3 }}>{item.supplementName}</h4>
+                        <span style={{ display: 'inline-block', background: 'white', color: '#047857', fontSize: '0.75rem', padding: '4px 10px', borderRadius: '8px', fontWeight: 600, border: '1px solid #d1fae5' }}>{item.contentQuantity} {item.contentUnit}</span>
                       </div>
                     </div>
                   ))}
