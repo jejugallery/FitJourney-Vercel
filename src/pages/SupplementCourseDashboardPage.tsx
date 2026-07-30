@@ -34,19 +34,22 @@ export default function SupplementCourseDashboardPage() {
     if (!course || !dashboardRef.current) return;
     setDownloading(true);
     try {
+      const paidCount = course.items.filter(item => Number(item.unitPrice || 0) > 0).length;
+      const targetWidthPx = paidCount > 9 ? 1400 : 1200;
+
       const el = dashboardRef.current;
       const originalWidth = el.style.width;
       const originalMaxWidth = el.style.maxWidth;
       
-      // Force desktop width during capture to prevent mobile layout clipping
-      el.style.width = '1400px';
-      el.style.maxWidth = '1400px';
+      // Force dynamic desktop width during capture to prevent mobile layout clipping
+      el.style.width = `${targetWidthPx}px`;
+      el.style.maxWidth = `${targetWidthPx}px`;
 
       const canvas = await html2canvas(el, { 
         scale: 2, 
         useCORS: true, 
         backgroundColor: '#f8fafc',
-        windowWidth: 1400
+        windowWidth: targetWidthPx
       });
 
       // Restore original styles
@@ -176,7 +179,7 @@ export default function SupplementCourseDashboardPage() {
       </div>
 
       <div className="desktop-only-dashboard">
-        <div ref={dashboardRef} style={{ background: '#f8fafc', width: '100%', maxWidth: '1400px', borderRadius: '24px', padding: '32px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', position: 'relative', overflow: 'hidden', display: 'flex', gap: '40px', alignItems: 'stretch' }}>
+        <div ref={dashboardRef} style={{ background: '#f8fafc', width: '100%', maxWidth: (course.items.filter(i => Number(i.unitPrice || 0) > 0).length > 9 ? '1400px' : '1200px'), borderRadius: '24px', padding: '32px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', position: 'relative', overflow: 'hidden', display: 'flex', gap: '40px', alignItems: 'stretch' }}>
         
         {/* Left Column: Info & Totals */}
         <div style={{ flex: '0 0 380px', display: 'flex', flexDirection: 'column' }}>
@@ -241,11 +244,11 @@ export default function SupplementCourseDashboardPage() {
                     <span style={{ display: 'inline-block', background: '#f1f5f9', color: '#475569', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '6px', fontWeight: 500 }}>{item.contentQuantity} {item.contentUnit}</span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', borderTop: '1px dashed #e2e8f0', paddingTop: '12px' }}>
-                  <div style={{ color: '#64748b', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', marginTop: 'auto', borderTop: '1px dashed #e2e8f0', paddingTop: '12px', gap: '8px' }}>
+                  <div style={{ color: '#64748b', fontSize: '0.85rem', whiteSpace: 'nowrap', alignSelf: 'flex-start' }}>
                     ฿{money(item.unitPrice)} / ชิ้น
                   </div>
-                  <div style={{ textAlign: 'right' }}>
+                  <div style={{ textAlign: 'right', alignSelf: 'flex-end' }}>
                     {Number(item.discountAmount || 0) > 0 && (
                       <div style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 600, background: '#fef2f2', padding: '2px 6px', borderRadius: '4px', marginBottom: '4px', display: 'inline-block' }}>ลด ฿{money(item.discountAmount)}</div>
                     )}
@@ -268,13 +271,13 @@ export default function SupplementCourseDashboardPage() {
 
             return (
               <div style={{ marginTop: '32px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                   <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>🎁</span> รายการของแถม (ฟรี)
+                    <span>🎁</span> ของแถมฟรี
                   </h3>
                   {totalFreeValue > 0 && (
-                    <div style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', padding: '6px 16px', borderRadius: '24px', fontSize: '0.95rem', fontWeight: 600, boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.3)' }}>
-                      มูลค่ารวม <span style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 4px' }}>{money(totalFreeValue)}</span> บาท
+                    <div style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 600, boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)' }}>
+                      มูลค่ารวม <span style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 2px' }}>{money(totalFreeValue)}</span> บาท
                     </div>
                   )}
                 </div>

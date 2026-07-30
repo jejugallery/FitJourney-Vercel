@@ -8,12 +8,14 @@ const htmlEntities: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '
 const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>'"]/g, char => htmlEntities[char] || char);
 
 export async function downloadSupplementCoursePdf(course: SavedSupplementCourse) {
-  const root = document.createElement('div');
-  root.style.cssText = 'position:fixed;left:-10000px;top:0;width:1400px;background:#f8fafc;color:#1e293b;padding:32px;font-family:Arial,"Noto Sans Thai",Tahoma,sans-serif;box-sizing:border-box;border-radius:24px;display:flex;gap:40px;align-items:stretch;';
-  
   const allItems = orderSupplementProducts(course.items, item => item.supplementName, item => item.unitPrice);
   const paidItems = allItems.filter(item => Number(item.unitPrice || 0) > 0);
   const freeItems = allItems.filter(item => Number(item.unitPrice || 0) === 0);
+
+  const targetWidthPx = paidItems.length > 9 ? 1400 : 1200;
+
+  const root = document.createElement('div');
+  root.style.cssText = `position:fixed;left:-10000px;top:0;width:${targetWidthPx}px;background:#f8fafc;color:#1e293b;padding:32px;font-family:Arial,"Noto Sans Thai",Tahoma,sans-serif;box-sizing:border-box;border-radius:24px;display:flex;gap:40px;align-items:stretch;`;
 
   const totalFreeValue = freeItems.reduce((sum, item) => {
     const m = item.supplementName.match(/\d{1,3}(?:,\d{3})*(?:\.\d+)?/g);
@@ -76,9 +78,9 @@ export async function downloadSupplementCoursePdf(course: SavedSupplementCourse)
                 <span style="display: inline-block; background: #f1f5f9; color: #475569; font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; font-weight: 500;">${escapeHtml(item.contentQuantity)} ${escapeHtml(item.contentUnit)}</span>
               </div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; border-top: 1px dashed #e2e8f0; padding-top: 12px;">
-              <div style="color: #64748b; font-size: 0.85rem; white-space: nowrap;">฿${baht(item.unitPrice)} / ชิ้น</div>
-              <div style="text-align: right;">
+            <div style="display: flex; flex-direction: column; margin-top: auto; border-top: 1px dashed #e2e8f0; padding-top: 12px; gap: 8px;">
+              <div style="color: #64748b; font-size: 0.85rem; white-space: nowrap; align-self: flex-start;">฿${baht(item.unitPrice)} / ชิ้น</div>
+              <div style="text-align: right; align-self: flex-end;">
                 ${Number(item.discountAmount || 0) > 0 ? `<div style="font-size: 0.75rem; color: #ef4444; font-weight: 600; background: #fef2f2; padding: 2px 6px; border-radius: 4px; margin-bottom: 4px; display: inline-block;">ลด ฿${baht(item.discountAmount)}</div>` : ''}
                 <div style="font-size: 1.15rem; font-weight: 800; color: #0f172a; line-height: 1;">฿${baht(item.netAmount)}</div>
               </div>
@@ -89,13 +91,13 @@ export async function downloadSupplementCoursePdf(course: SavedSupplementCourse)
 
       ${freeItems.length > 0 ? `
       <div style="margin-top: 32px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
           <h3 style="margin: 0; font-size: 1.2rem; color: #059669; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-            <span>🎁</span> รายการของแถม (ฟรี)
+            <span>🎁</span> ของแถมฟรี
           </h3>
           ${totalFreeValue > 0 ? `
-          <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 6px 16px; border-radius: 24px; font-size: 0.95rem; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);">
-            มูลค่ารวม <span style="font-size: 1.2rem; font-weight: 800; margin: 0 4px;">${baht(totalFreeValue)}</span> บาท
+          <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);">
+            มูลค่ารวม <span style="font-size: 1.1rem; font-weight: 800; margin: 0 2px;">${baht(totalFreeValue)}</span> บาท
           </div>` : ''}
         </div>
         <div style="display: grid; grid-template-columns: ${paidItems.length > 9 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)'}; gap: 16px; align-content: start;">
