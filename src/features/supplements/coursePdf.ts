@@ -61,7 +61,7 @@ export async function downloadSupplementCoursePdf(course: SavedSupplementCourse)
 
     <!-- Right Column -->
     <div style="flex: 1; display: flex; flex-direction: column;">
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-content: start;">
+      <div style="display: grid; grid-template-columns: ${paidItems.length > 9 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)'}; gap: 16px; align-content: start;">
         ${paidItems.map(item => `
           <div style="display: flex; flex-direction: column; background: white; padding: 16px; border-radius: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border: 1px solid #e2e8f0; position: relative;">
             <div style="position: absolute; top: -1px; right: -1px; background: #ef4444; color: white; font-size: 0.9rem; font-weight: 800; padding: 4px 10px; border-radius: 0 16px 0 16px; line-height: 1; box-shadow: -2px 2px 4px rgba(0,0,0,0.1);">
@@ -98,7 +98,7 @@ export async function downloadSupplementCoursePdf(course: SavedSupplementCourse)
             มูลค่ารวม <span style="font-size: 1.2rem; font-weight: 800; margin: 0 4px;">${baht(totalFreeValue)}</span> บาท
           </div>` : ''}
         </div>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-content: start;">
+        <div style="display: grid; grid-template-columns: ${paidItems.length > 9 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)'}; gap: 16px; align-content: start;">
           ${freeItems.map(item => `
             <div style="display: flex; flex-direction: column; background: #ecfdf5; padding: 16px; border-radius: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border: 1px solid #a7f3d0; position: relative;">
               <div style="position: absolute; top: -1px; right: -1px; background: #10b981; color: white; font-size: 0.9rem; font-weight: 800; padding: 4px 10px; border-radius: 0 16px 0 16px; line-height: 1; box-shadow: -2px 2px 4px rgba(16,185,129,0.2);">
@@ -126,18 +126,25 @@ export async function downloadSupplementCoursePdf(course: SavedSupplementCourse)
     const pdf = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape since it's wide
     const pageWidth = 297;
     const pageHeight = 210;
-    const imageHeight = canvas.height * pageWidth / canvas.width;
-    const imageData = canvas.toDataURL('image/jpeg', 0.94);
-    let remaining = imageHeight;
-    let y = 0;
-    pdf.addImage(imageData, 'JPEG', 0, y, pageWidth, imageHeight);
-    remaining -= pageHeight;
-    while (remaining > 0) {
-      y = remaining - imageHeight;
-      pdf.addPage();
-      pdf.addImage(imageData, 'JPEG', 0, y, pageWidth, imageHeight);
-      remaining -= pageHeight;
+    
+    // Fit to page logic
+    const imageAspectRatio = canvas.width / canvas.height;
+    const pageAspectRatio = pageWidth / pageHeight;
+    
+    let scaledWidth = pageWidth;
+    let scaledHeight = pageWidth / imageAspectRatio;
+    
+    if (imageAspectRatio < pageAspectRatio) {
+      scaledHeight = pageHeight;
+      scaledWidth = pageHeight * imageAspectRatio;
     }
+    
+    const x = (pageWidth - scaledWidth) / 2;
+    const y = (pageHeight - scaledHeight) / 2;
+
+    const imageData = canvas.toDataURL('image/jpeg', 0.94);
+    pdf.addImage(imageData, 'JPEG', x, y, scaledWidth, scaledHeight);
+    
     const safeName = course.traineeName.replace(/[\\/:*?"<>|]/g, '-').trim() || 'trainee';
     const date = new Date(course.createdAt).toISOString().slice(0, 10);
     pdf.save(`Supplement-Course-${safeName}-${date}.pdf`);

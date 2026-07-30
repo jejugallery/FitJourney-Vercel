@@ -109,7 +109,40 @@ export default function SupplementCourseDashboardPage() {
 
   return (
     <main style={{ minHeight: '100vh', background: '#f1f5f9', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: '"Inter", "Google Sans", sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: '1400px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <style>{`
+        .mobile-placeholder {
+          display: none;
+        }
+        @media (max-width: 1024px) {
+          .desktop-only-dashboard {
+            position: absolute !important;
+            left: -10000px !important;
+            top: 0 !important;
+          }
+          .mobile-placeholder {
+            display: flex !important;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            padding: 48px 24px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 500px;
+            margin: 60px auto 0;
+            border: 1px dashed #cbd5e1;
+          }
+          .header-title-container {
+            flex-direction: column;
+            gap: 16px;
+            text-align: center;
+          }
+        }
+      `}</style>
+
+      <div className="header-title-container" style={{ width: '100%', maxWidth: '1400px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#1e293b', fontWeight: 700 }}>Course Dashboard</h1>
         <button 
           onClick={downloadImage} 
@@ -118,19 +151,32 @@ export default function SupplementCourseDashboardPage() {
             background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 
             color: 'white', 
             border: 'none', 
-            padding: '10px 20px', 
-            borderRadius: '8px', 
-            fontWeight: 600, 
+            padding: '12px 24px', 
+            borderRadius: '12px', 
+            fontWeight: 700,
+            fontSize: '1.1rem',
             cursor: downloading ? 'not-allowed' : 'pointer',
             boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3)',
             transition: 'all 0.2s ease',
-            opacity: downloading ? 0.7 : 1
+            opacity: downloading ? 0.7 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}>
           {downloading ? 'กำลังบันทึก...' : '📸 บันทึกเป็นรูปภาพ'}
         </button>
       </div>
 
-      <div ref={dashboardRef} style={{ background: '#f8fafc', width: '100%', maxWidth: '1400px', borderRadius: '24px', padding: '32px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', position: 'relative', overflow: 'hidden', display: 'flex', gap: '40px', alignItems: 'stretch' }}>
+      <div className="mobile-placeholder">
+        <div style={{ fontSize: '4rem', marginBottom: '16px' }}>🖼️</div>
+        <h2 style={{ margin: '0 0 12px', color: '#1e293b', fontSize: '1.4rem' }}>พร้อมบันทึกใบสรุปคอร์ส</h2>
+        <p style={{ color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+          คุณสามารถกดปุ่ม <b>"บันทึกเป็นรูปภาพ"</b> <br/>เพื่อสร้างภาพใบสรุปคอร์สฉบับเต็มได้ทันที
+        </p>
+      </div>
+
+      <div className="desktop-only-dashboard">
+        <div ref={dashboardRef} style={{ background: '#f8fafc', width: '100%', maxWidth: '1400px', borderRadius: '24px', padding: '32px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', position: 'relative', overflow: 'hidden', display: 'flex', gap: '40px', alignItems: 'stretch' }}>
         
         {/* Left Column: Info & Totals */}
         <div style={{ flex: '0 0 380px', display: 'flex', flexDirection: 'column' }}>
@@ -176,11 +222,13 @@ export default function SupplementCourseDashboardPage() {
 
         {/* Right Column: Items List */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', alignContent: 'start' }}>
-            {orderSupplementProducts(course.items, item => item.supplementName, item => item.unitPrice)
-              .filter(item => Number(item.unitPrice || 0) > 0)
-              .map((item, idx) => (
-              <div key={item.id || idx} style={{ display: 'flex', flexDirection: 'column', background: 'white', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0', position: 'relative' }}>
+          {(() => {
+            const allItems = orderSupplementProducts(course.items, item => item.supplementName, item => item.unitPrice);
+            const paidItems = allItems.filter(item => Number(item.unitPrice || 0) > 0);
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: paidItems.length > 9 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: '16px', alignContent: 'start' }}>
+                {paidItems.map((item, idx) => (
+                  <div key={item.id || idx} style={{ display: 'flex', flexDirection: 'column', background: 'white', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0', position: 'relative' }}>
                 <div style={{ position: 'absolute', top: '-1px', right: '-1px', background: '#ef4444', color: 'white', fontSize: '0.9rem', fontWeight: 800, padding: '4px 10px', borderRadius: '0 16px 0 16px', lineHeight: 1, boxShadow: '-2px 2px 4px rgba(0,0,0,0.1)' }}>
                   x{item.packageQuantity}
                 </div>
@@ -207,6 +255,8 @@ export default function SupplementCourseDashboardPage() {
               </div>
             ))}
           </div>
+          );
+        })()}
 
           {course.items.some(item => Number(item.unitPrice || 0) === 0) && (() => {
             const freeItems = course.items.filter(item => Number(item.unitPrice || 0) === 0);
@@ -228,9 +278,12 @@ export default function SupplementCourseDashboardPage() {
                     </div>
                   )}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', alignContent: 'start' }}>
-                  {orderSupplementProducts(freeItems, item => item.supplementName, item => item.unitPrice)
-                    .map((item, idx) => (
+                {(() => {
+                  const paidCount = course.items.filter(item => Number(item.unitPrice || 0) > 0).length;
+                  return (
+                  <div style={{ display: 'grid', gridTemplateColumns: paidCount > 9 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: '16px', alignContent: 'start' }}>
+                    {orderSupplementProducts(freeItems, item => item.supplementName, item => item.unitPrice)
+                      .map((item, idx) => (
                     <div key={item.id || idx} style={{ display: 'flex', flexDirection: 'column', background: '#ecfdf5', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #a7f3d0', position: 'relative' }}>
                       <div style={{ position: 'absolute', top: '-1px', right: '-1px', background: '#10b981', color: 'white', fontSize: '0.9rem', fontWeight: 800, padding: '4px 10px', borderRadius: '0 16px 0 16px', lineHeight: 1, boxShadow: '-2px 2px 4px rgba(16,185,129,0.2)' }}>
                         x{item.packageQuantity}
@@ -247,11 +300,13 @@ export default function SupplementCourseDashboardPage() {
                     </div>
                   ))}
                 </div>
+                );
+              })()}
               </div>
             );
           })()}
         </div>
-
+        </div>
       </div>
 
       {previewImage && (
