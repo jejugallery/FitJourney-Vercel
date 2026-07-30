@@ -138,14 +138,16 @@ export default function SupplementCourseDashboardPage() {
         {/* Right Column: Items List */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', alignContent: 'start' }}>
-            {orderSupplementProducts(course.items, item => item.supplementName, item => item.unitPrice).map((item, idx) => (
-              <div key={item.id || idx} style={{ display: 'flex', flexDirection: 'column', background: 'white', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                  <div style={{ width: '50px', height: '50px', borderRadius: '10px', overflow: 'hidden', background: '#f8fafc', flexShrink: 0, border: '1px solid #e2e8f0', position: 'relative' }}>
+            {orderSupplementProducts(course.items, item => item.supplementName, item => item.unitPrice)
+              .filter(item => Number(item.unitPrice || 0) > 0)
+              .map((item, idx) => (
+              <div key={item.id || idx} style={{ display: 'flex', flexDirection: 'column', background: 'white', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: '-1px', right: '-1px', background: '#ef4444', color: 'white', fontSize: '0.9rem', fontWeight: 800, padding: '4px 10px', borderRadius: '0 16px 0 16px', lineHeight: 1, boxShadow: '-2px 2px 4px rgba(0,0,0,0.1)' }}>
+                  x{item.packageQuantity}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px', paddingRight: '24px' }}>
+                  <div style={{ width: '50px', height: '50px', borderRadius: '10px', overflow: 'hidden', background: '#f8fafc', flexShrink: 0, border: '1px solid #e2e8f0' }}>
                     {item.imageUrl ? <img src={item.imageUrl} alt={item.supplementName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1', fontSize: '1.2rem' }}>📦</div>}
-                    <div style={{ position: 'absolute', top: '0', right: '0', background: '#ef4444', color: 'white', fontSize: '0.8rem', fontWeight: 800, padding: '2px 6px', borderBottomLeftRadius: '8px', lineHeight: 1, boxShadow: '-2px 2px 4px rgba(0,0,0,0.2)' }}>
-                      x{item.packageQuantity}
-                    </div>
                   </div>
                   <div style={{ flex: 1 }}>
                     <h4 style={{ margin: '0 0 4px', fontSize: '1rem', color: '#1e293b', fontWeight: 700, lineHeight: 1.3 }}>{item.supplementName}</h4>
@@ -154,7 +156,7 @@ export default function SupplementCourseDashboardPage() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', borderTop: '1px dashed #e2e8f0', paddingTop: '12px' }}>
                   <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
-                    {Number(item.unitPrice || 0) === 0 ? 'ฟรี' : `฿${money(item.unitPrice)}`} / ชิ้น
+                    ฿{money(item.unitPrice)} / ชิ้น
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     {Number(item.discountAmount || 0) > 0 && (
@@ -166,6 +168,57 @@ export default function SupplementCourseDashboardPage() {
               </div>
             ))}
           </div>
+
+          {course.items.some(item => Number(item.unitPrice || 0) === 0) && (() => {
+            const freeItems = course.items.filter(item => Number(item.unitPrice || 0) === 0);
+            const totalFreeValue = freeItems.reduce((sum, item) => {
+              const m = item.supplementName.match(/\d{1,3}(?:,\d{3})*(?:\.\d+)?/g);
+              const price = m ? Number(m[m.length - 1].replace(/,/g, '')) : 0;
+              return sum + (price * Number(item.packageQuantity || 1));
+            }, 0);
+
+            return (
+              <div style={{ marginTop: '32px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>🎁</span> รายการของแถม (ฟรี)
+                  </h3>
+                  {totalFreeValue > 0 && (
+                    <div style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', padding: '6px 16px', borderRadius: '24px', fontSize: '0.95rem', fontWeight: 600, boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.3)' }}>
+                      มูลค่ารวม <span style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 4px' }}>{money(totalFreeValue)}</span> บาท
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', alignContent: 'start' }}>
+                  {orderSupplementProducts(freeItems, item => item.supplementName, item => item.unitPrice)
+                    .map((item, idx) => (
+                    <div key={item.id || idx} style={{ display: 'flex', flexDirection: 'column', background: '#ecfdf5', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #a7f3d0', position: 'relative' }}>
+                      <div style={{ position: 'absolute', top: '-1px', right: '-1px', background: '#10b981', color: 'white', fontSize: '0.9rem', fontWeight: 800, padding: '4px 10px', borderRadius: '0 16px 0 16px', lineHeight: 1, boxShadow: '-2px 2px 4px rgba(16,185,129,0.2)' }}>
+                        x{item.packageQuantity}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px', paddingRight: '24px' }}>
+                        <div style={{ width: '50px', height: '50px', borderRadius: '10px', overflow: 'hidden', background: 'white', flexShrink: 0, border: '1px solid #a7f3d0' }}>
+                          {item.imageUrl ? <img src={item.imageUrl} alt={item.supplementName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a7f3d0', fontSize: '1.2rem' }}>📦</div>}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ margin: '0 0 4px', fontSize: '1rem', color: '#064e3b', fontWeight: 700, lineHeight: 1.3 }}>{item.supplementName}</h4>
+                          <span style={{ display: 'inline-block', background: 'white', color: '#047857', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '6px', fontWeight: 600, border: '1px solid #d1fae5' }}>{item.contentQuantity} {item.contentUnit}</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', borderTop: '1px dashed #6ee7b7', paddingTop: '12px' }}>
+                        <div style={{ color: '#059669', fontSize: '0.85rem', fontWeight: 600 }}>
+                          ฟรี
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#047857', lineHeight: 1 }}>฿0.00</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
       </div>
