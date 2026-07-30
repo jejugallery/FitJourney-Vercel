@@ -9,7 +9,7 @@ const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>'"]/g, c
 
 export async function downloadSupplementCoursePdf(course: SavedSupplementCourse) {
   const root = document.createElement('div');
-  root.style.cssText = 'position:fixed;left:-10000px;top:0;width:1200px;background:#f8fafc;color:#1e293b;padding:32px;font-family:Arial,"Noto Sans Thai",Tahoma,sans-serif;box-sizing:border-box;border-radius:24px;display:flex;gap:40px;align-items:stretch;';
+  root.style.cssText = 'position:fixed;left:-10000px;top:0;width:1400px;background:#f8fafc;color:#1e293b;padding:32px;font-family:Arial,"Noto Sans Thai",Tahoma,sans-serif;box-sizing:border-box;border-radius:24px;display:flex;gap:40px;align-items:stretch;';
   
   const allItems = orderSupplementProducts(course.items, item => item.supplementName, item => item.unitPrice);
   const paidItems = allItems.filter(item => Number(item.unitPrice || 0) > 0);
@@ -77,7 +77,7 @@ export async function downloadSupplementCoursePdf(course: SavedSupplementCourse)
               </div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; border-top: 1px dashed #e2e8f0; padding-top: 12px;">
-              <div style="color: #64748b; font-size: 0.85rem;">฿${baht(item.unitPrice)} / ชิ้น</div>
+              <div style="color: #64748b; font-size: 0.85rem; white-space: nowrap;">฿${baht(item.unitPrice)} / ชิ้น</div>
               <div style="text-align: right;">
                 ${Number(item.discountAmount || 0) > 0 ? `<div style="font-size: 0.75rem; color: #ef4444; font-weight: 600; background: #fef2f2; padding: 2px 6px; border-radius: 4px; margin-bottom: 4px; display: inline-block;">ลด ฿${baht(item.discountAmount)}</div>` : ''}
                 <div style="font-size: 1.15rem; font-weight: 800; color: #0f172a; line-height: 1;">฿${baht(item.netAmount)}</div>

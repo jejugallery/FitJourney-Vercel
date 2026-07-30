@@ -39,14 +39,14 @@ export default function SupplementCourseDashboardPage() {
       const originalMaxWidth = el.style.maxWidth;
       
       // Force desktop width during capture to prevent mobile layout clipping
-      el.style.width = '1200px';
-      el.style.maxWidth = '1200px';
+      el.style.width = '1400px';
+      el.style.maxWidth = '1400px';
 
       const canvas = await html2canvas(el, { 
         scale: 2, 
         useCORS: true, 
         backgroundColor: '#f8fafc',
-        windowWidth: 1200
+        windowWidth: 1400
       });
 
       // Restore original styles
@@ -242,7 +242,7 @@ export default function SupplementCourseDashboardPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', borderTop: '1px dashed #e2e8f0', paddingTop: '12px' }}>
-                  <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                  <div style={{ color: '#64748b', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                     ฿{money(item.unitPrice)} / ชิ้น
                   </div>
                   <div style={{ textAlign: 'right' }}>
