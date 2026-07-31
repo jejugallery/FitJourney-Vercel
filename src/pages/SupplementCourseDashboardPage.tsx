@@ -169,15 +169,15 @@ export default function SupplementCourseDashboardPage() {
             alignItems: 'center',
             gap: '8px'
           }}>
-          {downloading ? 'กำลังบันทึก...' : '📸 บันทึกเป็นรูปภาพ'}
+          {downloading ? 'กำลังดาวน์โหลด...' : '📸 ดาวน์โหลดรูปภาพ'}
         </button>
       </div>
 
       <div className="mobile-placeholder">
         <div style={{ fontSize: '4rem', marginBottom: '16px' }}>🖼️</div>
-        <h2 style={{ margin: '0 0 12px', color: '#1e293b', fontSize: '1.4rem' }}>พร้อมบันทึกใบสรุปคอร์ส</h2>
+        <h2 style={{ margin: '0 0 12px', color: '#1e293b', fontSize: '1.4rem' }}>บันทึกใบสรุปคอร์ส</h2>
         <p style={{ color: '#64748b', margin: '0 0 24px', lineHeight: 1.5 }}>
-          คุณสามารถกดปุ่ม <b>"บันทึกเป็นรูปภาพ"</b> <br/>เพื่อสร้างภาพใบสรุปคอร์สฉบับเต็มได้ทันที
+          คุณสามารถกดปุ่ม <b>"ดาวน์โหลดรูปภาพ"</b> <br/>เพื่อสร้างภาพใบสรุปคอร์สฉบับเต็มได้ทันที
         </p>
         <button 
           onClick={downloadImage} 
@@ -200,7 +200,7 @@ export default function SupplementCourseDashboardPage() {
             width: '100%',
             justifyContent: 'center'
           }}>
-          {downloading ? 'กำลังบันทึก...' : '📸 บันทึกเป็นรูปภาพ'}
+          {downloading ? 'กำลังดาวน์โหลด...' : '📸 ดาวน์โหลดรูปภาพ'}
         </button>
       </div>
 
