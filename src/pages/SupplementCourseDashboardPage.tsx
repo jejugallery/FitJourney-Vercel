@@ -142,6 +142,9 @@ export default function SupplementCourseDashboardPage() {
             gap: 16px;
             text-align: center;
           }
+          .header-title-container button {
+            display: none !important;
+          }
         }
       `}</style>
 
@@ -173,9 +176,32 @@ export default function SupplementCourseDashboardPage() {
       <div className="mobile-placeholder">
         <div style={{ fontSize: '4rem', marginBottom: '16px' }}>🖼️</div>
         <h2 style={{ margin: '0 0 12px', color: '#1e293b', fontSize: '1.4rem' }}>พร้อมบันทึกใบสรุปคอร์ส</h2>
-        <p style={{ color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+        <p style={{ color: '#64748b', margin: '0 0 24px', lineHeight: 1.5 }}>
           คุณสามารถกดปุ่ม <b>"บันทึกเป็นรูปภาพ"</b> <br/>เพื่อสร้างภาพใบสรุปคอร์สฉบับเต็มได้ทันที
         </p>
+        <button 
+          onClick={downloadImage} 
+          disabled={downloading}
+          style={{ 
+            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 
+            color: 'white', 
+            border: 'none', 
+            padding: '14px 28px', 
+            borderRadius: '12px', 
+            fontWeight: 700,
+            fontSize: '1.1rem',
+            cursor: downloading ? 'not-allowed' : 'pointer',
+            boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3)',
+            transition: 'all 0.2s ease',
+            opacity: downloading ? 0.7 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            width: '100%',
+            justifyContent: 'center'
+          }}>
+          {downloading ? 'กำลังบันทึก...' : '📸 บันทึกเป็นรูปภาพ'}
+        </button>
       </div>
 
       <div className="desktop-only-dashboard">
