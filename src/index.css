@@ -197,6 +197,7 @@ h1, h2, h3, h4, h5, h6 {
 .supplement-card-copy b { overflow-wrap: anywhere; color: #1e293b; }
 .supplement-card-copy small,.supplement-card-copy span { color: #64748b; font-size: .8rem; }
 .supplement-card-copy strong { color: #ff416c; font-size: .95rem; }
+.supplement-card-clear { background: #fee2e2; color: #ef4444; border: none; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; flex-shrink: 0; }
 .supplement-card-add { width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center; border-radius: 50%; background: #fff1f4; color: #ff416c; font-size: 1.4rem; }
 .supplement-card-copy .supplement-selected-badge { width: fit-content; margin-top: 2px; padding: 3px 8px; border-radius: 999px; background: #ecfdf5; color: #047857; font-size: .72rem; font-weight: 800; }
 .supplement-course-card,.supplement-history-card,.supplement-catalog-card { padding: 14px; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; box-shadow: 0 4px 14px rgba(15,23,42,.04); }

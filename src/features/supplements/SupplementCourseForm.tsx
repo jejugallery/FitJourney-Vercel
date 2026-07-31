@@ -39,6 +39,9 @@ export default function SupplementCourseForm({ trainees, supplements, onSaved }:
   const add = (supplement: Supplement) => {
     setLines(current => [...current, createCourseDraftLine(supplement)]);
   };
+  const clear = (supplementId: string) => {
+    setLines(current => current.filter(line => line.supplementId !== supplementId));
+  };
   const change = (lineId: string, patch: Partial<CourseDraftLine>) => setLines(current => current.map(line => line.lineId === lineId ? { ...line, ...patch } : line));
   const save = async () => {
     if (!traineeId) return alert('กรุณาเลือกลูกเทรน');
@@ -55,7 +58,7 @@ export default function SupplementCourseForm({ trainees, supplements, onSaved }:
   if (pickerOpen) return <section className="supplement-screen">
     <div className="supplement-screen-header supplement-picker-header"><button type="button" className="supplement-back" onClick={() => { setPickerOpen(false); setProductSearch(''); }}>←</button><div><h3>เลือกอาหารเสริม</h3><p>แตะ + เพื่อเพิ่มได้หลายรายการ</p></div><button type="button" className="supplement-picker-finish" onClick={() => { setPickerOpen(false); setProductSearch(''); }}>เสร็จสิ้น</button></div>
     <input className="supplement-search" value={productSearch} onChange={e => setProductSearch(e.target.value)} placeholder="ค้นหาชื่ออาหารเสริม..." autoFocus />
-    {!availableCount ? <div className="supplement-state">ยังไม่มีอาหารเสริมในคลัง</div> : !available.length ? <div className="supplement-state">ไม่พบอาหารเสริม</div> : <div className="supplement-picker-grid">{available.map(item => <button type="button" key={item.id} className="supplement-product-card" onClick={() => add(item)} aria-label={`เพิ่ม ${item.name}`}><img src={item.imageUrl} alt="" /><span className="supplement-card-copy"><b>{item.name}</b><small>{item.contentQuantity} {item.contentUnit}</small><strong>{displayProductPrice(item.price)}</strong>{selectedCounts[item.id] > 0 && <span className="supplement-selected-badge">เลือกแล้ว ×{selectedCounts[item.id]}</span>}</span><span className="supplement-card-add">＋</span></button>)}</div>}
+    {!availableCount ? <div className="supplement-state">ยังไม่มีอาหารเสริมในคลัง</div> : !available.length ? <div className="supplement-state">ไม่พบอาหารเสริม</div> : <div className="supplement-picker-grid">{available.map(item => <div key={item.id} className="supplement-product-card" onClick={() => add(item)}><img src={item.imageUrl} alt="" /><span className="supplement-card-copy"><b>{item.name}</b><small>{item.contentQuantity} {item.contentUnit}</small><strong>{displayProductPrice(item.price)}</strong>{selectedCounts[item.id] > 0 && <span className="supplement-selected-badge">เลือกแล้ว ×{selectedCounts[item.id]}</span>}</span>{selectedCounts[item.id] > 0 && <button type="button" className="supplement-card-clear" onClick={(e) => { e.stopPropagation(); clear(item.id); }}>เคลียร์</button>}<span className="supplement-card-add">＋</span></div>)}</div>}
   </section>;
 
   return <div className="supplement-course-form">
