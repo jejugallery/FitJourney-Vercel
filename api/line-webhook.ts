@@ -4,6 +4,160 @@ import axios from 'axios';
 import * as crypto from 'crypto';
 
 const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+const DEFAULT_LIFF_URL = 'https://liff.line.me/2010284484-jvUDlx0u';
+
+const replyToLine = async (replyToken: string, messages: any[]) => {
+  if (!LINE_CHANNEL_ACCESS_TOKEN) {
+    throw new Error('LINE_CHANNEL_ACCESS_TOKEN is not configured');
+  }
+
+  await axios.post(
+    'https://api.line.me/v2/bot/message/reply',
+    { replyToken, messages },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`,
+      },
+    },
+  );
+};
+
+const buildBillingFlexMessage = (billing: {
+  id: string;
+  name: string;
+  amount: number;
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  invitationText: string;
+  invitationColor: string;
+  buttonColor: string;
+}) => {
+  const badgeTextColor = billing.invitationColor.toUpperCase() === '#FFE600' ? '#334155' : '#ffffff';
+  const buttonTextColor = billing.buttonColor.toUpperCase() === '#FFE600' ? '#334155' : '#ffffff';
+
+  return {
+    type: 'flex',
+    altText: `💸 รายการเรียกเก็บเงิน: ${billing.name}`,
+    contents: {
+      type: 'bubble',
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        paddingAll: 'md',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            contents: [
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: billing.invitationColor,
+                paddingAll: 'sm',
+                paddingStart: 'md',
+                paddingEnd: 'md',
+                cornerRadius: 'xxl',
+                contents: [
+                  {
+                    type: 'text',
+                    text: billing.invitationText,
+                    size: 'xs',
+                    color: badgeTextColor,
+                    weight: 'bold',
+                    align: 'center',
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            type: 'text',
+            text: billing.name,
+            weight: 'bold',
+            size: 'xl',
+            color: '#1e293b',
+            margin: 'md',
+            wrap: true,
+          },
+          {
+            type: 'box',
+            layout: 'vertical',
+            margin: 'lg',
+            spacing: 'sm',
+            contents: [
+              {
+                type: 'box',
+                layout: 'horizontal',
+                spacing: 'sm',
+                contents: [
+                  { type: 'text', text: '💰', size: 'sm', flex: 0, gravity: 'center' },
+                  { type: 'text', text: `จำนวนเงิน: ${billing.amount} บาท`, size: 'sm', color: '#475569', wrap: true, flex: 1, weight: 'bold', gravity: 'center' },
+                ],
+              },
+              {
+                type: 'box',
+                layout: 'horizontal',
+                spacing: 'sm',
+                contents: [
+                  { type: 'text', text: '🏦', size: 'sm', flex: 0, gravity: 'center' },
+                  { type: 'text', text: `ธนาคาร: ${billing.bankName}`, size: 'sm', color: '#475569', wrap: true, flex: 1, gravity: 'center' },
+                ],
+              },
+              {
+                type: 'box',
+                layout: 'horizontal',
+                spacing: 'sm',
+                contents: [
+                  { type: 'text', text: '👤', size: 'sm', flex: 0, gravity: 'center' },
+                  { type: 'text', text: `ชื่อบัญชี: ${billing.accountName}`, size: 'sm', color: '#475569', wrap: true, flex: 1, gravity: 'center' },
+                ],
+              },
+              {
+                type: 'box',
+                layout: 'horizontal',
+                spacing: 'sm',
+                contents: [
+                  { type: 'text', text: '💳', size: 'sm', flex: 0, gravity: 'center' },
+                  { type: 'text', text: `เลขบัญชี: ${billing.accountNumber}`, size: 'sm', color: '#475569', wrap: true, flex: 1, gravity: 'center' },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        contents: [
+          {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: billing.buttonColor,
+            cornerRadius: 'xxl',
+            paddingAll: 'md',
+            action: {
+              type: 'uri',
+              uri: `${DEFAULT_LIFF_URL}/payment/${billing.id}`,
+            },
+            contents: [
+              {
+                type: 'text',
+                text: 'ชำระเงิน / แนบหลักฐาน 💳',
+                color: buttonTextColor,
+                weight: 'bold',
+                size: 'sm',
+                align: 'center',
+              },
+            ],
+          },
+        ],
+      },
+    },
+  };
+};
 
 const isVideoUrl = (url: string | null | undefined): boolean => {
   if (!url) return false;
@@ -107,6 +261,105 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     } else if (event.type === 'message' && event.message?.type === 'text') {
       const text = event.message.text || '';
+      const trimmedText = text.trim();
+
+      if (trimmedText.startsWith('สร้างบิล')) {
+        if (!replyToken || !userId) continue;
+
+        const usageMessage = 'รูปแบบการสร้างบิล:\nสร้างบิล/ชื่อบิล/จำนวนเงิน\n\nตัวอย่าง:\nสร้างบิล/ค่า CENTER/280 บาท';
+        const parts = trimmedText.split('/').map((part: string) => part.trim());
+
+        if (trimmedText === 'สร้างบิล' || parts.length !== 3 || parts[0] !== 'สร้างบิล' || !parts[1] || !parts[2]) {
+          try {
+            await replyToLine(replyToken, [{ type: 'text', text: usageMessage }]);
+          } catch (err: any) {
+            console.error('[Billing Bot] Usage reply error:', err.response?.data || err.message);
+          }
+          continue;
+        }
+
+        const amountPattern = /^(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?\s*(?:บาท)?$/;
+        const amountText = parts[2];
+        const amount = Number(amountText.replace(/บาท/g, '').replace(/,/g, '').trim());
+
+        if (!amountPattern.test(amountText) || !Number.isFinite(amount) || amount <= 0) {
+          try {
+            await replyToLine(replyToken, [{ type: 'text', text: `จำนวนเงินไม่ถูกต้องครับ\n\n${usageMessage}` }]);
+          } catch (err: any) {
+            console.error('[Billing Bot] Invalid amount reply error:', err.response?.data || err.message);
+          }
+          continue;
+        }
+
+        try {
+          const accountRows = await sql`
+            SELECT account_name, bank_name, account_number
+            FROM saved_accounts
+            WHERE user_id = ${userId}
+            ORDER BY updated_at DESC
+            LIMIT 1
+          `;
+
+          if (accountRows.length === 0) {
+            await replyToLine(replyToken, [{
+              type: 'text',
+              text: 'ยังไม่พบบัญชีรับโอนที่บันทึกไว้ครับ กรุณาเข้า FitJourney และบันทึกบัญชีรับเงินก่อนสร้างบิล',
+            }]);
+            continue;
+          }
+
+          const account = accountRows[0];
+          const sourceEventId = event.webhookEventId || event.message?.id || crypto.randomBytes(16).toString('hex');
+          const billingId = crypto
+            .createHash('sha256')
+            .update(`${sourceEventId}:${userId}:${trimmedText}`)
+            .digest('hex')
+            .slice(0, 20);
+          const billingName = parts[1];
+          const invitationText = 'อย่าลืมโอนกันนะ 💸';
+          const invitationColor = '#ef4444';
+          const buttonColor = '#6d28d9';
+
+          await sql`
+            INSERT INTO billings (
+              id, name, amount, bank_name, account_name, account_number,
+              description, invitation_text, invitation_color, button_color,
+              status, created_by
+            ) VALUES (
+              ${billingId}, ${billingName}, ${amount}, ${account.bank_name},
+              ${account.account_name}, ${account.account_number}, '',
+              ${invitationText}, ${invitationColor}, ${buttonColor}, 'pending', ${userId}
+            )
+            ON CONFLICT (id) DO NOTHING
+          `;
+
+          const flexMessage = buildBillingFlexMessage({
+            id: billingId,
+            name: billingName,
+            amount,
+            bankName: account.bank_name,
+            accountName: account.account_name,
+            accountNumber: account.account_number,
+            invitationText,
+            invitationColor,
+            buttonColor,
+          });
+
+          await replyToLine(replyToken, [flexMessage]);
+        } catch (err: any) {
+          console.error('[Billing Bot] Create billing error:', err.response?.data || err.message);
+          try {
+            await replyToLine(replyToken, [{
+              type: 'text',
+              text: 'ไม่สามารถสร้างบิลได้ในขณะนี้ กรุณาลองใหม่อีกครั้งครับ',
+            }]);
+          } catch (replyErr: any) {
+            console.error('[Billing Bot] Error reply failed:', replyErr.response?.data || replyErr.message);
+          }
+        }
+        continue;
+      }
+
       if (text.startsWith('✍️ ลงชื่อเข้าร่วมกิจกรรม ')) {
         eventId = text.replace('✍️ ลงชื่อเข้าร่วมกิจกรรม ', '').trim();
         isRsvpAction = true;

@@ -136,6 +136,10 @@ export const billingsApi = {
       button_color: data.buttonColor,
     }),
   }),
+  delete: (id: string) => request<{ success: true; id: string }>(
+    `/api/billings?id=${encodeURIComponent(id)}`,
+    { method: 'DELETE' },
+  ),
 };
 
 // 7. Billing Payments (การชำระเงินและสลิป)

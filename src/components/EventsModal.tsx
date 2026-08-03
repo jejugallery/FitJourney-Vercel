@@ -54,9 +54,10 @@ interface BillingItemProps {
   creators: Record<string, any>;
   onNavigatePay: (billingId: string) => void;
   onUpdateStatus: (billingId: string, status: 'pending' | 'completed') => Promise<void>;
+  onDelete: (billingId: string) => Promise<void>;
 }
 
-function BillingItem({ billing, role, creators, onNavigatePay, onUpdateStatus }: BillingItemProps) {
+function BillingItem({ billing, role, creators, onNavigatePay, onUpdateStatus, onDelete }: BillingItemProps) {
   const [payments, setPayments] = useState<any[]>([]);
   const [showPayments, setShowPayments] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
@@ -66,6 +67,7 @@ function BillingItem({ billing, role, creators, onNavigatePay, onUpdateStatus }:
   const [completing, setCompleting] = useState(false);
   const [showReopenConfirm, setShowReopenConfirm] = useState(false);
   const [reopening, setReopening] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleMarkComplete = async () => {
     setShowCompleteConfirm(false);
@@ -90,6 +92,20 @@ function BillingItem({ billing, role, creators, onNavigatePay, onUpdateStatus }:
       alert("เกิดข้อผิดพลาดในการเปิดรายการอีกครั้ง ระบบคืนสถานะเดิมแล้ว");
     } finally {
       setReopening(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`ลบบิล “${billing.name}” ถาวร?\n\nรายการผู้ชำระเงินที่ผูกกับบิลนี้จะถูกลบด้วย`)) return;
+
+    setDeleting(true);
+    try {
+      await onDelete(billing.id);
+    } catch (err) {
+      console.error('Error deleting billing:', err);
+      alert('เกิดข้อผิดพลาดในการลบบิล กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -522,13 +538,24 @@ function BillingItem({ billing, role, creators, onNavigatePay, onUpdateStatus }:
         )}
 
         {isTrainerOrAdmin && billing.status === 'completed' && (
-          <button
-            type="button"
-            onClick={() => setShowReopenConfirm(true)}
-            style={{ flex: 1, padding: '8px 16px', background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-          >
-            🔄 ย้อนคืนสถานะ
-          </button>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => setShowReopenConfirm(true)}
+              disabled={deleting}
+              style={{ width: '100%', padding: '8px 16px', background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            >
+              🔄 ย้อนคืนสถานะ
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              style={{ width: '100%', padding: '8px 16px', background: '#fff1f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.85rem', cursor: deleting ? 'wait' : 'pointer' }}
+            >
+              {deleting ? 'กำลังลบ...' : '🗑️ ลบบิลนี้'}
+            </button>
+          </div>
         )}
       </div>
 
@@ -913,6 +940,12 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
       }
       throw error;
     }
+  };
+
+  const deleteBilling = async (billingId: string) => {
+    await billingsApi.delete(billingId);
+    pendingBillingStatusesRef.current.delete(billingId);
+    setRawBillings(current => current.filter((billing: any) => billing.id !== billingId));
   };
 
   const handleAddToCalendar = (ev: any) => {
@@ -1648,6 +1681,7 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
                         role={role} 
                         creators={creators}
                         onUpdateStatus={updateBillingStatus}
+                        onDelete={deleteBilling}
                         onNavigatePay={(id) => {
                           onClose();
                           navigate(`/payment/${id}`);

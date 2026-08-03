@@ -1,10 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { sql } from './_db.js';
+import { HttpError, requireTrainer } from './_auth.js';
 import * as crypto from 'crypto';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -120,9 +121,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json(result[0]);
     }
 
+    if (req.method === 'DELETE') {
+      if (!id || typeof id !== 'string') {
+        return res.status(400).json({ error: 'Billing ID is required' });
+      }
+
+      const actor = await requireTrainer(req);
+      const result = actor.isSuperadmin
+        ? await sql`DELETE FROM billings WHERE id = ${id} RETURNING id`
+        : await sql`DELETE FROM billings WHERE id = ${id} AND created_by = ${actor.userId} RETURNING id`;
+
+      if (result.length === 0) {
+        return res.status(404).json({ error: 'Billing not found or you do not have permission to delete it' });
+      }
+
+      return res.status(200).json({ success: true, id });
+    }
+
     return res.status(405).json({ error: 'Method Not Allowed' });
   } catch (error: any) {
     console.error('Database Error in billings:', error);
+    if (error instanceof HttpError) {
+      return res.status(error.status).json({ error: error.message });
+    }
     return res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
 }
