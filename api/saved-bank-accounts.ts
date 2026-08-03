@@ -3,7 +3,7 @@ import { sql } from './_db.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -47,6 +47,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `;
 
       return res.status(200).json(result[0]);
+    }
+
+    if (req.method === 'DELETE') {
+      const { id } = req.query;
+      if (!id || typeof id !== 'string' || !userId || typeof userId !== 'string') {
+        return res.status(400).json({ error: 'id and userId parameters are required' });
+      }
+
+      const result = await sql`
+        DELETE FROM saved_accounts
+        WHERE id = ${id} AND user_id = ${userId}
+        RETURNING id
+      `;
+
+      if (result.length === 0) {
+        return res.status(404).json({ error: 'Saved account not found' });
+      }
+
+      return res.status(200).json({ success: true, id });
     }
 
     return res.status(405).json({ error: 'Method Not Allowed' });

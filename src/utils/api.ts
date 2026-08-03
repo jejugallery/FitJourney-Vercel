@@ -153,10 +153,23 @@ export const usedSlipsApi = {
 };
 
 // 9. Saved Bank Accounts (บันทึกบัญชีรับเงิน)
+export interface SavedBankAccount {
+  id: string;
+  userId: string;
+  accountName: string;
+  bankName: string;
+  accountNumber: string;
+  updatedAt?: string;
+}
+
 export const savedAccountsApi = {
-  list: (userId: string) => request<any[]>(`/api/saved-bank-accounts?userId=${userId}`),
+  list: (userId: string) => request<SavedBankAccount[]>(`/api/saved-bank-accounts?userId=${userId}`),
   save: (data: { id: string; userId: string; accountName: string; bankName: string; accountNumber: string }) => 
-    request<any>('/api/saved-bank-accounts', { method: 'POST', body: JSON.stringify(data) }),
+    request<SavedBankAccount>('/api/saved-bank-accounts', { method: 'POST', body: JSON.stringify(data) }),
+  delete: (id: string, userId: string) => request<{ success: true; id: string }>(
+    `/api/saved-bank-accounts?id=${encodeURIComponent(id)}&userId=${encodeURIComponent(userId)}`,
+    { method: 'DELETE' },
+  ),
 };
 
 // 10. Health Knowledges (คลังความรู้)

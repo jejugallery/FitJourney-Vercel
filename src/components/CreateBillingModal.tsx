@@ -47,6 +47,7 @@ export default function CreateBillingModal({ onClose, userId }: CreateBillingMod
   const [saveAccount, setSaveAccount] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
   const [selectedSavedAccountId, setSelectedSavedAccountId] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const [saving, setSaving] = useState(false);
 
@@ -66,13 +67,7 @@ export default function CreateBillingModal({ onClose, userId }: CreateBillingMod
     const fetchSavedAccounts = async () => {
       try {
         const accountsList = await savedAccountsApi.list(userId);
-        const accounts: SavedAccount[] = accountsList.map((a: any) => ({
-          id: a.id,
-          accountName: a.account_name,
-          bankName: a.bank_name,
-          accountNumber: a.account_number
-        }));
-        setSavedAccounts(accounts);
+        setSavedAccounts(accountsList);
       } catch (err) {
         console.error('Failed to load saved accounts', err);
       }
@@ -80,14 +75,28 @@ export default function CreateBillingModal({ onClose, userId }: CreateBillingMod
     fetchSavedAccounts();
   }, [userId]);
 
-  const handleSelectSavedAccount = (id: string) => {
-    setSelectedSavedAccountId(id);
-    if (!id) return;
-    const found = savedAccounts.find(a => a.id === id);
-    if (found) {
-      setAccountName(found.accountName);
-      setBankName(found.bankName);
-      setAccountNumber(found.accountNumber);
+  const handleSelectSavedAccount = (account?: SavedAccount) => {
+    setSelectedSavedAccountId(account?.id || '');
+    if (!account) return;
+    setAccountName(account.accountName);
+    setBankName(account.bankName);
+    setAccountNumber(account.accountNumber);
+  };
+
+  const handleDeleteSavedAccount = async () => {
+    const account = savedAccounts.find(item => item.id === selectedSavedAccountId);
+    if (!account || !confirm(`ลบบัญชี “${account.accountName}” ออกจากบัญชีที่บันทึกไว้?`)) return;
+
+    setDeletingAccount(true);
+    try {
+      await savedAccountsApi.delete(account.id, userId);
+      setSavedAccounts(current => current.filter(item => item.id !== account.id));
+      setSelectedSavedAccountId('');
+    } catch (err) {
+      console.error('Failed to delete saved account', err);
+      alert('เกิดข้อผิดพลาดในการลบบัญชีที่บันทึกไว้');
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -222,18 +231,33 @@ export default function CreateBillingModal({ onClose, userId }: CreateBillingMod
           {savedAccounts.length > 0 && (
             <div>
               <label style={labelStyle}>เลือกบัญชีที่บันทึกไว้</label>
-              <select
-                value={selectedSavedAccountId}
-                onChange={e => handleSelectSavedAccount(e.target.value)}
-                style={{ ...inputStyle, color: selectedSavedAccountId ? '#1e293b' : '#94a3b8', appearance: 'auto' }}
-              >
-                <option value="">— กรอกข้อมูลบัญชีใหม่ —</option>
-                {savedAccounts.map(acc => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.accountName}  ·  {acc.bankName}  ·  {acc.accountNumber}
-                  </option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                <select
+                  value={selectedSavedAccountId}
+                  onChange={e => handleSelectSavedAccount(
+                    savedAccounts.find(account => account.id === e.target.value)
+                  )}
+                  style={{ ...inputStyle, flex: 1, color: selectedSavedAccountId ? '#1e293b' : '#94a3b8', appearance: 'auto' }}
+                >
+                  <option value="">— กรอกข้อมูลบัญชีใหม่ —</option>
+                  {savedAccounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.accountName}  ·  {acc.bankName}  ·  {acc.accountNumber}
+                    </option>
+                  ))}
+                </select>
+                {selectedSavedAccountId && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteSavedAccount}
+                    disabled={deletingAccount}
+                    aria-label="ลบบัญชีที่เลือก"
+                    style={{ padding: '0 14px', borderRadius: '8px', border: '1px solid #fecaca', background: '#fff1f2', color: '#dc2626', fontWeight: 'bold', cursor: deletingAccount ? 'wait' : 'pointer' }}
+                  >
+                    {deletingAccount ? '...' : 'ลบ'}
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
