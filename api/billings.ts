@@ -31,15 +31,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const {
         name,
         amount,
-        bankName,
-        accountName,
-        accountNumber,
+        bankName: bodyBankName,
+        bank_name: bodyBankNameSnake,
+        accountName: bodyAccountName,
+        account_name: bodyAccountNameSnake,
+        accountNumber: bodyAccountNumber,
+        account_number: bodyAccountNumberSnake,
         description,
-        invitationText,
-        invitationColor,
-        buttonColor,
-        createdBy,
-      } = req.body;
+        invitationText: bodyInvitationText,
+        invitation_text: bodyInvitationTextSnake,
+        invitationColor: bodyInvitationColor,
+        invitation_color: bodyInvitationColorSnake,
+        buttonColor: bodyButtonColor,
+        button_color: bodyButtonColorSnake,
+        createdBy: bodyCreatedBy,
+        created_by: bodyCreatedBySnake,
+      } = req.body || {};
+
+      const bankName = bodyBankName ?? bodyBankNameSnake;
+      const accountName = bodyAccountName ?? bodyAccountNameSnake;
+      const accountNumber = bodyAccountNumber ?? bodyAccountNumberSnake;
+      const invitationText = bodyInvitationText ?? bodyInvitationTextSnake;
+      const invitationColor = bodyInvitationColor ?? bodyInvitationColorSnake;
+      const buttonColor = bodyButtonColor ?? bodyButtonColorSnake;
+      const createdBy = bodyCreatedBy ?? bodyCreatedBySnake;
 
       if (!name || !amount || !bankName || !accountName || !accountNumber) {
         return res.status(400).json({ error: 'Required fields are missing' });
@@ -63,12 +78,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (req.method === 'PUT') {
-      const billingId = id || req.body.id;
+      const body = req.body || {};
+      const billingId = id || body.id;
       if (!billingId || typeof billingId !== 'string') {
         return res.status(400).json({ error: 'Billing ID is required' });
       }
 
-      const { status, name, amount, bankName, accountName, accountNumber, description, invitationText, invitationColor, buttonColor } = req.body;
+      const {
+        status,
+        name,
+        amount,
+        description,
+      } = body;
+      const bankName = body.bankName ?? body.bank_name;
+      const accountName = body.accountName ?? body.account_name;
+      const accountNumber = body.accountNumber ?? body.account_number;
+      const invitationText = body.invitationText ?? body.invitation_text;
+      const invitationColor = body.invitationColor ?? body.invitation_color;
+      const buttonColor = body.buttonColor ?? body.button_color;
 
       const result = await sql`
         UPDATE billings SET

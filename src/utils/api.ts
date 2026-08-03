@@ -106,8 +106,36 @@ export const eventRsvpsApi = {
 export const billingsApi = {
   list: () => request<any[]>('/api/billings'),
   get: (id: string) => request<any>(`/api/billings?id=${id}`),
-  create: (data: any) => request<any>('/api/billings', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => request<any>(`/api/billings?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  create: (data: any) => request<any>('/api/billings', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: data.name,
+      amount: data.amount,
+      bank_name: data.bankName,
+      account_name: data.accountName,
+      account_number: data.accountNumber,
+      description: data.description,
+      invitation_text: data.invitationText,
+      invitation_color: data.invitationColor,
+      button_color: data.buttonColor,
+      created_by: data.createdBy,
+    }),
+  }),
+  update: (id: string, data: any) => request<any>(`/api/billings?id=${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      status: data.status,
+      name: data.name,
+      amount: data.amount,
+      bank_name: data.bankName,
+      account_name: data.accountName,
+      account_number: data.accountNumber,
+      description: data.description,
+      invitation_text: data.invitationText,
+      invitation_color: data.invitationColor,
+      button_color: data.buttonColor,
+    }),
+  }),
 };
 
 // 7. Billing Payments (การชำระเงินและสลิป)
