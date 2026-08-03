@@ -6,6 +6,7 @@ import { filterCourseTrainees } from './traineeSearch';
 import { displayProductPrice } from './priceDisplay';
 import { orderSupplementProducts } from './productOrder';
 import type { CourseDraftLine, CourseTrainee, DiscountType, SavedSupplementCourse, Supplement } from './types';
+import ProfileImage from '../../components/ProfileImage';
 
 interface Props { trainees: CourseTrainee[]; supplements: Supplement[]; onSaved: (course: SavedSupplementCourse) => Promise<void>; }
 const discounts: Array<[DiscountType, string]> = [['none', 'ไม่ลด'], ['percent_10', '10%'], ['percent_15', '15%'], ['fixed_100', '100฿'], ['fixed_300', '300฿'], ['fixed_500', '500฿'], ['custom', 'กำหนดเอง']];
@@ -68,12 +69,12 @@ export default function SupplementCourseForm({ trainees, supplements, onSaved }:
     <label className="supplement-label">เลือกลูกเทรน *</label>
     <div className="supplement-trainee-picker">
       <button type="button" className={`supplement-trainee-trigger ${traineeDropdownOpen ? 'open' : ''}`} onClick={() => setTraineeDropdownOpen(open => !open)} aria-expanded={traineeDropdownOpen}>
-        <span className="supplement-trainee-value">{selectedTrainee ? <><span className="supplement-avatar">{selectedTrainee.pictureUrl ? <img src={selectedTrainee.pictureUrl} alt="" /> : '👤'}</span><b>{selectedTrainee.nickname}</b></> : <span className="placeholder">เลือกลูกเทรน</span>}</span>
+        <span className="supplement-trainee-value">{selectedTrainee ? <><span className="supplement-avatar">{selectedTrainee.pictureUrl || selectedTrainee.pictureBackupUrl ? <ProfileImage src={selectedTrainee.pictureUrl} fallbackSrc={selectedTrainee.pictureBackupUrl} alt="" /> : '👤'}</span><b>{selectedTrainee.nickname}</b></> : <span className="placeholder">เลือกลูกเทรน</span>}</span>
         <span className="supplement-trainee-chevron">▼</span>
       </button>
       {traineeDropdownOpen && <><button type="button" className="supplement-trainee-overlay" aria-label="ปิดรายการลูกเทรน" onClick={() => { setTraineeDropdownOpen(false); setTraineeSearch(''); }} /><div className="supplement-trainee-panel">
         <div className="supplement-trainee-search-wrap"><span>🔍</span><input value={traineeSearch} onChange={e => setTraineeSearch(e.target.value)} placeholder="ค้นหาลูกเทรน..." autoFocus /></div>
-        <div className="supplement-trainee-options">{!trainees.length ? <div className="supplement-trainee-empty">ยังไม่มีลูกเทรน</div> : !filteredTrainees.length ? <div className="supplement-trainee-empty">ไม่พบลูกเทรน</div> : filteredTrainees.map(trainee => <button type="button" key={trainee.userId} className={`supplement-trainee-option ${trainee.userId === traineeId ? 'selected' : ''}`} onClick={() => { setTraineeId(trainee.userId); setTraineeDropdownOpen(false); setTraineeSearch(''); }}><span className="supplement-avatar">{trainee.pictureUrl ? <img src={trainee.pictureUrl} alt="" /> : '👤'}</span><span>{trainee.nickname}</span>{trainee.userId === traineeId && <strong>✓</strong>}</button>)}</div>
+        <div className="supplement-trainee-options">{!trainees.length ? <div className="supplement-trainee-empty">ยังไม่มีลูกเทรน</div> : !filteredTrainees.length ? <div className="supplement-trainee-empty">ไม่พบลูกเทรน</div> : filteredTrainees.map(trainee => <button type="button" key={trainee.userId} className={`supplement-trainee-option ${trainee.userId === traineeId ? 'selected' : ''}`} onClick={() => { setTraineeId(trainee.userId); setTraineeDropdownOpen(false); setTraineeSearch(''); }}><span className="supplement-avatar">{trainee.pictureUrl || trainee.pictureBackupUrl ? <ProfileImage src={trainee.pictureUrl} fallbackSrc={trainee.pictureBackupUrl} alt="" /> : '👤'}</span><span>{trainee.nickname}</span>{trainee.userId === traineeId && <strong>✓</strong>}</button>)}</div>
       </div></>}
     </div>
     <button type="button" className="supplement-action supplement-action-primary supplement-picker-trigger" onClick={() => setPickerOpen(true)} disabled={!availableCount}>＋ {availableCount ? 'เลือกอาหารเสริม' : 'ยังไม่มีอาหารเสริมในคลัง'}</button>

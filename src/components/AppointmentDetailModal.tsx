@@ -8,6 +8,7 @@ import SuccessPopup from './SuccessPopup';
 import { isVideoUrl, getMediaFlexUrl, getMediaThumbnailUrl, getMediaVideoLoopUrl } from '../utils/mediaHelper';
 import { appointmentsApi, appointmentInvitationsApi } from '../utils/api';
 import { LIFF_URLS } from '../constants/liff';
+import ProfileImage from './ProfileImage';
 
 interface AppointmentDetailModalProps {
   appointmentId: string;
@@ -662,8 +663,8 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
           
           {creatorData && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
-              {creatorData.pictureUrl ? (
-                <img src={creatorData.pictureUrl} alt="creator" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+              {creatorData.pictureUrl || creatorData.pictureBackupUrl ? (
+                <ProfileImage src={creatorData.pictureUrl} fallbackSrc={creatorData.pictureBackupUrl} alt="creator" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
               ) : (
                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '12px' }}>👤</div>
               )}
@@ -795,8 +796,8 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
                   return (
                     <div key={id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
-                        {person.pictureUrl ? (
-                          <img src={person.pictureUrl} alt="profile" style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        {person.pictureUrl || person.pictureBackupUrl ? (
+                          <ProfileImage src={person.pictureUrl} fallbackSrc={person.pictureBackupUrl} alt="profile" style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                         ) : (
                           <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>👤</div>
                         )}
@@ -834,8 +835,8 @@ export default function AppointmentDetailModal({ appointmentId, initialAppointme
                       return (
                         <div key={id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: isAcceptedInv ? '#f0fdf4' : '#fffbeb', borderRadius: '12px', border: `1px solid ${isAcceptedInv ? '#bbf7d0' : '#fde68a'}`, opacity: 0.85 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
-                            {person.pictureUrl ? (
-                              <img src={person.pictureUrl} alt="profile" style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                          {person.pictureUrl || person.pictureBackupUrl ? (
+                            <ProfileImage src={person.pictureUrl} fallbackSrc={person.pictureBackupUrl} alt="profile" style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                             ) : (
                               <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>👤</div>
                             )}

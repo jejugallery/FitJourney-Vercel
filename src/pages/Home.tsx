@@ -14,6 +14,8 @@ import HealthKnowledgeModal from '../components/HealthKnowledgeModal';
 import HealthKnowledgePlayerModal from '../components/HealthKnowledgePlayerModal';
 import liff from '@line/liff';
 import SuccessPopup from '../components/SuccessPopup';
+import ProfileImage from '../components/ProfileImage';
+import { syncLineProfilePicture } from '../utils/profilePictureSync';
 
 export default function Home({ isRecordOnly = false }: { isRecordOnly?: boolean }) {
   const navigate = useNavigate();
@@ -57,6 +59,16 @@ export default function Home({ isRecordOnly = false }: { isRecordOnly?: boolean 
       sessionStorage.removeItem('cachedAdminData');
     }
   }, [adminData]);
+
+  const realProfileUserId = realProfile?.userId;
+  const realProfileDisplayName = realProfile?.displayName;
+  const realProfilePictureUrl = realProfile?.pictureUrl;
+  useEffect(() => {
+    if (!realProfileUserId || !realProfileDisplayName) return;
+    void syncLineProfilePicture({ userId: realProfileUserId, displayName: realProfileDisplayName, pictureUrl: realProfilePictureUrl }).catch(error => {
+      console.warn('Unable to sync the current LINE profile picture.', error);
+    });
+  }, [realProfileUserId, realProfileDisplayName, realProfilePictureUrl]);
 
   // Sync viewMode and viewingTraineeId when navigating back to this page (e.g. from FoodHistoryPage)
   useEffect(() => {
@@ -909,8 +921,8 @@ export default function Home({ isRecordOnly = false }: { isRecordOnly?: boolean 
                   <div key={trainer.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
                     {/* คอลัมน์ที่ 1: รูปภาพ */}
                     <div>
-                      {trainer.pictureUrl ? (
-                        <img src={trainer.pictureUrl} alt="Profile" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} />
+                      {trainer.pictureUrl || trainer.pictureBackupUrl ? (
+                        <ProfileImage src={trainer.pictureUrl} fallbackSrc={trainer.pictureBackupUrl} alt="Profile" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} />
                       ) : (
                         <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#cbd5e1' }} />
                       )}
@@ -996,7 +1008,7 @@ export default function Home({ isRecordOnly = false }: { isRecordOnly?: boolean 
             <h2 style={{ color: 'var(--primary)', marginBottom: '1.5rem', fontSize: '1.4rem' }}>มีเทรนเนอร์ใหม่รออนุมัติ!</h2>
             
             {newTrainerAlert.pictureUrl ? (
-              <img src={newTrainerAlert.pictureUrl} alt="profile" style={{ width: '110px', height: '110px', borderRadius: '50%', objectFit: 'cover', border: '4px solid var(--primary)', marginBottom: '1rem', boxShadow: '0 8px 16px rgba(255, 65, 108, 0.2)' }} />
+              <ProfileImage src={newTrainerAlert.pictureUrl} alt="profile" style={{ width: '110px', height: '110px', borderRadius: '50%', objectFit: 'cover', border: '4px solid var(--primary)', marginBottom: '1rem', boxShadow: '0 8px 16px rgba(255, 65, 108, 0.2)' }} />
             ) : (
               <div style={{ width: '110px', height: '110px', borderRadius: '50%', background: '#cbd5e1', border: '4px solid var(--primary)', margin: '0 auto 1rem auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '2rem' }}>👤</div>
             )}

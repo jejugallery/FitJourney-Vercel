@@ -55,6 +55,29 @@ export async function uploadToImgBB(file: File): Promise<string> {
   }
 }
 
+export async function uploadImageUrlToImgBB(imageUrl: string): Promise<string> {
+  const formData = new FormData();
+  formData.append('key', '42148f6b7b12bd47c5e7909be404d11d');
+  formData.append('image', imageUrl);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  try {
+    const response = await fetch('https://api.imgbb.com/1/upload', {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success || !data.data?.url) {
+      throw new Error(data.error?.message || `สำรองรูปโปรไฟล์ไปที่ ImgBB ไม่สำเร็จ (${response.status})`);
+    }
+    return data.data.url;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 
 export async function uploadToCloudinary(file: File): Promise<string> {
   if (file.type.startsWith('image/')) {
@@ -175,4 +198,3 @@ export async function convertVideoToGif(videoFile: File): Promise<Blob> {
     );
   });
 }
-

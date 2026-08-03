@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import ProfileImage from '../components/ProfileImage';
 
 interface TraineeProfile {
   userId: string;
   nickname: string;
   lineName?: string;
   pictureUrl?: string;
+  pictureBackupUrl?: string;
   gender?: 'male' | 'female';
   age?: number;
   height?: number;
@@ -386,8 +388,8 @@ export default function BodyMetricsAnalysisPage() {
 
           {/* Profile Card */}
           <div style={{ background: '#fff', borderRadius: '20px', padding: '1.5rem', margin: 0, boxShadow: '0 4px 15px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-            {trainee.pictureUrl ? (
-              <img src={trainee.pictureUrl} alt={trainee.nickname} style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover' }} />
+            {trainee.pictureUrl || trainee.pictureBackupUrl ? (
+              <ProfileImage src={trainee.pictureUrl} fallbackSrc={trainee.pictureBackupUrl} alt={trainee.nickname} style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover' }} />
             ) : (
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', color: '#fff' }}>👤</div>
             )}

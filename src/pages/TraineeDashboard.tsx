@@ -13,6 +13,7 @@ import AddTrainerModal from '../components/AddTrainerModal';
 import TraineeEventsSlider from '../components/TraineeEventsSlider';
 import TraineeAppointmentsSlider from '../components/TraineeAppointmentsSlider';
 import FoodHistoryModal from '../components/FoodHistoryModal';
+import ProfileImage from '../components/ProfileImage';
 
 interface TraineeDashboardProps { 
   onAppointmentsClick?: () => void;
@@ -371,8 +372,8 @@ export default function TraineeDashboard({
         }}>
           {/* Top row: Profile picture and Nickname next to it */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-            {(isMyStats ? (profile?.pictureUrl || traineeData?.pictureUrl) : traineeData?.pictureUrl) ? (
-              <img src={isMyStats ? (profile?.pictureUrl || traineeData?.pictureUrl) : traineeData?.pictureUrl} alt="Profile" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            {(isMyStats ? (profile?.pictureUrl || traineeData?.pictureUrl || traineeData?.pictureBackupUrl) : (traineeData?.pictureUrl || traineeData?.pictureBackupUrl)) ? (
+              <ProfileImage src={isMyStats ? (profile?.pictureUrl || traineeData?.pictureUrl) : traineeData?.pictureUrl} fallbackSrc={traineeData?.pictureBackupUrl} alt="Profile" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
             ) : (
               <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#cbd5e1', flexShrink: 0 }} />
             )}
@@ -586,8 +587,8 @@ export default function TraineeDashboard({
                     flex: '1 1 calc(50% - 0.75rem)',
                     minWidth: '140px'
                   }}>
-                    {trainer.pictureUrl ? (
-                      <img src={trainer.pictureUrl} alt="Trainer" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #f59e0b', objectFit: 'cover' }} />
+                    {trainer.pictureUrl || trainer.pictureBackupUrl ? (
+                      <ProfileImage src={trainer.pictureUrl} fallbackSrc={trainer.pictureBackupUrl} alt="Trainer" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #f59e0b', objectFit: 'cover' }} />
                     ) : (
                       <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1rem' }}>👨‍🏫</div>
                     )}

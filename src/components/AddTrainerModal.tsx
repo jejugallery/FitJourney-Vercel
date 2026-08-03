@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, updateDoc, arrayUnion, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useLiff } from '../context/LiffContext';
+import ProfileImage from './ProfileImage';
 
 interface AddTrainerModalProps {
   traineeId: string;
@@ -152,9 +153,10 @@ export default function AddTrainerModal({ traineeId, currentTrainerIds = [], onC
             display: 'flex', alignItems: 'center', gap: '1.5rem', background: '#fff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
           }}>
             <div style={{ flexShrink: 0 }}>
-              {trainerInfo.pictureUrl ? (
-                <img 
-                  src={trainerInfo.pictureUrl} 
+              {trainerInfo.pictureUrl || trainerInfo.pictureBackupUrl ? (
+                <ProfileImage
+                  src={trainerInfo.pictureUrl}
+                  fallbackSrc={trainerInfo.pictureBackupUrl}
                   alt="Trainer Profile" 
                   style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--primary)' }}
                 />

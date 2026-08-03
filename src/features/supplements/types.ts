@@ -64,4 +64,5 @@ export interface CourseTrainee {
   userId: string;
   nickname: string;
   pictureUrl?: string;
+  pictureBackupUrl?: string;
 }

@@ -6,6 +6,7 @@ import { useLiff } from '../context/LiffContext';
 import SuccessPopup from './SuccessPopup';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
 import liff from '@line/liff';
+import ProfileImage from './ProfileImage';
 
 export default function FoodUploadModal({ traineeId, trainerIds, onClose }: { traineeId: string, trainerIds: string[], onClose: () => void }) {
   const { profile } = useLiff();
@@ -375,8 +376,8 @@ export default function FoodUploadModal({ traineeId, trainerIds, onClose }: { tr
                         style={{ cursor: 'pointer', accentColor: 'var(--primary)' }}
                       />
                     )}
-                    {trainer.pictureUrl ? (
-                      <img src={trainer.pictureUrl} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+                    {trainer.pictureUrl || trainer.pictureBackupUrl ? (
+                      <ProfileImage src={trainer.pictureUrl} fallbackSrc={trainer.pictureBackupUrl} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
                     ) : (
                       <span style={{ fontSize: '1rem' }}>👨‍🏫</span>
                     )}

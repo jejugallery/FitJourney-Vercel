@@ -11,6 +11,7 @@ import FoodLogsModal from './FoodLogsModal';
 import AddTrainerModal from './AddTrainerModal';
 import FoodHistoryModal from './FoodHistoryModal';
 import SupplementCourseModal from './SupplementCourseModal';
+import ProfileImage from './ProfileImage';
 
 
 interface MetricsFormProps {
@@ -410,6 +411,7 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
             height: data.height || '',
             dob: data.dob,
             pictureUrl: data.pictureUrl || '',
+            pictureBackupUrl: data.pictureBackupUrl || '',
             createdAt: data.createdAt ? data.createdAt.toDate().getTime() : 0
           };
           list.push(traineeObj);
@@ -823,7 +825,7 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
                 border: '1px solid #e2e8f0'
               }}>
                 {profile?.pictureUrl ? (
-                  <img 
+                  <ProfileImage
                     src={profile.pictureUrl} 
                     alt="Advisor" 
                     style={{ width: '40px', height: '40px', borderRadius: '50%' }}
@@ -920,8 +922,8 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
                       flex: '1 1 calc(50% - 0.75rem)',
                       minWidth: '140px'
                     }}>
-                      {trainer.pictureUrl ? (
-                        <img src={trainer.pictureUrl} alt="Trainer" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #f59e0b', objectFit: 'cover' }} />
+                      {trainer.pictureUrl || trainer.pictureBackupUrl ? (
+                        <ProfileImage src={trainer.pictureUrl} fallbackSrc={trainer.pictureBackupUrl} alt="Trainer" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #f59e0b', objectFit: 'cover' }} />
                       ) : (
                         <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1rem' }}>👨‍🏫</div>
                       )}
@@ -1063,7 +1065,7 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
             onClose={() => setShowSupplementCourseModal(false)}
             isSuperadmin={reactiveAdminData?.status === 'superadmin'}
             currentTrainerId={profile?.userId || ''}
-            trainees={trainees.filter(t => t?.userId).map(t => ({ userId: t.userId, nickname: t.nickname || t.lineName || 'ลูกเทรน', pictureUrl: t.pictureUrl }))}
+            trainees={trainees.filter(t => t?.userId).map(t => ({ userId: t.userId, nickname: t.nickname || t.lineName || 'ลูกเทรน', pictureUrl: t.pictureUrl, pictureBackupUrl: t.pictureBackupUrl }))}
           />
         )}
         </>
@@ -1115,8 +1117,8 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
                 {formData.name === '__SELF__' && <span>บันทึกค่าตัวเอง</span>}
                 {formData.name !== '' && formData.name !== '__NEW_TRAINEE__' && formData.name !== '__SELF__' && (
                   <>
-                    {selectedTrainee?.pictureUrl ? (
-                      <img src={selectedTrainee.pictureUrl} alt="profile" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                    {selectedTrainee?.pictureUrl || selectedTrainee?.pictureBackupUrl ? (
+                      <ProfileImage src={selectedTrainee.pictureUrl} fallbackSrc={selectedTrainee.pictureBackupUrl} alt="profile" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
                     ) : (
                       <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '12px' }}>👤</div>
                     )}
@@ -1208,8 +1210,8 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
                         onMouseOver={(e) => { if (formData.name !== t.nickname) e.currentTarget.style.background = '#f8fafc' }}
                         onMouseOut={(e) => { if (formData.name !== t.nickname) e.currentTarget.style.background = '#fff' }}
                       >
-                        {t.pictureUrl ? (
-                          <img src={t.pictureUrl} alt="profile" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                        {t.pictureUrl || t.pictureBackupUrl ? (
+                          <ProfileImage src={t.pictureUrl} fallbackSrc={t.pictureBackupUrl} alt="profile" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
                         ) : (
                           <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '16px' }}>👤</div>
                         )}
@@ -1742,8 +1744,8 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
                   return (
                     <div key={t.userId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
-                        {t.pictureUrl ? (
-                          <img src={t.pictureUrl} alt="profile" style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        {t.pictureUrl || t.pictureBackupUrl ? (
+                          <ProfileImage src={t.pictureUrl} fallbackSrc={t.pictureBackupUrl} alt="profile" style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                         ) : (
                           <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>👤</div>
                         )}
