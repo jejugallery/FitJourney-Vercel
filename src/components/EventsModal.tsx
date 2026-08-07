@@ -769,8 +769,8 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
 
   const activeBillings = useMemo(() => {
     return rawBillings.filter(b => {
-      // 1. Creator filter (only show billings created by themselves)
-      if (b.createdBy !== userId) return false;
+      // 1. Creator filter (only show billings created by themselves, unless superadmin)
+      if (role !== 'superadmin' && b.createdBy !== userId) return false;
 
       // 2. Status filter
       if (billingStatus === 'pending') {
@@ -799,7 +799,7 @@ export default function EventsModal({ onClose, userId, role, initialMode = 'even
 
       return true;
     });
-  }, [rawBillings, userId, billingStatus, startDate, endDate]);
+  }, [rawBillings, userId, role, billingStatus, startDate, endDate]);
 
   const [showCreateBillingModal, setShowCreateBillingModal] = useState(false);
   const navigate = useNavigate();

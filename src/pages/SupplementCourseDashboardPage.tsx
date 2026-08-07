@@ -58,7 +58,7 @@ export default function SupplementCourseDashboardPage() {
       const dataUrl = canvas.toDataURL('image/png');
       const fileName = `Course_${course.traineeName}.png`;
 
-      canvas.toBlob(async (blob) => {
+      canvas.toBlob(async (blob: Blob | null) => {
         let shared = false;
         if (blob && navigator.share && navigator.canShare) {
           const file = new File([blob], fileName, { type: 'image/png' });
