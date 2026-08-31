@@ -37,18 +37,39 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initLiff = async (isRetry = false) => {
       try {
+        const urlParams = new URLSearchParams(window.location.search);
         const path = window.location.pathname;
+
+        // LINE's LIFF apps are configured with these production endpoints:
+        // SHARE_KNOWLEDGE (IctOVPHw) -> /shareKnowledge
+        // SHARE_LINK (FYLbLMl2) -> /shareLink
+        // Prefer an explicit LIFF ID when it is present in the URL/state;
+        // otherwise select the app from the endpoint that LINE opened.
+        const knownLiffIds = new Set(Object.values(LIFF_IDS));
+        const state = urlParams.get('liff.state');
+        let requestedLiffId = urlParams.get('liffId');
+        if (!requestedLiffId && state) {
+          try {
+            const decodedState = decodeURIComponent(state);
+            requestedLiffId = new URLSearchParams(
+              decodedState.startsWith('?') ? decodedState.slice(1) : decodedState,
+            ).get('liffId');
+          } catch {
+            // Ignore malformed state and fall back to the endpoint mapping.
+          }
+        }
+
         let LIFF_ID = LIFF_IDS.DEFAULT;
-        if (path.startsWith('/shareKnowledge')) {
+        if (requestedLiffId && knownLiffIds.has(requestedLiffId)) {
+          LIFF_ID = requestedLiffId;
+        } else if (path.startsWith('/shareKnowledge')) {
           LIFF_ID = LIFF_IDS.SHARE_KNOWLEDGE;
         } else if (path.startsWith('/shareLink')) {
-          const requestedLiffId = new URLSearchParams(window.location.search).get('liffId');
-          LIFF_ID = requestedLiffId === LIFF_IDS.SHARE_LINK
-            ? LIFF_IDS.SHARE_LINK
-            : LIFF_IDS.SHARE_KNOWLEDGE;
+          LIFF_ID = LIFF_IDS.SHARE_LINK;
         } else if (path.startsWith('/shareEvent')) {
           LIFF_ID = LIFF_IDS.SHARE_EVENT;
         }
+
         await liff.init({ liffId: LIFF_ID });
         
         if (!liff.isLoggedIn()) {
