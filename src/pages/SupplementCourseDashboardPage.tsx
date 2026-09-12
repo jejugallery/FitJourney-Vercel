@@ -13,6 +13,70 @@ const normalize = (value: any): any => Array.isArray(value)
     : value;
 const money = (value: number) => Number(value || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+function CardScalerWrapper({
+  children,
+  innerRef,
+  background = '#f8fafc',
+}: {
+  children: React.ReactNode;
+  innerRef: (el: HTMLDivElement | null) => void;
+  background?: string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState<number>(1);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        const w = containerRef.current.clientWidth;
+        setScale(Math.min(w / 1000, 1));
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        width: '100%',
+        maxWidth: '1000px',
+        height: `${1400 * scale}px`,
+        position: 'relative',
+        marginBottom: '32px',
+      }}
+    >
+      <div
+        ref={innerRef}
+        style={{
+          width: '1000px',
+          height: '1400px',
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: `translateX(-50%) scale(${scale})`,
+          transformOrigin: 'top center',
+          background,
+          borderRadius: '28px',
+          padding: '48px',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          fontFamily: '"Inter", "Google Sans", sans-serif',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.03)',
+          border: '1px solid #e2e8f0',
+          overflow: 'hidden',
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function SupplementCourseDashboardPage() {
   const [searchParams] = useSearchParams();
   const [course, setCourse] = useState<SavedSupplementCourse | null>(null);
@@ -54,7 +118,9 @@ export default function SupplementCourseDashboardPage() {
         if (!el) continue;
 
         const originalTransform = el.style.transform;
+        const originalLeft = el.style.left;
         el.style.transform = 'none';
+        el.style.left = '0px';
 
         const canvas = await html2canvas(el, {
           scale: 2,
@@ -67,6 +133,7 @@ export default function SupplementCourseDashboardPage() {
         });
 
         el.style.transform = originalTransform;
+        el.style.left = originalLeft;
         const dataUrl = canvas.toDataURL('image/png');
         urls.push(dataUrl);
       }
@@ -202,53 +269,27 @@ export default function SupplementCourseDashboardPage() {
       <div style={{ width: '100%', maxWidth: '1000px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         {/* Item Pages (5 items per page) */}
         {itemChunks.map((chunk, pageIndex) => (
-          <div
+          <CardScalerWrapper
             key={`page-${pageIndex}`}
-            ref={el => { pageRefs.current[pageIndex] = el; }}
-            className="page-card-scaler"
-            style={{
-              width: '1000px',
-              maxWidth: '100%',
-              aspectRatio: '5 / 7',
-              background: '#f8fafc',
-              borderRadius: '28px',
-              padding: '48px',
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              fontFamily: '"Inter", "Google Sans", sans-serif',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.03)',
-              marginBottom: '32px',
-              border: '1px solid #e2e8f0',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
+            innerRef={el => { pageRefs.current[pageIndex] = el; }}
           >
             {/* Unified Single Header Frame (กรอบเดียวกัน) */}
             <div style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '22px', padding: '24px 28px', marginBottom: '24px', boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.05)' }}>
               {/* Top Row: Title + Page Indicator */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div style={{ flex: 1, paddingRight: '16px' }}>
-                  <input
-                    type="text"
-                    className="header-edit-input"
-                    value={courseTitle}
-                    onChange={e => setCourseTitle(e.target.value)}
-                    placeholder="หัวข้อ..."
-                    style={{
-                      width: '100%',
-                      background: 'transparent',
-                      border: 'none',
-                      outline: 'none',
-                      fontSize: '2.1rem',
-                      fontWeight: 800,
-                      color: '#0f172a',
-                      letterSpacing: '-0.5px',
-                      fontFamily: 'inherit',
-                      padding: '2px 4px',
-                    }}
-                  />
+                  <h2 style={{
+                    margin: 0,
+                    fontSize: '2.1rem',
+                    fontWeight: 800,
+                    color: '#0f172a',
+                    letterSpacing: '-0.5px',
+                    lineHeight: 1.4,
+                    wordBreak: 'break-word',
+                    fontFamily: 'inherit'
+                  }}>
+                    {courseTitle || 'คอร์สลดน้ำหนัก'}
+                  </h2>
                 </div>
                 <div style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', padding: '6px 18px', borderRadius: '16px', fontWeight: 800, fontSize: '1.1rem', flexShrink: 0, boxShadow: '0 4px 6px -1px rgba(37,99,235,0.25)' }}>
                   หน้า {pageIndex + 1}/{totalPages}
@@ -256,34 +297,26 @@ export default function SupplementCourseDashboardPage() {
               </div>
 
               {/* Divider Line inside Frame */}
-              <div style={{ height: '1.5px', background: '#bfdbfe', margin: '0 0 16px 0' }}></div>
+              <div style={{ height: '1.5px', background: '#bfdbfe', margin: '12px 0 16px 0' }}></div>
 
               {/* Bottom Row: Trainee + Trainer */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ flex: 1, paddingRight: '20px' }}>
                   <span style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '2px' }}>ลูกเทรน</span>
-                  <input
-                    type="text"
-                    className="header-edit-input"
-                    value={customTraineeName}
-                    onChange={e => setCustomTraineeName(e.target.value)}
-                    placeholder="พิมพ์แก้ไขชื่อได้ไม่ต้องบันทึก..."
-                    style={{
-                      width: '100%',
-                      background: 'transparent',
-                      border: 'none',
-                      outline: 'none',
-                      fontSize: '1.65rem',
-                      fontWeight: 800,
-                      color: '#1d4ed8',
-                      fontFamily: 'inherit',
-                      padding: '2px 4px',
-                    }}
-                  />
+                  <div style={{
+                    fontSize: '1.65rem',
+                    fontWeight: 800,
+                    color: '#1d4ed8',
+                    lineHeight: 1.4,
+                    wordBreak: 'break-word',
+                    fontFamily: 'inherit'
+                  }}>
+                    {displayTraineeName || '-'}
+                  </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, display: 'block', marginBottom: '2px' }}>เทรนเนอร์</span>
-                  <b style={{ display: 'block', fontSize: '1.25rem', color: '#334155', fontWeight: 700 }}>{course.trainerName}</b>
+                  <b style={{ display: 'block', fontSize: '1.25rem', color: '#334155', fontWeight: 700, lineHeight: 1.4 }}>{course.trainerName}</b>
                 </div>
               </div>
             </div>
@@ -337,57 +370,31 @@ export default function SupplementCourseDashboardPage() {
               <span>📅 {new Date(course.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
               <span>FitJourney Health & Wellness</span>
             </div>
-          </div>
+          </CardScalerWrapper>
         ))}
 
         {/* Separate Summary Page Card */}
-        <div
+        <CardScalerWrapper
           key="summary-page"
-          ref={el => { pageRefs.current[itemChunks.length] = el; }}
-          className="page-card-scaler"
-          style={{
-            width: '1000px',
-            maxWidth: '100%',
-            aspectRatio: '5 / 7',
-            background: '#f8fafc',
-            borderRadius: '28px',
-            padding: '48px',
-            boxSizing: 'border-box',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            fontFamily: '"Inter", "Google Sans", sans-serif',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.03)',
-            marginBottom: '32px',
-            border: '1px solid #e2e8f0',
-            position: 'relative',
-            overflow: 'hidden'
-          }}
+          innerRef={el => { pageRefs.current[itemChunks.length] = el; }}
         >
           {/* Summary Page Unified Single Header Frame */}
           <div style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)', color: 'white', borderRadius: '22px', padding: '24px 28px', marginBottom: '24px', boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.25)' }}>
             {/* Top Row: Title + Page Indicator */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ flex: 1, paddingRight: '16px' }}>
-                <input
-                  type="text"
-                  className="header-edit-input"
-                  value={courseTitle}
-                  onChange={e => setCourseTitle(e.target.value)}
-                  placeholder="หัวข้อ..."
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    fontSize: '2.1rem',
-                    fontWeight: 800,
-                    color: 'white',
-                    letterSpacing: '-0.5px',
-                    fontFamily: 'inherit',
-                    padding: '2px 4px',
-                  }}
-                />
+                <h2 style={{
+                  margin: 0,
+                  fontSize: '2.1rem',
+                  fontWeight: 800,
+                  color: 'white',
+                  letterSpacing: '-0.5px',
+                  lineHeight: 1.4,
+                  wordBreak: 'break-word',
+                  fontFamily: 'inherit'
+                }}>
+                  {courseTitle || 'คอร์สลดน้ำหนัก'}
+                </h2>
               </div>
               <div style={{ background: 'rgba(255, 255, 255, 0.2)', color: 'white', padding: '6px 18px', borderRadius: '16px', fontWeight: 800, fontSize: '1.1rem', flexShrink: 0, backdropFilter: 'blur(4px)' }}>
                 หน้า {totalPages}/{totalPages}
@@ -395,34 +402,26 @@ export default function SupplementCourseDashboardPage() {
             </div>
 
             {/* Divider Line inside Frame */}
-            <div style={{ height: '1.5px', background: 'rgba(255, 255, 255, 0.25)', margin: '0 0 16px 0' }}></div>
+            <div style={{ height: '1.5px', background: 'rgba(255, 255, 255, 0.25)', margin: '12px 0 16px 0' }}></div>
 
             {/* Bottom Row: Trainee + Trainer */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ flex: 1, paddingRight: '20px' }}>
                 <span style={{ fontSize: '0.85rem', color: '#93c5fd', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '2px' }}>ลูกเทรน</span>
-                <input
-                  type="text"
-                  className="header-edit-input"
-                  value={customTraineeName}
-                  onChange={e => setCustomTraineeName(e.target.value)}
-                  placeholder="พิมพ์แก้ไขชื่อได้ไม่ต้องบันทึก..."
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    fontSize: '1.65rem',
-                    fontWeight: 800,
-                    color: 'white',
-                    fontFamily: 'inherit',
-                    padding: '2px 4px',
-                  }}
-                />
+                <div style={{
+                  fontSize: '1.65rem',
+                  fontWeight: 800,
+                  color: 'white',
+                  lineHeight: 1.4,
+                  wordBreak: 'break-word',
+                  fontFamily: 'inherit'
+                }}>
+                  {displayTraineeName || '-'}
+                </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <span style={{ fontSize: '0.85rem', color: '#93c5fd', fontWeight: 600, display: 'block', marginBottom: '2px' }}>เทรนเนอร์</span>
-                <b style={{ display: 'block', fontSize: '1.25rem', color: 'white', fontWeight: 700 }}>{course.trainerName}</b>
+                <b style={{ display: 'block', fontSize: '1.25rem', color: 'white', fontWeight: 700, lineHeight: 1.4 }}>{course.trainerName}</b>
               </div>
             </div>
           </div>
@@ -483,7 +482,7 @@ export default function SupplementCourseDashboardPage() {
             <span>📅 วันที่ออกเอกสาร: {new Date(course.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
             <span>ขอบคุณที่ไว้วางใจ FitJourney 💙</span>
           </div>
-        </div>
+        </CardScalerWrapper>
       </div>
 
       {/* Generated Images Preview Modal */}
