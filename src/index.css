@@ -247,7 +247,7 @@ h1, h2, h3, h4, h5, h6 {
 .supplement-snapshot-price .supplement-item-gross { color: #94a3b8; font-size: .74rem; text-decoration: line-through; white-space: nowrap; }
 .supplement-snapshot-price .supplement-item-discount { color: #dc2626; font-size: .74rem; white-space: nowrap; }
 .supplement-snapshot-images { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; padding: 0 8px; }
-.supplement-snapshot-images img,.supplement-snapshot-noimg { width: 52px; height: 52px; border-radius: 14px; object-fit: cover; background: #f1f5f9; border: none; }
+.supplement-snapshot-images img,.supplement-snapshot-noimg { width: 66px; height: 66px; border-radius: 16px; object-fit: cover; background: #f1f5f9; border: none; }
 .supplement-snapshot-noimg { display: grid; place-items: center; color: #cbd5e1; font-size: 1.1rem; }
 .supplement-status-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
 .supplement-status-row span { padding: 3px 7px; border-radius: 999px; background: #f1f5f9; color: #64748b; font-size: .67rem; white-space: nowrap; }
