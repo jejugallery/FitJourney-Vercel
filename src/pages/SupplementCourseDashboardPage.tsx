@@ -275,6 +275,9 @@ export default function SupplementCourseDashboardPage() {
                     ฿{Math.round(Number(item.unitPrice || 0)).toLocaleString()} / ชิ้น
                   </div>
                   <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '12px', textAlign: 'right' }}>
+                    {Number(item.unitPrice || 0) > 0 && (
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500, marginBottom: '4px' }}>รวมก่อนลด ฿{Math.round(Number(item.grossAmount ?? (item.unitPrice * item.packageQuantity))).toLocaleString()}</div>
+                    )}
                     {Number(item.discountAmount || 0) > 0 && (
                       <div style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 600, background: '#fef2f2', padding: '2px 6px', borderRadius: '4px', marginBottom: '4px', display: 'inline-block' }}>ลด ฿{Math.round(Number(item.discountAmount || 0)).toLocaleString()}</div>
                     )}
