@@ -82,6 +82,7 @@ export default function SupplementCourseDashboardPage() {
   const [course, setCourse] = useState<SavedSupplementCourse | null>(null);
   const [courseTitle, setCourseTitle] = useState<string>('คอร์สลดน้ำหนัก');
   const [customTraineeName, setCustomTraineeName] = useState<string>('');
+  const [customTrainerName, setCustomTrainerName] = useState<string>('');
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
@@ -95,11 +96,13 @@ export default function SupplementCourseDashboardPage() {
         const norm = normalize(data);
         setCourse(norm);
         setCustomTraineeName(norm.traineeName || '');
+        setCustomTrainerName(norm.trainerName || '');
       })
       .catch(() => setError('ลิงก์ไม่ถูกต้องหรือหมดอายุแล้ว กรุณากลับไปที่ประวัติคอร์สเพื่อสร้างลิงก์ใหม่'));
   }, [token]);
 
   const displayTraineeName = customTraineeName.trim() || course?.traineeName || '';
+  const displayTrainerName = customTrainerName.trim() || course?.trainerName || '';
 
   const allItems = course ? orderSupplementProducts(course.items, item => item.supplementName, item => item.unitPrice) : [];
   const itemChunks: SavedCourseItem[][] = [];
@@ -233,7 +236,7 @@ export default function SupplementCourseDashboardPage() {
 
       {/* Temporary On-Screen Editors Panel (does NOT update DB) */}
       <div className="editors-panel" style={{ width: '100%', maxWidth: '1000px', background: 'white', padding: '18px 24px', borderRadius: '20px', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.03)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
-        <div style={{ flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>✏️ หัวข้อรูปภาพ (ชั่วคราว):</label>
           <input
             type="text"
@@ -244,7 +247,7 @@ export default function SupplementCourseDashboardPage() {
           />
         </div>
 
-        <div style={{ flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>✏️ ชื่อลูกเทรน (ชั่วคราว):</label>
           <input
             type="text"
@@ -255,9 +258,20 @@ export default function SupplementCourseDashboardPage() {
           />
         </div>
 
-        {(courseTitle !== 'คอร์สลดน้ำหนัก' || customTraineeName !== course.traineeName) && (
+        <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>✏️ ชื่อเทรนเนอร์ (ชั่วคราว):</label>
+          <input
+            type="text"
+            value={customTrainerName}
+            onChange={e => setCustomTrainerName(e.target.value)}
+            placeholder="พิมพ์ชื่อเทรนเนอร์..."
+            style={{ padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #cbd5e1', fontSize: '1rem', fontWeight: 700, color: '#0f172a', outline: 'none' }}
+          />
+        </div>
+
+        {(courseTitle !== 'คอร์สลดน้ำหนัก' || customTraineeName !== course.traineeName || customTrainerName !== course.trainerName) && (
           <button 
-            onClick={() => { setCourseTitle('คอร์สลดน้ำหนัก'); setCustomTraineeName(course.traineeName); }}
+            onClick={() => { setCourseTitle('คอร์สลดน้ำหนัก'); setCustomTraineeName(course.traineeName); setCustomTrainerName(course.trainerName); }}
             style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#64748b', padding: '10px 16px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-end', whiteSpace: 'nowrap' }}
           >
             คืนค่าเดิม
@@ -316,7 +330,7 @@ export default function SupplementCourseDashboardPage() {
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, display: 'block', marginBottom: '2px' }}>เทรนเนอร์</span>
-                  <b style={{ display: 'block', fontSize: '1.25rem', color: '#334155', fontWeight: 700, lineHeight: 1.4 }}>{course.trainerName}</b>
+                  <b style={{ display: 'block', fontSize: '1.25rem', color: '#334155', fontWeight: 700, lineHeight: 1.4 }}>{displayTrainerName || '-'}</b>
                 </div>
               </div>
             </div>
@@ -421,7 +435,7 @@ export default function SupplementCourseDashboardPage() {
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <span style={{ fontSize: '0.85rem', color: '#93c5fd', fontWeight: 600, display: 'block', marginBottom: '2px' }}>เทรนเนอร์</span>
-                <b style={{ display: 'block', fontSize: '1.25rem', color: 'white', fontWeight: 700, lineHeight: 1.4 }}>{course.trainerName}</b>
+                <b style={{ display: 'block', fontSize: '1.25rem', color: 'white', fontWeight: 700, lineHeight: 1.4 }}>{displayTrainerName || '-'}</b>
               </div>
             </div>
           </div>
