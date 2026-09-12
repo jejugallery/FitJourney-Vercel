@@ -16,6 +16,8 @@ test('course detail displays item total before discount, discount, and net price
   assert.match(component, /฿\{money\(grossAmount\)\}/);
   assert.match(component, /ส่วนลด -฿\{money\(item\.discountAmount\)\}/);
   assert.match(component, /฿\{money\(item\.netAmount\)\}/);
+  assert.match(component, /supplement-snapshot-images/);
+  assert.match(component, /Array\.from\(\{ length: qty \}\)/);
   assert.doesNotMatch(component, /รวมก่อนลด/);
   assert.doesNotMatch(component, /สุทธิ ฿/);
   assert.doesNotMatch(component, /จำนวน \{item\.packageQuantity\}/);

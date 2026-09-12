@@ -245,6 +245,9 @@ h1, h2, h3, h4, h5, h6 {
 .supplement-snapshot-price > strong { color: #ff416c; font-size: .9rem; white-space: nowrap; }
 .supplement-snapshot-price .supplement-item-gross { color: #94a3b8; font-size: .74rem; text-decoration: line-through; white-space: nowrap; }
 .supplement-snapshot-price .supplement-item-discount { color: #dc2626; font-size: .74rem; white-space: nowrap; }
+.supplement-snapshot-images { display: flex; flex-wrap: wrap; gap: 5px; max-width: 110px; flex-shrink: 0; align-items: center; }
+.supplement-snapshot-images img,.supplement-snapshot-noimg { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; background: #f1f5f9; border: 1px solid #e2e8f0; }
+.supplement-snapshot-noimg { display: grid; place-items: center; color: #cbd5e1; font-size: 1.1rem; }
 .supplement-status-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
 .supplement-status-row span { padding: 3px 7px; border-radius: 999px; background: #f1f5f9; color: #64748b; font-size: .67rem; white-space: nowrap; }
 .supplement-status-row span.active { background: #ecfdf5; color: #047857; }
