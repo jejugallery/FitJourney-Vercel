@@ -321,43 +321,43 @@ export default function SupplementCourseDashboardPage() {
               </div>
             </div>
 
-            {/* Items Chunk (Up to 5 items) */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', justifyContent: 'space-between' }}>
+            {/* Items Chunk (Up to 5 items stacked from top) */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', justifyContent: 'flex-start' }}>
               {chunk.map((item, idx) => {
                 const isFree = Number(item.unitPrice || 0) === 0;
                 const grossAmount = Number(item.grossAmount ?? (item.unitPrice * item.packageQuantity));
                 const hasDiscount = Number(item.discountAmount || 0) > 0;
 
                 return (
-                  <div key={item.id || idx} style={{ background: isFree ? '#ecfdf5' : 'white', border: `1.5px solid ${isFree ? '#a7f3d0' : '#e2e8f0'}`, borderRadius: '22px', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+                  <div key={item.id || idx} style={{ background: isFree ? '#ecfdf5' : 'white', border: `1.5px solid ${isFree ? '#a7f3d0' : '#e2e8f0'}`, borderRadius: '24px', padding: '24px 28px', display: 'flex', alignItems: 'center', gap: '28px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
                     {/* Enlarged Product Image */}
-                    <div style={{ width: '108px', height: '108px', borderRadius: '16px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #e2e8f0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {item.imageUrl ? <img src={item.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" /> : <span style={{ fontSize: '2.8rem' }}>📦</span>}
+                    <div style={{ width: '126px', height: '126px', borderRadius: '20px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #e2e8f0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {item.imageUrl ? <img src={item.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" /> : <span style={{ fontSize: '3.5rem' }}>📦</span>}
                     </div>
 
                     {/* Product Title + Quantity right next to item name */}
                     <div style={{ flex: 1 }}>
-                      <h3 style={{ margin: '0 0 8px', fontSize: '1.4rem', color: isFree ? '#064e3b' : '#0f172a', fontWeight: 700, lineHeight: 1.3 }}>
+                      <h3 style={{ margin: '0 0 10px', fontSize: '1.65rem', color: isFree ? '#064e3b' : '#0f172a', fontWeight: 800, lineHeight: 1.35 }}>
                         {item.supplementName}
-                        <span style={{ color: isFree ? '#059669' : '#ff416c', fontWeight: 800, fontSize: '1.45rem', marginLeft: '10px', display: 'inline-block' }}>
+                        <span style={{ color: isFree ? '#059669' : '#ff416c', fontWeight: 900, fontSize: '1.75rem', marginLeft: '12px', display: 'inline-block' }}>
                           × {item.packageQuantity}
                         </span>
                       </h3>
-                      {!isFree && <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.95rem', padding: '4px 12px', borderRadius: '8px', fontWeight: 600 }}>฿{money(item.unitPrice)} / ชิ้น</span>}
-                      {isFree && <span style={{ background: '#d1fae5', color: '#047857', fontSize: '0.95rem', padding: '4px 12px', borderRadius: '8px', fontWeight: 700 }}>🎁 ของแถมฟรี</span>}
+                      {!isFree && <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '1.05rem', padding: '6px 14px', borderRadius: '10px', fontWeight: 600 }}>฿{money(item.unitPrice)} / ชิ้น</span>}
+                      {isFree && <span style={{ background: '#d1fae5', color: '#047857', fontSize: '1.05rem', padding: '6px 14px', borderRadius: '10px', fontWeight: 700 }}>🎁 ของแถมฟรี</span>}
                     </div>
 
                     {/* Prices */}
                     {!isFree && (
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        {hasDiscount && <div style={{ fontSize: '0.95rem', color: '#94a3b8', textDecoration: 'line-through', fontWeight: 500 }}>฿{money(grossAmount)}</div>}
-                        {hasDiscount && <div style={{ fontSize: '0.95rem', color: '#ef4444', fontWeight: 600 }}>ส่วนลด -฿{money(item.discountAmount)}</div>}
-                        <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>฿{money(item.netAmount)}</div>
+                        {hasDiscount && <div style={{ fontSize: '1.05rem', color: '#94a3b8', textDecoration: 'line-through', fontWeight: 500 }}>฿{money(grossAmount)}</div>}
+                        {hasDiscount && <div style={{ fontSize: '1.05rem', color: '#ef4444', fontWeight: 600 }}>ส่วนลด -฿{money(item.discountAmount)}</div>}
+                        <div style={{ fontSize: '1.9rem', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>฿{money(item.netAmount)}</div>
                       </div>
                     )}
                     {isFree && (
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#059669' }}>ฟรี</div>
+                        <div style={{ fontSize: '1.9rem', fontWeight: 900, color: '#059669' }}>ฟรี</div>
                       </div>
                     )}
                   </div>
