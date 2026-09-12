@@ -57,7 +57,14 @@ export default function SupplementCourseForm({ trainees, supplements, onSaved, i
     if (lines.some(line => !Number.isInteger(line.packageQuantity) || line.packageQuantity <= 0 || line.discountValue < 0)) return alert('กรุณาตรวจสอบจำนวนและส่วนลด');
     setSaving(true);
     try {
-      const course = await supplementCoursesApi.create({ traineeId, cashbackPercent, items: lines.map(line => ({ supplementId: line.supplementId, packageQuantity: line.packageQuantity, discountType: line.discountType, discountValue: line.discountValue })) });
+      const payload = {
+        traineeId,
+        cashbackPercent,
+        items: lines.map(line => ({ supplementId: line.supplementId, packageQuantity: line.packageQuantity, discountType: line.discountType, discountValue: line.discountValue })),
+      };
+      const course = initialCourse?.id
+        ? await supplementCoursesApi.update(initialCourse.id, payload)
+        : await supplementCoursesApi.create(payload);
       await onSaved(course);
       setLines([]); setTraineeId('');
     } catch (error: any) { alert(error.message || 'บันทึกคอร์สไม่สำเร็จ'); } finally { setSaving(false); }

@@ -16,6 +16,8 @@ const money = (value: number) => Number(value || 0).toLocaleString('th-TH', { mi
 export default function SupplementCourseDashboardPage() {
   const [searchParams] = useSearchParams();
   const [course, setCourse] = useState<SavedSupplementCourse | null>(null);
+  const [courseTitle, setCourseTitle] = useState<string>('คอร์สลดน้ำหนัก');
+  const [customTraineeName, setCustomTraineeName] = useState<string>('');
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
@@ -25,9 +27,15 @@ export default function SupplementCourseDashboardPage() {
   useEffect(() => {
     if (!token) { setError('ลิงก์ไม่ถูกต้องหรือหมดอายุแล้ว'); return; }
     supplementCoursesApi.getByPdfToken(token)
-      .then(data => setCourse(normalize(data)))
+      .then(data => {
+        const norm = normalize(data);
+        setCourse(norm);
+        setCustomTraineeName(norm.traineeName || '');
+      })
       .catch(() => setError('ลิงก์ไม่ถูกต้องหรือหมดอายุแล้ว กรุณากลับไปที่ประวัติคอร์สเพื่อสร้างลิงก์ใหม่'));
   }, [token]);
+
+  const displayTraineeName = customTraineeName.trim() || course?.traineeName || '';
 
   const allItems = course ? orderSupplementProducts(course.items, item => item.supplementName, item => item.unitPrice) : [];
   const itemChunks: SavedCourseItem[][] = [];
@@ -71,7 +79,7 @@ export default function SupplementCourseDashboardPage() {
           const isSummary = i === totalPages - 1;
           const link = document.createElement('a');
           const pageLabel = isSummary ? 'Summary' : `Page_${i + 1}`;
-          link.download = `Course_${course.traineeName}_${pageLabel}.png`;
+          link.download = `Course_${displayTraineeName}_${pageLabel}.png`;
           link.href = url;
           document.body.appendChild(link);
           link.click();
@@ -110,17 +118,25 @@ export default function SupplementCourseDashboardPage() {
           maxWidth: 100%;
           aspectRatio: 5 / 7;
         }
+        .header-edit-input:focus {
+          background: rgba(255, 255, 255, 0.6) !important;
+          border-radius: 8px !important;
+        }
         @media (max-width: 1024px) {
           .header-title-container {
             flex-direction: column;
             gap: 16px;
             text-align: center;
           }
+          .editors-panel {
+            flex-direction: column;
+            align-items: stretch !important;
+          }
         }
       `}</style>
 
-      {/* Header & Download Trigger */}
-      <div className="header-title-container" style={{ width: '100%', maxWidth: '1000px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      {/* Top Header & Download Trigger */}
+      <div className="header-title-container" style={{ width: '100%', maxWidth: '1000px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '1.6rem', color: '#1e293b', fontWeight: 800 }}>Course Dashboard (อัตราส่วน 5:7)</h1>
           <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.95rem' }}>ตัดทีละ 5 รายการ และรูปสรุปรวมราคาแยกอีกภาพ ({totalPages} รูปภาพ)</p>
@@ -146,6 +162,40 @@ export default function SupplementCourseDashboardPage() {
           }}>
           {downloading ? 'กำลังสร้างรูปภาพ...' : '📸 ดาวน์โหลดรูปภาพ'}
         </button>
+      </div>
+
+      {/* Temporary On-Screen Editors Panel (does NOT update DB) */}
+      <div className="editors-panel" style={{ width: '100%', maxWidth: '1000px', background: 'white', padding: '18px 24px', borderRadius: '20px', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.03)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
+        <div style={{ flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>✏️ หัวข้อรูปภาพ (ชั่วคราว):</label>
+          <input
+            type="text"
+            value={courseTitle}
+            onChange={e => setCourseTitle(e.target.value)}
+            placeholder="พิมพ์หัวข้อ..."
+            style={{ padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #cbd5e1', fontSize: '1rem', fontWeight: 700, color: '#0f172a', outline: 'none' }}
+          />
+        </div>
+
+        <div style={{ flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>✏️ ชื่อลูกเทรน (ชั่วคราว):</label>
+          <input
+            type="text"
+            value={customTraineeName}
+            onChange={e => setCustomTraineeName(e.target.value)}
+            placeholder="พิมพ์ชื่อลูกเทรน..."
+            style={{ padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #3b82f6', fontSize: '1rem', fontWeight: 700, color: '#1d4ed8', outline: 'none', background: '#eff6ff' }}
+          />
+        </div>
+
+        {(courseTitle !== 'คอร์สลดน้ำหนัก' || customTraineeName !== course.traineeName) && (
+          <button 
+            onClick={() => { setCourseTitle('คอร์สลดน้ำหนัก'); setCustomTraineeName(course.traineeName); }}
+            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#64748b', padding: '10px 16px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', alignSelf: 'flex-end', whiteSpace: 'nowrap' }}
+          >
+            คืนค่าเดิม
+          </button>
+        )}
       </div>
 
       {/* Cards List Stack (5:7 ratio pages) */}
@@ -175,68 +225,106 @@ export default function SupplementCourseDashboardPage() {
               overflow: 'hidden'
             }}
           >
-            {/* Header */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px dashed #cbd5e1', paddingBottom: '20px' }}>
-                <div>
-                  <h2 style={{ margin: 0, fontSize: '2.2rem', color: '#0f172a', fontWeight: 800, letterSpacing: '-0.5px' }}>ใบสรุปคอร์สอาหารเสริม</h2>
-                  <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '1.05rem', fontWeight: 500 }}>FitJourney Supplement Course</p>
+            {/* Unified Single Header Frame (กรอบเดียวกัน) */}
+            <div style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '22px', padding: '24px 28px', marginBottom: '24px', boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.05)' }}>
+              {/* Top Row: Title + Page Indicator */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ flex: 1, paddingRight: '16px' }}>
+                  <input
+                    type="text"
+                    className="header-edit-input"
+                    value={courseTitle}
+                    onChange={e => setCourseTitle(e.target.value)}
+                    placeholder="หัวข้อ..."
+                    style={{
+                      width: '100%',
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      fontSize: '2.1rem',
+                      fontWeight: 800,
+                      color: '#0f172a',
+                      letterSpacing: '-0.5px',
+                      fontFamily: 'inherit',
+                      padding: '2px 4px',
+                    }}
+                  />
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', padding: '8px 20px', borderRadius: '20px', fontWeight: 800, fontSize: '1.1rem', boxShadow: '0 4px 6px -1px rgba(37,99,235,0.25)' }}>
-                  หน้า {pageIndex + 1} จาก {totalPages}
+                <div style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', padding: '6px 18px', borderRadius: '16px', fontWeight: 800, fontSize: '1.1rem', flexShrink: 0, boxShadow: '0 4px 6px -1px rgba(37,99,235,0.25)' }}>
+                  หน้า {pageIndex + 1}/{totalPages}
                 </div>
               </div>
 
-              {/* Trainee Card */}
-              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '18px', padding: '18px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <div>
-                  <span style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>ลูกเทรน</span>
-                  <strong style={{ display: 'block', fontSize: '1.6rem', color: '#1d4ed8', margin: '2px 0', fontWeight: 800 }}>{course.traineeName}</strong>
+              {/* Divider Line inside Frame */}
+              <div style={{ height: '1.5px', background: '#bfdbfe', margin: '0 0 16px 0' }}></div>
+
+              {/* Bottom Row: Trainee + Trainer */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ flex: 1, paddingRight: '20px' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '2px' }}>ลูกเทรน</span>
+                  <input
+                    type="text"
+                    className="header-edit-input"
+                    value={customTraineeName}
+                    onChange={e => setCustomTraineeName(e.target.value)}
+                    placeholder="พิมพ์แก้ไขชื่อได้ไม่ต้องบันทึก..."
+                    style={{
+                      width: '100%',
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      fontSize: '1.65rem',
+                      fontWeight: 800,
+                      color: '#1d4ed8',
+                      fontFamily: 'inherit',
+                      padding: '2px 4px',
+                    }}
+                  />
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>เทรนเนอร์ผู้ดูแล</span>
-                  <b style={{ display: 'block', fontSize: '1.2rem', color: '#334155', fontWeight: 700 }}>{course.trainerName}</b>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, display: 'block', marginBottom: '2px' }}>เทรนเนอร์</span>
+                  <b style={{ display: 'block', fontSize: '1.25rem', color: '#334155', fontWeight: 700 }}>{course.trainerName}</b>
                 </div>
               </div>
             </div>
 
             {/* Items Chunk (Up to 5 items) */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'flex-start' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', justifyContent: 'space-between' }}>
               {chunk.map((item, idx) => {
                 const isFree = Number(item.unitPrice || 0) === 0;
                 const grossAmount = Number(item.grossAmount ?? (item.unitPrice * item.packageQuantity));
                 const hasDiscount = Number(item.discountAmount || 0) > 0;
 
                 return (
-                  <div key={item.id || idx} style={{ background: isFree ? '#ecfdf5' : 'white', border: `1.5px solid ${isFree ? '#a7f3d0' : '#e2e8f0'}`, borderRadius: '20px', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: '20px', position: 'relative', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                    {/* Quantity Badge */}
-                    <div style={{ position: 'absolute', top: '-1px', right: '-1px', background: isFree ? '#10b981' : '#ff416c', color: 'white', fontSize: '1.15rem', fontWeight: 800, padding: '6px 16px', borderRadius: '0 18px 0 16px', boxShadow: '-2px 2px 4px rgba(0,0,0,0.1)' }}>
-                      × {item.packageQuantity}
+                  <div key={item.id || idx} style={{ background: isFree ? '#ecfdf5' : 'white', border: `1.5px solid ${isFree ? '#a7f3d0' : '#e2e8f0'}`, borderRadius: '22px', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+                    {/* Enlarged Product Image */}
+                    <div style={{ width: '108px', height: '108px', borderRadius: '16px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #e2e8f0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {item.imageUrl ? <img src={item.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" /> : <span style={{ fontSize: '2.8rem' }}>📦</span>}
                     </div>
 
-                    {/* Product Image */}
-                    <div style={{ width: '76px', height: '76px', borderRadius: '14px', overflow: 'hidden', background: '#f8fafc', border: '1px solid #e2e8f0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {item.imageUrl ? <img src={item.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" /> : <span style={{ fontSize: '2rem' }}>📦</span>}
-                    </div>
-
-                    {/* Product Copy */}
-                    <div style={{ flex: 1, paddingRight: '70px' }}>
-                      <h3 style={{ margin: '0 0 6px', fontSize: '1.35rem', color: isFree ? '#064e3b' : '#0f172a', fontWeight: 700, lineHeight: 1.3 }}>{item.supplementName}</h3>
-                      {!isFree && <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.9rem', padding: '4px 10px', borderRadius: '8px', fontWeight: 600 }}>฿{money(item.unitPrice)} / ชิ้น</span>}
-                      {isFree && <span style={{ background: '#d1fae5', color: '#047857', fontSize: '0.9rem', padding: '4px 10px', borderRadius: '8px', fontWeight: 700 }}>🎁 ของแถมฟรี</span>}
+                    {/* Product Title + Quantity right next to item name */}
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ margin: '0 0 8px', fontSize: '1.4rem', color: isFree ? '#064e3b' : '#0f172a', fontWeight: 700, lineHeight: 1.3 }}>
+                        {item.supplementName}
+                        <span style={{ color: isFree ? '#059669' : '#ff416c', fontWeight: 800, fontSize: '1.45rem', marginLeft: '10px', display: 'inline-block' }}>
+                          × {item.packageQuantity}
+                        </span>
+                      </h3>
+                      {!isFree && <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.95rem', padding: '4px 12px', borderRadius: '8px', fontWeight: 600 }}>฿{money(item.unitPrice)} / ชิ้น</span>}
+                      {isFree && <span style={{ background: '#d1fae5', color: '#047857', fontSize: '0.95rem', padding: '4px 12px', borderRadius: '8px', fontWeight: 700 }}>🎁 ของแถมฟรี</span>}
                     </div>
 
                     {/* Prices */}
                     {!isFree && (
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        {hasDiscount && <div style={{ fontSize: '0.9rem', color: '#94a3b8', textDecoration: 'line-through', fontWeight: 500 }}>฿{money(grossAmount)}</div>}
-                        {hasDiscount && <div style={{ fontSize: '0.9rem', color: '#ef4444', fontWeight: 600 }}>ส่วนลด -฿{money(item.discountAmount)}</div>}
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>฿{money(item.netAmount)}</div>
+                        {hasDiscount && <div style={{ fontSize: '0.95rem', color: '#94a3b8', textDecoration: 'line-through', fontWeight: 500 }}>฿{money(grossAmount)}</div>}
+                        {hasDiscount && <div style={{ fontSize: '0.95rem', color: '#ef4444', fontWeight: 600 }}>ส่วนลด -฿{money(item.discountAmount)}</div>}
+                        <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>฿{money(item.netAmount)}</div>
                       </div>
                     )}
                     {isFree && (
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669' }}>ฟรี</div>
+                        <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#059669' }}>ฟรี</div>
                       </div>
                     )}
                   </div>
@@ -276,27 +364,65 @@ export default function SupplementCourseDashboardPage() {
             overflow: 'hidden'
           }}
         >
-          {/* Header */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '2px dashed #cbd5e1', paddingBottom: '20px' }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: '2.2rem', color: '#0f172a', fontWeight: 800, letterSpacing: '-0.5px' }}>สรุปยอดคอร์สอาหารเสริม</h2>
-                <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '1.05rem', fontWeight: 500 }}>FitJourney Supplement Summary</p>
+          {/* Summary Page Unified Single Header Frame */}
+          <div style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)', color: 'white', borderRadius: '22px', padding: '24px 28px', marginBottom: '24px', boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.25)' }}>
+            {/* Top Row: Title + Page Indicator */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ flex: 1, paddingRight: '16px' }}>
+                <input
+                  type="text"
+                  className="header-edit-input"
+                  value={courseTitle}
+                  onChange={e => setCourseTitle(e.target.value)}
+                  placeholder="หัวข้อ..."
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '2.1rem',
+                    fontWeight: 800,
+                    color: 'white',
+                    letterSpacing: '-0.5px',
+                    fontFamily: 'inherit',
+                    padding: '2px 4px',
+                  }}
+                />
               </div>
-              <div style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', padding: '8px 20px', borderRadius: '20px', fontWeight: 800, fontSize: '1.1rem', boxShadow: '0 4px 6px -1px rgba(16,185,129,0.25)' }}>
-                หน้า {totalPages} จาก {totalPages} (สรุปรวม)
+              <div style={{ background: 'rgba(255, 255, 255, 0.2)', color: 'white', padding: '6px 18px', borderRadius: '16px', fontWeight: 800, fontSize: '1.1rem', flexShrink: 0, backdropFilter: 'blur(4px)' }}>
+                หน้า {totalPages}/{totalPages}
               </div>
             </div>
 
-            {/* Trainee Banner */}
-            <div style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)', color: 'white', borderRadius: '20px', padding: '28px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.25)', marginBottom: '28px' }}>
-              <div>
-                <span style={{ fontSize: '0.9rem', color: '#93c5fd', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>ลูกเทรน</span>
-                <h1 style={{ margin: '4px 0 0', fontSize: '2.4rem', color: 'white', fontWeight: 800 }}>{course.traineeName}</h1>
+            {/* Divider Line inside Frame */}
+            <div style={{ height: '1.5px', background: 'rgba(255, 255, 255, 0.25)', margin: '0 0 16px 0' }}></div>
+
+            {/* Bottom Row: Trainee + Trainer */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ flex: 1, paddingRight: '20px' }}>
+                <span style={{ fontSize: '0.85rem', color: '#93c5fd', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '2px' }}>ลูกเทรน</span>
+                <input
+                  type="text"
+                  className="header-edit-input"
+                  value={customTraineeName}
+                  onChange={e => setCustomTraineeName(e.target.value)}
+                  placeholder="พิมพ์แก้ไขชื่อได้ไม่ต้องบันทึก..."
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '1.65rem',
+                    fontWeight: 800,
+                    color: 'white',
+                    fontFamily: 'inherit',
+                    padding: '2px 4px',
+                  }}
+                />
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '0.9rem', color: '#93c5fd', fontWeight: 600 }}>เทรนเนอร์ผู้ดูแล</span>
-                <b style={{ display: 'block', fontSize: '1.4rem', color: 'white' }}>{course.trainerName}</b>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <span style={{ fontSize: '0.85rem', color: '#93c5fd', fontWeight: 600, display: 'block', marginBottom: '2px' }}>เทรนเนอร์</span>
+                <b style={{ display: 'block', fontSize: '1.25rem', color: 'white', fontWeight: 700 }}>{course.trainerName}</b>
               </div>
             </div>
           </div>
@@ -377,7 +503,7 @@ export default function SupplementCourseDashboardPage() {
                 <div key={i} style={{ background: '#1e293b', padding: '16px', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', maxWidth: '320px' }}>
                   <span style={{ color: '#93c5fd', fontWeight: 700, fontSize: '0.95rem' }}>{label}</span>
                   <img src={url} alt={label} style={{ width: '100%', height: 'auto', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)', aspectRatio: '5 / 7', objectFit: 'contain' }} />
-                  <a href={url} download={`Course_${course.traineeName}_${isSummary ? 'Summary' : `Page_${i + 1}`}.png`} style={{ background: '#3b82f6', color: 'white', textDecoration: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', width: '100%', textAlign: 'center' }}>
+                  <a href={url} download={`Course_${displayTraineeName}_${isSummary ? 'Summary' : `Page_${i + 1}`}.png`} style={{ background: '#3b82f6', color: 'white', textDecoration: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', width: '100%', textAlign: 'center' }}>
                     ⬇️ ดาวน์โหลดรูปนี้
                   </a>
                 </div>

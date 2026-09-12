@@ -41,7 +41,7 @@ async function courseItems(courseId: string) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.query.resource === 'catalog') return supplementsHandler(req, res);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -98,6 +98,81 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json(rows);
     }
 
+    if (req.method === 'PUT') {
+      const id = typeof req.query.id === 'string' ? req.query.id : '';
+      if (!id) throw new HttpError(400, 'ไม่พบรหัสคอร์ส');
+
+      const existing = await sql`SELECT * FROM supplement_courses WHERE id = ${id} AND trainer_id = ${actor.userId}`;
+      if (!existing.length) throw new HttpError(404, 'ไม่พบคอร์สที่คุณสร้าง');
+
+      const traineeId = String(req.body?.traineeId || existing[0].trainee_id);
+      const inputTraineeName = String(req.body?.traineeName || '').trim();
+      const cashbackPercent = req.body?.cashbackPercent == null ? Number(existing[0].cashback_percent) : Number(req.body.cashbackPercent);
+
+      const trainee = await requireLinkedTrainee(actor.userId, traineeId);
+      const traineeName = inputTraineeName || trainee.nickname;
+
+      if (!CASHBACKS.has(cashbackPercent)) throw new HttpError(400, 'เปอร์เซ็นต์ได้เงินคืนไม่ถูกต้อง');
+      const draftLines = Array.isArray(req.body?.items) ? req.body.items : [];
+      if (!draftLines.length) throw new HttpError(400, 'กรุณาเลือกอาหารเสริมอย่างน้อย 1 รายการ');
+      if (draftLines.length > 50) throw new HttpError(400, 'รายการอาหารเสริมมากเกินไป');
+
+      const uniqueIds = getUniqueSupplementIds(draftLines);
+      if (uniqueIds.some(i => !i)) throw new HttpError(400, 'รายการอาหารเสริมไม่ถูกต้อง');
+      const uniqueIdsJson = JSON.stringify(uniqueIds);
+      const products = await sql`SELECT * FROM supplements WHERE id IN (SELECT jsonb_array_elements_text(${uniqueIdsJson}::jsonb)) AND is_active = TRUE`;
+      if (products.length !== uniqueIds.length) throw new HttpError(409, 'มีอาหารเสริมที่ถูกลบ กรุณาโหลดรายการใหม่');
+      const productMap = new Map(products.map((product: any) => [product.id, product]));
+
+      const items: PricedItem[] = draftLines.map((line: any, index: number) => {
+        const product: any = productMap.get(String(line.supplementId));
+        const quantity = Number(line.packageQuantity);
+        const discountType = String(line.discountType || 'none');
+        const discountValue = Number(line.discountValue || 0);
+        if (!Number.isInteger(quantity) || quantity <= 0) throw new HttpError(400, `จำนวนสินค้าแถวที่ ${index + 1} ไม่ถูกต้อง`);
+        if (!DISCOUNTS.has(discountType) || !Number.isFinite(discountValue) || discountValue < 0) throw new HttpError(400, `ส่วนลดแถวที่ ${index + 1} ไม่ถูกต้อง`);
+        const priced = calculateCourseLine(Number(product.price), quantity, discountType as DiscountType, discountValue);
+        return {
+          id: crypto.randomBytes(10).toString('hex'), supplementId: product.id, supplementName: product.name,
+          imageUrl: product.image_url, contentQuantity: Number(product.content_quantity), contentUnit: product.content_unit,
+          unitPrice: Number(product.price), packageQuantity: quantity, discountType,
+          discountValue: discountType === 'custom' ? discountValue : discountType.startsWith('percent') ? Number(discountType.slice(-2)) : discountType === 'fixed_100' ? 100 : discountType === 'fixed_300' ? 300 : discountType === 'fixed_500' ? 500 : 0,
+          ...priced, sortOrder: index,
+        };
+      });
+
+      const subtotal = money(items.reduce((sum, item) => sum + item.grossAmount, 0));
+      const discountTotal = money(items.reduce((sum, item) => sum + item.discountAmount, 0));
+      const total = money(items.reduce((sum, item) => sum + item.netAmount, 0));
+      const cashbackAmount = calculateCourseCashback(items.map(item => ({ name: item.supplementName, netAmount: item.netAmount })), cashbackPercent);
+
+      await sql`DELETE FROM supplement_course_items WHERE course_id = ${id}`;
+      const itemsJson = JSON.stringify(items);
+      const updated = await sql`
+        WITH updated_course AS (
+          UPDATE supplement_courses
+          SET trainee_id = ${trainee.userId}, trainee_name = ${traineeName}, subtotal = ${subtotal}, discount_total = ${discountTotal}, total = ${total}, cashback_percent = ${cashbackPercent}, cashback_amount = ${cashbackAmount}, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${id}
+          RETURNING *
+        ), input_items AS (
+          SELECT * FROM jsonb_to_recordset(${itemsJson}::jsonb) AS x(
+            id TEXT, "supplementId" TEXT, "supplementName" TEXT, "imageUrl" TEXT, "contentQuantity" INTEGER,
+            "contentUnit" TEXT, "unitPrice" NUMERIC, "packageQuantity" INTEGER, "discountType" TEXT,
+            "discountValue" NUMERIC, "grossAmount" NUMERIC, "discountAmount" NUMERIC, "netAmount" NUMERIC, "sortOrder" INTEGER
+          )
+        ), new_items AS (
+          INSERT INTO supplement_course_items (id, course_id, supplement_id, supplement_name, image_url, content_quantity,
+            content_unit, unit_price, package_quantity, discount_type, discount_value, gross_amount, discount_amount, net_amount, sort_order)
+          SELECT id, ${id}, "supplementId", "supplementName", "imageUrl", "contentQuantity", "contentUnit", "unitPrice",
+            "packageQuantity", "discountType", "discountValue", "grossAmount", "discountAmount", "netAmount", "sortOrder" FROM input_items
+          RETURNING id
+        )
+        SELECT updated_course.* FROM updated_course, (SELECT COUNT(*) FROM new_items) saved_items
+      `;
+
+      return res.status(200).json({ ...updated[0], items: await courseItems(id) });
+    }
+
     if (req.method === 'POST') {
       const action = typeof req.query.action === 'string' ? req.query.action : '';
       if (action === 'pdf-token') {
@@ -116,8 +191,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const traineeId = String(req.body?.traineeId || '');
+      const inputTraineeName = String(req.body?.traineeName || '').trim();
       const cashbackPercent = req.body?.cashbackPercent == null ? 3 : Number(req.body.cashbackPercent);
       const trainee = await requireLinkedTrainee(actor.userId, traineeId);
+      const traineeName = inputTraineeName || trainee.nickname;
+
       if (!CASHBACKS.has(cashbackPercent)) throw new HttpError(400, 'เปอร์เซ็นต์ได้เงินคืนไม่ถูกต้อง');
       const draftLines = Array.isArray(req.body?.items) ? req.body.items : [];
       if (!draftLines.length) throw new HttpError(400, 'กรุณาเลือกอาหารเสริมอย่างน้อย 1 รายการ');
@@ -156,7 +234,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const inserted = await sql`
         WITH new_course AS (
           INSERT INTO supplement_courses (id, trainer_id, trainer_name, trainee_id, trainee_name, subtotal, discount_total, total, cashback_percent, cashback_amount)
-          VALUES (${courseId}, ${actor.userId}, ${actor.displayName}, ${trainee.userId}, ${trainee.nickname}, ${subtotal}, ${discountTotal}, ${total}, ${cashbackPercent}, ${cashbackAmount})
+          VALUES (${courseId}, ${actor.userId}, ${actor.displayName}, ${trainee.userId}, ${traineeName}, ${subtotal}, ${discountTotal}, ${total}, ${cashbackPercent}, ${cashbackAmount})
           RETURNING *
         ), input_items AS (
           SELECT * FROM jsonb_to_recordset(${itemsJson}::jsonb) AS x(
