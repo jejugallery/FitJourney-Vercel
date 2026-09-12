@@ -32,3 +32,20 @@ test('equal names retain their original relative order', () => {
   const ordered = order([item('second', 'โปรตีน', 500), item('first', 'โปรตีน', 500)]);
   assert.deepEqual(ordered.map(row => row.id), ['second', 'first']);
 });
+
+test('places Bodykey products after application items and before other paid products', () => {
+  const ordered = order([
+    item('paid-1', 'ดับเบิ้ล เอ็กซ์', 2200),
+    item('bodykey-2', 'Bodykey Meal Replacement', 1600),
+    item('application-1', 'ใบสมัคร ABO', 100),
+    item('bodykey-1', 'บอดี้คีย์ รสเบอร์รี่', 1600),
+    item('free-1', 'ของแถม', 0),
+  ]);
+  assert.deepEqual(ordered.map(row => row.id), [
+    'application-1',
+    'bodykey-1',
+    'bodykey-2',
+    'paid-1',
+    'free-1',
+  ]);
+});

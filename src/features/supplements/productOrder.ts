@@ -4,8 +4,10 @@ export function orderSupplementProducts<T>(
   getUnitPrice: (item: T) => number,
 ): T[] {
   const rank = (item: T) => {
-    if (String(getName(item) || '').includes('ใบสมัคร')) return 0;
-    return Number(getUnitPrice(item)) > 0 ? 1 : 2;
+    const name = String(getName(item) || '').toLowerCase();
+    if (name.includes('ใบสมัคร')) return 0;
+    if (name.includes('บอดี้คีย์') || name.includes('bodykey') || name.includes('body key')) return 1;
+    return Number(getUnitPrice(item)) > 0 ? 2 : 3;
   };
   return items.map((item, index) => ({ item, index }))
     .sort((a, b) => {
