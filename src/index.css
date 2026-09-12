@@ -238,15 +238,16 @@ h1, h2, h3, h4, h5, h6 {
 .supplement-history-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 11px 0; color: #64748b; font-size: .8rem; }
 .supplement-person-card { display: flex; flex-direction: column; gap: 3px; padding: 14px; border-radius: 14px; background: #fff7f8; }
 .supplement-person-card span,.supplement-person-card small { color: #64748b; font-size: .78rem; }
-.supplement-snapshot-card { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; border-bottom: 1px solid #e2e8f0; }
+.supplement-snapshot-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid #e2e8f0; }
 .supplement-snapshot-card > strong { color: #ff416c; font-size: .9rem; white-space: nowrap; }
+.supplement-card-copy { flex: 0 0 auto; max-width: 45%; min-width: 0; display: flex; flex-direction: column; gap: 3px; color: #334155; }
 .supplement-card-copy .supplement-item-qty { color: #ff416c; font-size: 1.1rem; font-weight: 800; margin-left: 3px; }
-.supplement-snapshot-price { display: flex; flex-direction: column; align-items: flex-end; text-align: right; margin-left: auto; gap: 2px; flex-shrink: 0; }
+.supplement-snapshot-price { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 2px; }
 .supplement-snapshot-price > strong { color: #ff416c; font-size: .9rem; white-space: nowrap; }
 .supplement-snapshot-price .supplement-item-gross { color: #94a3b8; font-size: .74rem; text-decoration: line-through; white-space: nowrap; }
 .supplement-snapshot-price .supplement-item-discount { color: #dc2626; font-size: .74rem; white-space: nowrap; }
-.supplement-snapshot-images { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; align-self: center; flex-shrink: 0; }
-.supplement-snapshot-images img,.supplement-snapshot-noimg { width: 56px; height: 56px; border-radius: 14px; object-fit: cover; background: #f1f5f9; border: 1px solid #e2e8f0; }
+.supplement-snapshot-images { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; padding: 0 8px; }
+.supplement-snapshot-images img,.supplement-snapshot-noimg { width: 52px; height: 52px; border-radius: 14px; object-fit: cover; background: #f1f5f9; border: none; }
 .supplement-snapshot-noimg { display: grid; place-items: center; color: #cbd5e1; font-size: 1.1rem; }
 .supplement-status-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
 .supplement-status-row span { padding: 3px 7px; border-radius: 999px; background: #f1f5f9; color: #64748b; font-size: .67rem; white-space: nowrap; }
