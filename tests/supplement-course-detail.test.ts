@@ -10,11 +10,14 @@ test('formats paid and free course item quantities', () => {
 
 test('course detail displays item total before discount, discount, and net price in right price block', () => {
   const component = readFileSync(new URL('../src/features/supplements/SupplementCourseHistory.tsx', import.meta.url), 'utf8');
-  assert.match(component, /formatCourseItemPriceQuantity\(item\.unitPrice, item\.packageQuantity\)/);
+  assert.match(component, /formatCourseItemUnitPrice\(item\.unitPrice\)/);
+  assert.match(component, /supplement-item-qty/);
   assert.match(component, /supplement-snapshot-price/);
-  assert.match(component, /รวมก่อนลด ฿\{money\(grossAmount\)\}/);
+  assert.match(component, /฿\{money\(grossAmount\)\}/);
   assert.match(component, /ส่วนลด -฿\{money\(item\.discountAmount\)\}/);
-  assert.match(component, /สุทธิ ฿\{money\(item\.netAmount\)\}/);
+  assert.match(component, /฿\{money\(item\.netAmount\)\}/);
+  assert.doesNotMatch(component, /รวมก่อนลด/);
+  assert.doesNotMatch(component, /สุทธิ ฿/);
   assert.doesNotMatch(component, /จำนวน \{item\.packageQuantity\}/);
 });
 
