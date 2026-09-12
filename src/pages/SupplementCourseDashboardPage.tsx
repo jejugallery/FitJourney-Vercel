@@ -440,8 +440,8 @@ export default function SupplementCourseDashboardPage() {
             </div>
           </div>
 
-          {/* Main Content Area */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', justifyContent: 'center' }}>
+          {/* Main Content Area (Stacked towards top) */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', justifyContent: 'flex-start' }}>
             {/* Items List Overview */}
             <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '24px 32px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
