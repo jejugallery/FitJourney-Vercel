@@ -17,3 +17,24 @@ export function countDraftLinesBySupplement(lines: CourseDraftLine[]): Record<st
     return counts;
   }, {});
 }
+
+export function draftLineFromSavedItem(item: any, supplements: Supplement[]): CourseDraftLine {
+  const match = supplements.find(s => s.id === item.supplementId);
+  const supplement: Supplement = match || {
+    id: item.supplementId,
+    name: item.supplementName,
+    imageUrl: item.imageUrl,
+    price: Number(item.unitPrice || 0),
+    contentQuantity: Number(item.contentQuantity || 1),
+    contentUnit: item.contentUnit || 'เม็ด',
+    isActive: true,
+  };
+  return {
+    lineId: item.id || crypto.randomUUID(),
+    supplementId: item.supplementId,
+    supplement,
+    packageQuantity: Number(item.packageQuantity || 1),
+    discountType: item.discountType || 'none',
+    discountValue: Number(item.discountValue || 0),
+  };
+}

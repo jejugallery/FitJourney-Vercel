@@ -1,22 +1,29 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supplementCoursesApi } from '../../utils/api';
 import { calculateAutoCashbackPercent, calculateCourseCashback, calculateCourseLine, calculateCourseTotals } from './pricing';
-import { countDraftLinesBySupplement, createCourseDraftLine } from './draftLines';
+import { countDraftLinesBySupplement, createCourseDraftLine, draftLineFromSavedItem } from './draftLines';
 import { filterCourseTrainees } from './traineeSearch';
 import { displayProductPrice } from './priceDisplay';
 import { orderSupplementProducts } from './productOrder';
 import type { CourseDraftLine, CourseTrainee, DiscountType, SavedSupplementCourse, Supplement } from './types';
 import ProfileImage from '../../components/ProfileImage';
 
-interface Props { trainees: CourseTrainee[]; supplements: Supplement[]; onSaved: (course: SavedSupplementCourse) => Promise<void>; }
+interface Props { trainees: CourseTrainee[]; supplements: Supplement[]; onSaved: (course: SavedSupplementCourse) => Promise<void>; initialCourse?: SavedSupplementCourse | null; }
 const discounts: Array<[DiscountType, string]> = [['none', 'ไม่ลด'], ['percent_10', '10%'], ['percent_15', '15%'], ['fixed_100', '100฿'], ['fixed_300', '300฿'], ['fixed_500', '500฿'], ['custom', 'กำหนดเอง']];
 const money = (value: number) => Number(value || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export default function SupplementCourseForm({ trainees, supplements, onSaved }: Props) {
-  const [traineeId, setTraineeId] = useState('');
+export default function SupplementCourseForm({ trainees, supplements, onSaved, initialCourse }: Props) {
+  const [traineeId, setTraineeId] = useState(() => initialCourse?.traineeId || '');
   const [traineeDropdownOpen, setTraineeDropdownOpen] = useState(false);
   const [traineeSearch, setTraineeSearch] = useState('');
-  const [lines, setLines] = useState<CourseDraftLine[]>([]);
+  const [lines, setLines] = useState<CourseDraftLine[]>(() => initialCourse?.items ? initialCourse.items.map(item => draftLineFromSavedItem(item, supplements)) : []);
+
+  useEffect(() => {
+    if (initialCourse) {
+      setTraineeId(initialCourse.traineeId || '');
+      setLines(initialCourse.items ? initialCourse.items.map(item => draftLineFromSavedItem(item, supplements)) : []);
+    }
+  }, [initialCourse, supplements]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [saving, setSaving] = useState(false);
