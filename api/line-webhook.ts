@@ -234,6 +234,26 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
   throw lastError || new Error('ไม่สามารถประมวลผลผ่าน Gemini API ได้ในขณะนี้');
 };
 
+let pendingTablePromise: Promise<void> | null = null;
+const ensurePendingImagesTable = () => {
+  if (!pendingTablePromise) {
+    pendingTablePromise = (async () => {
+      await sql`
+        CREATE TABLE IF NOT EXISTS pending_food_images (
+          chat_id TEXT PRIMARY KEY,
+          message_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `;
+    })().catch(err => {
+      pendingTablePromise = null;
+      console.error('[Database] Create pending_food_images table error:', err);
+    });
+  }
+  return pendingTablePromise;
+};
+
 const buildBillingFlexMessage = (billing: {
   id: string;
   name: string;
@@ -468,19 +488,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (event.type === 'message' && event.message?.type === 'image') {
       const messageId = event.message?.id;
-      if (!replyToken || !messageId) continue;
+      const chatId = event.source?.groupId || event.source?.roomId || event.source?.userId;
+      if (!messageId || !chatId) continue;
 
       try {
-        const { base64, mimeType } = await fetchLineImageBase64(messageId);
-        const nutritionData = await analyzeFoodNutrition(base64, mimeType);
-        if (!nutritionData) {
-          // ไม่ใช่รูปอาหาร/เครื่องดื่ม -> ข้ามไปเงียบๆ ไม่ตอบกลับเพื่อไม่ให้รบกวนแชทกลุ่ม
-          continue;
-        }
-        const flexMessage = buildFoodAnalysisFlexMessage(nutritionData);
-        await replyToLine(replyToken, [flexMessage]);
+        await ensurePendingImagesTable();
+        await sql`
+          INSERT INTO pending_food_images (chat_id, message_id, user_id, created_at)
+          VALUES (${chatId}, ${messageId}, ${userId || ''}, CURRENT_TIMESTAMP)
+          ON CONFLICT (chat_id) DO UPDATE SET
+            message_id = EXCLUDED.message_id,
+            user_id = EXCLUDED.user_id,
+            created_at = CURRENT_TIMESTAMP
+        `;
       } catch (err: any) {
-        console.error('[Food AI Analysis Error]:', err.response?.data || err.message);
+        console.error('[Pending Food Image Save Error]:', err.message);
       }
       continue;
     }
@@ -495,6 +517,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else if (event.type === 'message' && event.message?.type === 'text') {
       const text = event.message.text || '';
       const trimmedText = text.trim();
+
+      if (trimmedText === 'ตรวจอาหาร' || trimmedText.startsWith('ตรวจอาหาร')) {
+        if (!replyToken) continue;
+        const chatId = event.source?.groupId || event.source?.roomId || event.source?.userId;
+        if (!chatId) continue;
+
+        try {
+          await ensurePendingImagesTable();
+          const pendingRows = await sql`
+            SELECT * FROM pending_food_images
+            WHERE chat_id = ${chatId} AND created_at > (CURRENT_TIMESTAMP - INTERVAL '2 hours')
+          `;
+
+          if (pendingRows.length === 0) {
+            await replyToLine(replyToken, [{
+              type: 'text',
+              text: 'ยังไม่พบรูปภาพอาหารล่าสุดในแชทนี้ครับ กรุณาส่งรูปอาหารก่อน แล้วค่อยพิมพ์ "ตรวจอาหาร"',
+            }]);
+            continue;
+          }
+
+          const pendingMsgId = pendingRows[0].message_id;
+
+          const { base64, mimeType } = await fetchLineImageBase64(pendingMsgId);
+          const nutritionData = await analyzeFoodNutrition(base64, mimeType);
+
+          await sql`DELETE FROM pending_food_images WHERE chat_id = ${chatId}`;
+
+          if (!nutritionData) {
+            await replyToLine(replyToken, [{
+              type: 'text',
+              text: 'รูปภาพล่าสุดที่ส่งเข้ามาในแชทนี้ไม่ใช่อาหารครับ 😅',
+            }]);
+            continue;
+          }
+
+          const flexMessage = buildFoodAnalysisFlexMessage(nutritionData);
+          await replyToLine(replyToken, [flexMessage]);
+        } catch (err: any) {
+          console.error('[Trigger Food Check Error]:', err.response?.data || err.message);
+          try {
+            await replyToLine(replyToken, [{
+              type: 'text',
+              text: '❌ เกิดข้อผิดพลาดในการวิเคราะห์รูปอาหาร กรุณาลองใหม่อีกครั้งครับ',
+            }]);
+          } catch (replyErr: any) {
+            console.error('[Error Reply Failed]:', replyErr.response?.data || replyErr.message);
+          }
+        }
+        continue;
+      }
 
       if (trimmedText.startsWith('สร้างบิล')) {
         if (!replyToken || !userId) continue;
