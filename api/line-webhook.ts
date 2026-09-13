@@ -67,6 +67,14 @@ const getGeminiApiKeys = async (): Promise<string[]> => {
   return apiKeys;
 };
 
+interface FoodItemBreakdown {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 interface FoodNutritionResult {
   isFood: boolean;
   foodName: string;
@@ -74,6 +82,7 @@ interface FoodNutritionResult {
   protein: number;
   carbs: number;
   fat: number;
+  items: FoodItemBreakdown[];
   summary: string;
 }
 
@@ -97,40 +106,57 @@ const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult) => {
         spacing: 'xs',
         margin: 'sm',
         contents: [
-          { type: 'box', layout: 'vertical', backgroundColor: '#7c3aed', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'พลังงาน', size: 'xxs', color: '#ffffff', align: 'center' }, { type: 'text', text: `${calories}`, size: 'sm', weight: 'bold', color: '#ffffff', align: 'center', margin: 'xs' }, { type: 'text', text: 'kcal', size: 'xxs', color: '#ffffff', align: 'center' }] },
-          { type: 'box', layout: 'vertical', backgroundColor: '#fff1f2', borderColor: '#ffe4e6', borderWidth: '1px', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'โปรตีน', size: 'xxs', color: '#9f1239', align: 'center' }, { type: 'text', text: `${protein}g`, size: 'sm', weight: 'bold', color: '#be123c', align: 'center', margin: 'xs' }] },
-          { type: 'box', layout: 'vertical', backgroundColor: '#f0fdf4', borderColor: '#dcfce7', borderWidth: '1px', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'คาร์บ', size: 'xxs', color: '#166534', align: 'center' }, { type: 'text', text: `${carbs}g`, size: 'sm', weight: 'bold', color: '#15803d', align: 'center', margin: 'xs' }] },
-          { type: 'box', layout: 'vertical', backgroundColor: '#fffbeb', borderColor: '#fef3c7', borderWidth: '1px', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'ไขมัน', size: 'xxs', color: '#92400e', align: 'center' }, { type: 'text', text: `${fat}g`, size: 'sm', weight: 'bold', color: '#b45309', align: 'center', margin: 'xs' }] }
+          { type: 'box', layout: 'vertical', backgroundColor: '#7c3aed', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'พลังงานรวม', size: 'xxs', color: '#ffffff', align: 'center' }, { type: 'text', text: `${calories}`, size: 'sm', weight: 'bold', color: '#ffffff', align: 'center', margin: 'xs' }, { type: 'text', text: 'kcal', size: 'xxs', color: '#ffffff', align: 'center' }] },
+          { type: 'box', layout: 'vertical', backgroundColor: '#fff1f2', borderColor: '#ffe4e6', borderWidth: '1px', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'โปรตีนรวม', size: 'xxs', color: '#9f1239', align: 'center' }, { type: 'text', text: `${protein}g`, size: 'sm', weight: 'bold', color: '#be123c', align: 'center', margin: 'xs' }] },
+          { type: 'box', layout: 'vertical', backgroundColor: '#f0fdf4', borderColor: '#dcfce7', borderWidth: '1px', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'คาร์บรวม', size: 'xxs', color: '#166534', align: 'center' }, { type: 'text', text: `${carbs}g`, size: 'sm', weight: 'bold', color: '#15803d', align: 'center', margin: 'xs' }] },
+          { type: 'box', layout: 'vertical', backgroundColor: '#fffbeb', borderColor: '#fef3c7', borderWidth: '1px', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'ไขมันรวม', size: 'xxs', color: '#92400e', align: 'center' }, { type: 'text', text: `${fat}g`, size: 'sm', weight: 'bold', color: '#b45309', align: 'center', margin: 'xs' }] }
         ]
       }
     ]
   };
 
+  const itemRows = (nutrition.items || []).map((item, idx) => ({
+    type: 'box',
+    layout: 'vertical',
+    margin: idx === 0 ? 'sm' : 'xs',
+    backgroundColor: '#f8fafc',
+    paddingAll: 'sm',
+    cornerRadius: '6px',
+    contents: [
+      { type: 'text', text: `• ${item.name}`, weight: 'bold', size: 'xs', color: '#334155', wrap: true },
+      { type: 'text', text: `🔥 ${item.calories || 0} kcal | P: ${item.protein || 0}g | C: ${item.carbs || 0}g | F: ${item.fat || 0}g`, size: 'xxs', color: '#64748b', margin: 'xs' }
+    ]
+  }));
+
+  const itemsBox = itemRows.length > 0 ? {
+    type: 'box',
+    layout: 'vertical',
+    margin: 'lg',
+    contents: [
+      { type: 'text', text: '🍱 จำแนกรายการอาหารในจาน:', size: 'xs', weight: 'bold', color: '#475569' },
+      ...itemRows
+    ]
+  } : null;
+
   return {
     type: 'flex',
-    altText: `🥗 ผลตรวจอาหาร (AI): ${foodName} (${calories} kcal)`,
+    altText: `🥗 ผลการตรวจอาหาร: ${foodName} (${calories} kcal)`,
     contents: {
       type: 'bubble',
-      hero: {
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop',
-        size: 'full',
-        aspectRatio: '20:13',
-        aspectMode: 'cover'
-      },
       body: {
         type: 'box',
         layout: 'vertical',
         contents: [
-          { type: 'text', text: 'ผลตรวจอาหาร (AI)', weight: 'bold', size: 'xl', color: '#1DB446' },
-          { type: 'text', text: 'วิเคราะห์โดย Gemini AI 🤖', size: 'xs', color: '#94a3b8', margin: 'xs' },
+          { type: 'text', text: 'ผลการตรวจอาหาร', weight: 'bold', size: 'xl', color: '#1DB446' },
+          { type: 'text', text: 'วิเคราะห์ด้วย AI', size: 'xs', color: '#94a3b8', margin: 'xs' },
           nutritionBox,
+          ...(itemsBox ? [itemsBox] : []),
           ...(nutrition.summary ? [
             {
               type: 'box',
               layout: 'vertical',
               margin: 'lg',
-              backgroundColor: '#f8fafc',
+              backgroundColor: '#f1f5f9',
               paddingAll: 'md',
               cornerRadius: '8px',
               contents: [
@@ -153,14 +179,18 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
 
   const prompt = `คุณคือระบบ AI ตรวจสอบและวิเคราะห์โภชนาการอาหารประจำ FitJourney โปรดตรวจสอบว่ารูปภาพนี้คือ "รูปอาหาร เครื่องดื่ม หรือขนม" หรือไม่?
 
-1. หากเป็นรูปอาหาร/เครื่องดื่ม ให้ตอบกลับ JSON ดังนี้:
+1. หากเป็นรูปอาหาร/เครื่องดื่ม ให้วิเคราะห์จำแนกวัตถุดิบ/รายการอาหารแต่ละอย่างในจาน และคำนวณสารอาหารรวม แล้วตอบกลับ JSON ดังนี้เท่านั้น:
 {
   "isFood": true,
-  "foodName": "ชื่อเมนูอาหารภาษาไทย",
+  "foodName": "ชื่อเมนูอาหารหลักภาษาไทย",
   "calories": 450,
-  "protein": 20,
+  "protein": 25,
   "carbs": 50,
   "fat": 15,
+  "items": [
+    { "name": "ชื่ออาหาร/วัตถุดิบ 1", "calories": 200, "protein": 4, "carbs": 44, "fat": 1 },
+    { "name": "ชื่ออาหาร/วัตถุดิบ 2", "calories": 250, "protein": 21, "carbs": 6, "fat": 14 }
+  ],
   "summary": "คำแนะนำสั้นๆ สไตล์โค้ชสุขภาพแบบเป็นกันเอง (1-2 ประโยค)"
 }
 
@@ -170,14 +200,14 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
   "isFood": false
 }
 
-(ห้ามใส่คำว่า \`\`\`json ให้ตอบเฉพาะ JSON สดๆ เท่านั้น)`;
+(ห้ามใส่คำว่า \`\`\`json ให้ตอบเฉพาะตัวข้อความ JSON สดๆ เท่านั้น)`;
 
   const models = [
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
     'gemini-3.5-flash-lite',
     'gemini-3.1-flash-lite',
     'gemini-2.5-flash-lite',
-    'gemini-2.5-flash',
-    'gemini-1.5-flash',
     'gemma-4-26b-a4b-it'
   ];
   let lastError: any = null;
@@ -211,6 +241,15 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
             if (parsed.isFood === false) {
               return null;
             }
+            const rawItems = Array.isArray(parsed.items) ? parsed.items : [];
+            const items: FoodItemBreakdown[] = rawItems.map((item: any) => ({
+              name: String(item.name || 'รายการอาหาร'),
+              calories: Math.round(Number(item.calories)) || 0,
+              protein: Math.round(Number(item.protein)) || 0,
+              carbs: Math.round(Number(item.carbs)) || 0,
+              fat: Math.round(Number(item.fat)) || 0,
+            }));
+
             return {
               isFood: true,
               foodName: String(parsed.foodName || 'อาหารทั่วไป'),
@@ -218,6 +257,7 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
               protein: Math.round(Number(parsed.protein)) || 0,
               carbs: Math.round(Number(parsed.carbs)) || 0,
               fat: Math.round(Number(parsed.fat)) || 0,
+              items,
               summary: String(parsed.summary || 'มื้ออาหารน่าทาน รักษาสมดุลโภชนาการต่อไปนะครับ!'),
             };
           } catch (jsonErr) {
