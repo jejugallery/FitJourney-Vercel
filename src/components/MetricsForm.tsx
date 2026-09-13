@@ -252,8 +252,28 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
 
   useEffect(() => {
     if (!adminData?.docId) {
-      setTrainerDisplayName(adminData?.nickname || adminData?.displayName || profile?.displayName || 'กำลังโหลด...');
-      setReactiveAdminData(adminData);
+      if (profile?.userId) {
+        const fetchTrainerDoc = async () => {
+          try {
+            const q = query(collection(db, 'trainers'), where('trainerId', '==', profile.userId));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+              const data: any = { ...snap.docs[0].data(), docId: snap.docs[0].id };
+              setReactiveAdminData(data);
+              setTrainerDisplayName(data.nickname || data.displayName || profile?.displayName || 'กำลังโหลด...');
+            } else {
+              setTrainerDisplayName(adminData?.nickname || adminData?.displayName || profile?.displayName || 'กำลังโหลด...');
+              setReactiveAdminData(adminData);
+            }
+          } catch (err) {
+            console.error('Error fetching trainer doc in MetricsForm:', err);
+          }
+        };
+        fetchTrainerDoc();
+      } else {
+        setTrainerDisplayName(adminData?.nickname || adminData?.displayName || profile?.displayName || 'กำลังโหลด...');
+        setReactiveAdminData(adminData);
+      }
       return;
     }
     const unsub = onSnapshot(doc(db, 'trainers', adminData.docId), (docSnap) => {
@@ -1273,22 +1293,39 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
             {/* Left side: Trainee Info & Location */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: '1 1 250px' }}>
               {/* Trainee profile header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {traineePic ? (
-                  <img 
-                    src={traineePic} 
-                    alt="Trainee Profile" 
-                    style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '18px' }}>👤</div>
-                )}
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '1.05rem' }}>{traineeName}</span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    {isSelf ? 'บันทึกข้อมูลของตัวเอง' : 'ลูกเทรน'}
-                  </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {traineePic ? (
+                    <img 
+                      src={traineePic} 
+                      alt="Trainee Profile" 
+                      style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '18px' }}>👤</div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '1.05rem' }}>{traineeName}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      {isSelf ? 'บันทึกข้อมูลของตัวเอง' : 'ลูกเทรน'}
+                    </span>
+                  </div>
                 </div>
+
+                {reactiveAdminData?.status === 'superadmin' && !isSelf && (
+                  <button 
+                    type="button"
+                    onClick={() => setShowAddTrainerModal(true)}
+                    style={{ 
+                      display: 'inline-flex', alignItems: 'center', gap: '0.35rem', 
+                      background: '#eff6ff', border: '1px dashed #3b82f6', color: '#3b82f6', 
+                      padding: '0.35rem 0.75rem', borderRadius: '10px', fontSize: '0.8rem', 
+                      fontWeight: 600, cursor: 'pointer', marginTop: '0.2rem', width: 'fit-content' 
+                    }}
+                  >
+                    ➕ เพิ่มเทรนเนอร์
+                  </button>
+                )}
               </div>
               
               {/* Location details */}

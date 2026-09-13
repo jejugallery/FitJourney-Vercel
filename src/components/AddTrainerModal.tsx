@@ -45,8 +45,8 @@ export default function AddTrainerModal({ traineeId, currentTrainerIds = [], onC
         setError('ไม่พบเทรนเนอร์รหัสนี้ หรือยังไม่ได้รับการอนุมัติ');
       } else {
         const foundData = snap.docs[0].data();
-        if (profile?.userId && foundData.trainerId === profile.userId) {
-          setError('ไม่สามารถเพิ่มตัวเองเป็นเทรนเนอร์ได้');
+        if (traineeId === profile?.userId && foundData.trainerId === profile?.userId) {
+          setError('ไม่สามารถเพิ่มตัวเองเป็นเทรนเนอร์ให้ตัวเองได้');
         } else {
           setTrainerInfo(foundData);
         }

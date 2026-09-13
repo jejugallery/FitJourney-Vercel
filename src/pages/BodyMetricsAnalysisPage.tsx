@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useLiff } from '../context/LiffContext';
+import AddTrainerModal from '../components/AddTrainerModal';
 import ProfileImage from '../components/ProfileImage';
 
 interface TraineeProfile {
@@ -15,6 +17,7 @@ interface TraineeProfile {
   height?: number;
   province?: string;
   zone?: string;
+  trainerIds?: string[];
 }
 
 interface BodyMetric {
@@ -36,11 +39,31 @@ interface BodyMetric {
 export default function BodyMetricsAnalysisPage() {
   const { traineeId } = useParams<{ traineeId: string }>();
   const navigate = useNavigate();
+  const { profile } = useLiff();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [trainee, setTrainee] = useState<TraineeProfile | null>(null);
   const [latestMetric, setLatestMetric] = useState<BodyMetric | null>(null);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [showAddTrainerModal, setShowAddTrainerModal] = useState(false);
+  const [currentTrainerIds, setCurrentTrainerIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!profile?.userId) return;
+    const checkAdmin = async () => {
+      try {
+        const q = query(collection(db, 'trainers'), where('trainerId', '==', profile.userId));
+        const snap = await getDocs(q);
+        if (!snap.empty && snap.docs[0].data().status === 'superadmin') {
+          setIsSuperadmin(true);
+        }
+      } catch (err) {
+        console.error('Error checking superadmin status:', err);
+      }
+    };
+    checkAdmin();
+  }, [profile?.userId]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,6 +109,7 @@ export default function BodyMetricsAnalysisPage() {
             const traineeSnap = await getDocs(traineeQuery);
             if (!traineeSnap.empty) {
               const tData = traineeSnap.docs[0].data();
+              setCurrentTrainerIds(tData.trainerIds || []);
               traineeData = {
                 userId: tData.userId,
                 nickname: tData.nickname || tData.lineName || 'ลูกเทรน',
@@ -95,7 +119,8 @@ export default function BodyMetricsAnalysisPage() {
                 age: Number(tData.age),
                 height: Number(tData.height),
                 province: tData.province,
-                zone: tData.zone
+                zone: tData.zone,
+                trainerIds: tData.trainerIds || []
               };
             }
           }
@@ -404,6 +429,20 @@ export default function BodyMetricsAnalysisPage() {
                 <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.2rem 0.6rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
                   ส่วนสูง: {latestMetric.height} ซม.
                 </span>
+                {isSuperadmin && (
+                  <button 
+                    type="button"
+                    onClick={() => setShowAddTrainerModal(true)}
+                    style={{ 
+                      display: 'inline-flex', alignItems: 'center', gap: '0.35rem', 
+                      background: '#eff6ff', border: '1px dashed #3b82f6', color: '#3b82f6', 
+                      padding: '0.2rem 0.6rem', borderRadius: '8px', fontSize: '0.8rem', 
+                      fontWeight: 600, cursor: 'pointer'
+                    }}
+                  >
+                    ➕ เพิ่มเทรนเนอร์
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -752,6 +791,18 @@ export default function BodyMetricsAnalysisPage() {
         </div>
 
       </div>
+
+      {showAddTrainerModal && traineeId && (
+        <AddTrainerModal 
+          traineeId={traineeId} 
+          currentTrainerIds={currentTrainerIds}
+          onClose={() => setShowAddTrainerModal(false)}
+          onSuccess={() => {
+            setShowAddTrainerModal(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }
