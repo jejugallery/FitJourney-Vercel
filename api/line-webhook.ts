@@ -73,6 +73,7 @@ interface FoodItemBreakdown {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
 }
 
 interface FoodNutritionResult {
@@ -82,6 +83,7 @@ interface FoodNutritionResult {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
   items: FoodItemBreakdown[];
   summary: string;
 }
@@ -91,6 +93,7 @@ const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult) => {
   const protein = Number(nutrition.protein) || 0;
   const carbs = Number(nutrition.carbs) || 0;
   const fat = Number(nutrition.fat) || 0;
+  const fiber = Number(nutrition.fiber) || 0;
   const foodName = nutrition.foodName || 'อาหารทั่วไป';
 
   const nutritionBox = {
@@ -99,17 +102,17 @@ const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult) => {
     margin: 'lg',
     spacing: 'xs',
     contents: [
-      ...(foodName ? [{ type: 'text', text: `🍽️ ${foodName}`, weight: 'bold', size: 'sm', color: '#1e293b', wrap: true }] : []),
       {
         type: 'box',
         layout: 'horizontal',
         spacing: 'xs',
-        margin: 'sm',
+        margin: 'xs',
         contents: [
-          { type: 'box', layout: 'vertical', backgroundColor: '#7c3aed', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'พลังงานรวม', size: 'xxs', color: '#ffffff', align: 'center' }, { type: 'text', text: `${calories}`, size: 'sm', weight: 'bold', color: '#ffffff', align: 'center', margin: 'xs' }, { type: 'text', text: 'kcal', size: 'xxs', color: '#ffffff', align: 'center' }] },
-          { type: 'box', layout: 'vertical', backgroundColor: '#fff1f2', borderColor: '#ffe4e6', borderWidth: '1px', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'โปรตีนรวม', size: 'xxs', color: '#9f1239', align: 'center' }, { type: 'text', text: `${protein}g`, size: 'sm', weight: 'bold', color: '#be123c', align: 'center', margin: 'xs' }] },
-          { type: 'box', layout: 'vertical', backgroundColor: '#f0fdf4', borderColor: '#dcfce7', borderWidth: '1px', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'คาร์บรวม', size: 'xxs', color: '#166534', align: 'center' }, { type: 'text', text: `${carbs}g`, size: 'sm', weight: 'bold', color: '#15803d', align: 'center', margin: 'xs' }] },
-          { type: 'box', layout: 'vertical', backgroundColor: '#fffbeb', borderColor: '#fef3c7', borderWidth: '1px', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'ไขมันรวม', size: 'xxs', color: '#92400e', align: 'center' }, { type: 'text', text: `${fat}g`, size: 'sm', weight: 'bold', color: '#b45309', align: 'center', margin: 'xs' }] }
+          { type: 'box', layout: 'vertical', backgroundColor: '#7c3aed', cornerRadius: '6px', paddingAll: 'xs', alignItems: 'center', contents: [{ type: 'text', text: 'พลังงานรวม', size: 'xxs', color: '#ffffff', align: 'center' }, { type: 'text', text: `${calories}`, size: 'xs', weight: 'bold', color: '#ffffff', align: 'center', margin: 'xs' }, { type: 'text', text: 'kcal', size: 'xxs', color: '#ffffff', align: 'center' }] },
+          { type: 'box', layout: 'vertical', backgroundColor: '#fff1f2', borderColor: '#ffe4e6', borderWidth: '1px', cornerRadius: '6px', paddingAll: 'xs', alignItems: 'center', contents: [{ type: 'text', text: 'โปรตีนรวม', size: 'xxs', color: '#9f1239', align: 'center' }, { type: 'text', text: `${protein}g`, size: 'xs', weight: 'bold', color: '#be123c', align: 'center', margin: 'xs' }] },
+          { type: 'box', layout: 'vertical', backgroundColor: '#f0fdf4', borderColor: '#dcfce7', borderWidth: '1px', cornerRadius: '6px', paddingAll: 'xs', alignItems: 'center', contents: [{ type: 'text', text: 'คาร์บรวม', size: 'xxs', color: '#166534', align: 'center' }, { type: 'text', text: `${carbs}g`, size: 'xs', weight: 'bold', color: '#15803d', align: 'center', margin: 'xs' }] },
+          { type: 'box', layout: 'vertical', backgroundColor: '#fffbeb', borderColor: '#fef3c7', borderWidth: '1px', cornerRadius: '6px', paddingAll: 'xs', alignItems: 'center', contents: [{ type: 'text', text: 'ไขมันรวม', size: 'xxs', color: '#92400e', align: 'center' }, { type: 'text', text: `${fat}g`, size: 'xs', weight: 'bold', color: '#b45309', align: 'center', margin: 'xs' }] },
+          { type: 'box', layout: 'vertical', backgroundColor: '#e0f2fe', borderColor: '#bae6fd', borderWidth: '1px', cornerRadius: '6px', paddingAll: 'xs', alignItems: 'center', contents: [{ type: 'text', text: 'ไฟเบอร์รวม', size: 'xxs', color: '#0369a1', align: 'center' }, { type: 'text', text: `${fiber}g`, size: 'xs', weight: 'bold', color: '#0284c7', align: 'center', margin: 'xs' }] }
         ]
       }
     ]
@@ -124,7 +127,7 @@ const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult) => {
     cornerRadius: '6px',
     contents: [
       { type: 'text', text: `• ${item.name}`, weight: 'bold', size: 'xs', color: '#334155', wrap: true },
-      { type: 'text', text: `🔥 ${item.calories || 0} kcal | P: ${item.protein || 0}g | C: ${item.carbs || 0}g | F: ${item.fat || 0}g`, size: 'xxs', color: '#64748b', margin: 'xs' }
+      { type: 'text', text: `🔥 ${item.calories || 0} kcal | P: ${item.protein || 0}g | C: ${item.carbs || 0}g | F: ${item.fat || 0}g | Fiber: ${item.fiber || 0}g`, size: 'xxs', color: '#64748b', margin: 'xs' }
     ]
   }));
 
@@ -140,7 +143,7 @@ const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult) => {
 
   return {
     type: 'flex',
-    altText: `🥗 ผลการตรวจอาหาร: ${foodName} (${calories} kcal)`,
+    altText: `🥗 ผลการตรวจอาหาร (${calories} kcal)`,
     contents: {
       type: 'bubble',
       body: {
@@ -179,7 +182,7 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
 
   const prompt = `คุณคือระบบ AI ตรวจสอบและวิเคราะห์โภชนาการอาหารประจำ FitJourney โปรดตรวจสอบว่ารูปภาพนี้คือ "รูปอาหาร เครื่องดื่ม หรือขนม" หรือไม่?
 
-1. หากเป็นรูปอาหาร/เครื่องดื่ม ให้วิเคราะห์จำแนกวัตถุดิบ/รายการอาหารแต่ละอย่างในจาน และคำนวณสารอาหารรวม แล้วตอบกลับ JSON ดังนี้เท่านั้น:
+1. หากเป็นรูปอาหาร/เครื่องดื่ม ให้วิเคราะห์จำแนกวัตถุดิบ/รายการอาหารแต่ละอย่างในจาน และคำนวณสารอาหารรวม (รวมถึงไฟเบอร์/ใยอาหาร) แล้วตอบกลับ JSON ดังนี้เท่านั้น:
 {
   "isFood": true,
   "foodName": "ชื่อเมนูอาหารหลักภาษาไทย",
@@ -187,9 +190,10 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
   "protein": 25,
   "carbs": 50,
   "fat": 15,
+  "fiber": 6,
   "items": [
-    { "name": "ชื่ออาหาร/วัตถุดิบ 1", "calories": 200, "protein": 4, "carbs": 44, "fat": 1 },
-    { "name": "ชื่ออาหาร/วัตถุดิบ 2", "calories": 250, "protein": 21, "carbs": 6, "fat": 14 }
+    { "name": "ชื่ออาหาร/วัตถุดิบ 1", "calories": 200, "protein": 4, "carbs": 44, "fat": 1, "fiber": 3 },
+    { "name": "ชื่ออาหาร/วัตถุดิบ 2", "calories": 250, "protein": 21, "carbs": 6, "fat": 14, "fiber": 3 }
   ],
   "summary": "คำแนะนำสั้นๆ สไตล์โค้ชสุขภาพแบบเป็นกันเอง (1-2 ประโยค)"
 }
@@ -248,6 +252,7 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
               protein: Math.round(Number(item.protein)) || 0,
               carbs: Math.round(Number(item.carbs)) || 0,
               fat: Math.round(Number(item.fat)) || 0,
+              fiber: Math.round(Number(item.fiber)) || 0,
             }));
 
             return {
@@ -257,6 +262,7 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
               protein: Math.round(Number(parsed.protein)) || 0,
               carbs: Math.round(Number(parsed.carbs)) || 0,
               fat: Math.round(Number(parsed.fat)) || 0,
+              fiber: Math.round(Number(parsed.fiber)) || 0,
               items,
               summary: String(parsed.summary || 'มื้ออาหารน่าทาน รักษาสมดุลโภชนาการต่อไปนะครับ!'),
             };
