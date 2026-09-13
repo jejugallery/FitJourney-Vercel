@@ -54,6 +54,7 @@ export default function TraineeDashboard({
   const [metricsData, setMetricsData] = useState<any[]>([]);
   const [recommendation, setRecommendation] = useState<any | null>(null);
   const [showPastMetricsModal, setShowPastMetricsModal] = useState(false);
+  const [isTrainerAuthorized, setIsTrainerAuthorized] = useState(false);
   
   const [trainerName, setTrainerName] = useState('');
   const [trainersList, setTrainersList] = useState<any[]>([]);
@@ -78,6 +79,17 @@ export default function TraineeDashboard({
       const queryId = targetTraineeId || profile.userId;
 
       try {
+        // Verify the current user is an approved trainer before enabling destructive actions.
+        try {
+          const currentTrainerQ = query(collection(db, 'trainers'), where('trainerId', '==', profile.userId));
+          const currentTrainerSnap = await getDocs(currentTrainerQ);
+          const currentTrainer = currentTrainerSnap.docs[0]?.data();
+          setIsTrainerAuthorized(currentTrainer?.status === 'อนุมัติ' || currentTrainer?.status === 'superadmin');
+        } catch (errTrainer) {
+          console.error('Error checking trainer permission:', errTrainer);
+          setIsTrainerAuthorized(false);
+        }
+
         // Check if user is a pending trainer
         if (queryId === profile.userId) {
           try {
@@ -216,6 +228,44 @@ export default function TraineeDashboard({
 
     fetchData();
   }, [profile, targetTraineeId]);
+
+  const handleDeleteLatestMetric = async () => {
+    if (!isTrainerAuthorized) {
+      alert('เฉพาะเทรนเนอร์เท่านั้นที่สามารถลบค่าสถิติได้');
+      return;
+    }
+
+    const latestMetric = metricsData[metricsData.length - 1];
+    if (!latestMetric?.id || !queryId) {
+      alert('ไม่พบข้อมูลสถิติที่ต้องการลบ');
+      return;
+    }
+
+    if (!window.confirm(`ต้องการลบค่าสถิติครั้งล่าสุดของ ${traineeName || 'ผู้รับการวัด'} ใช่หรือไม่?`)) {
+      return;
+    }
+
+    try {
+      // Re-check ownership before deleting, so a stale UI cannot delete another trainee's record.
+      const metricQuery = query(
+        collection(db, 'bodyMetrics'),
+        where('traineeId', '==', queryId),
+      );
+      const metricSnapshot = await getDocs(metricQuery);
+      const metricExists = metricSnapshot.docs.some((metricDoc) => metricDoc.id === latestMetric.id);
+      if (!metricExists) {
+        alert('ไม่พบรายการสถิตินี้แล้ว กรุณารีเฟรชหน้าอีกครั้ง');
+        return;
+      }
+
+      await deleteDoc(doc(db, 'bodyMetrics', latestMetric.id));
+      setMetricsData((current) => current.filter((metric) => metric.id !== latestMetric.id));
+      alert('ลบค่าสถิติครั้งล่าสุดเรียบร้อยแล้ว');
+    } catch (error) {
+      console.error('Error deleting latest body metric:', error);
+      alert('เกิดข้อผิดพลาดในการลบค่าสถิติ กรุณาลองใหม่อีกครั้ง');
+    }
+  };
 
   const handleViewCommentsClick = async () => {
     if (!profile) return;
@@ -861,7 +911,7 @@ export default function TraineeDashboard({
         )}
 
         {(targetTraineeId || isTrainerSelf) && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginTop: '2rem', flexWrap: 'wrap' }}>
             <button 
               type="button"
               className="btn-secondary" 
@@ -870,6 +920,15 @@ export default function TraineeDashboard({
             >
               🕒 บันทึกค่าร่างกายย้อนหลัง
             </button>
+            {isTrainerAuthorized && metricsData.length > 0 && (
+              <button
+                type="button"
+                onClick={handleDeleteLatestMetric}
+                style={{ padding: '0.8rem 1.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+              >
+                🗑️ ลบค่าครั้งล่าสุด
+              </button>
+            )}
           </div>
         )}
           </>
