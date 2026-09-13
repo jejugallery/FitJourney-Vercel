@@ -23,6 +23,208 @@ const replyToLine = async (replyToken: string, messages: any[]) => {
   );
 };
 
+const fetchLineImageBase64 = async (messageId: string): Promise<{ base64: string; mimeType: string }> => {
+  if (!LINE_CHANNEL_ACCESS_TOKEN) {
+    throw new Error('LINE_CHANNEL_ACCESS_TOKEN is not configured');
+  }
+
+  const response = await axios.get(`https://api-data.line.me/v2/bot/message/${messageId}/content`, {
+    headers: {
+      Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`,
+    },
+    responseType: 'arraybuffer',
+  });
+
+  const mimeType = (response.headers['content-type'] as string) || 'image/jpeg';
+  const base64 = Buffer.from(response.data).toString('base64');
+  return { base64, mimeType };
+};
+
+const getGeminiApiKeys = async (): Promise<string[]> => {
+  let apiKeys: string[] = [];
+
+  // 1. Try fetching from Firestore document (system_configs/gemini)
+  try {
+    const res = await axios.get(
+      'https://firestore.googleapis.com/v1/projects/fitjourneythailand/databases/(default)/documents/system_configs/gemini'
+    );
+    const values = res.data?.fields?.apiKeys?.arrayValue?.values || [];
+    apiKeys = values.map((v: any) => v.stringValue || '').filter(Boolean);
+  } catch (err: any) {
+    console.warn('[Gemini Bot] Could not fetch keys from Firestore system_configs/gemini:', err.message);
+  }
+
+  // 2. Fallback to process.env (GEMINI_API_KEY, VITE_GEMINI_API_KEYS, VITE_GEMINI_API_KEY)
+  if (apiKeys.length === 0) {
+    const keysString =
+      process.env.GEMINI_API_KEY ||
+      process.env.VITE_GEMINI_API_KEYS ||
+      process.env.VITE_GEMINI_API_KEY ||
+      '';
+    apiKeys = keysString.split(',').map((k: string) => k.trim()).filter(Boolean);
+  }
+
+  return apiKeys;
+};
+
+interface FoodNutritionResult {
+  foodName: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  summary: string;
+}
+
+const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult) => {
+  const calories = Math.round(Number(nutrition.calories)) || 0;
+  const protein = Number(nutrition.protein) || 0;
+  const carbs = Number(nutrition.carbs) || 0;
+  const fat = Number(nutrition.fat) || 0;
+  const foodName = nutrition.foodName || 'อาหารทั่วไป';
+
+  const nutritionBox = {
+    type: 'box',
+    layout: 'vertical',
+    margin: 'lg',
+    spacing: 'xs',
+    contents: [
+      ...(foodName ? [{ type: 'text', text: `🍽️ ${foodName}`, weight: 'bold', size: 'sm', color: '#1e293b', wrap: true }] : []),
+      {
+        type: 'box',
+        layout: 'horizontal',
+        spacing: 'xs',
+        margin: 'sm',
+        contents: [
+          { type: 'box', layout: 'vertical', backgroundColor: '#7c3aed', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'พลังงาน', size: 'xxs', color: '#ffffff', align: 'center' }, { type: 'text', text: `${calories}`, size: 'sm', weight: 'bold', color: '#ffffff', align: 'center', margin: 'xs' }, { type: 'text', text: 'kcal', size: 'xxs', color: '#ffffff', align: 'center' }] },
+          { type: 'box', layout: 'vertical', backgroundColor: '#fff1f2', borderColor: '#ffe4e6', borderWidth: '1px', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'โปรตีน', size: 'xxs', color: '#9f1239', align: 'center' }, { type: 'text', text: `${protein}g`, size: 'sm', weight: 'bold', color: '#be123c', align: 'center', margin: 'xs' }] },
+          { type: 'box', layout: 'vertical', backgroundColor: '#f0fdf4', borderColor: '#dcfce7', borderWidth: '1px', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'คาร์บ', size: 'xxs', color: '#166534', align: 'center' }, { type: 'text', text: `${carbs}g`, size: 'sm', weight: 'bold', color: '#15803d', align: 'center', margin: 'xs' }] },
+          { type: 'box', layout: 'vertical', backgroundColor: '#fffbeb', borderColor: '#fef3c7', borderWidth: '1px', cornerRadius: '8px', paddingAll: 'sm', alignItems: 'center', contents: [{ type: 'text', text: 'ไขมัน', size: 'xxs', color: '#92400e', align: 'center' }, { type: 'text', text: `${fat}g`, size: 'sm', weight: 'bold', color: '#b45309', align: 'center', margin: 'xs' }] }
+        ]
+      }
+    ]
+  };
+
+  return {
+    type: 'flex',
+    altText: `🥗 ผลตรวจอาหาร (AI): ${foodName} (${calories} kcal)`,
+    contents: {
+      type: 'bubble',
+      hero: {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop',
+        size: 'full',
+        aspectRatio: '20:13',
+        aspectMode: 'cover'
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          { type: 'text', text: 'ผลตรวจอาหาร (AI)', weight: 'bold', size: 'xl', color: '#1DB446' },
+          { type: 'text', text: 'วิเคราะห์โดย Gemini AI 🤖', size: 'xs', color: '#94a3b8', margin: 'xs' },
+          nutritionBox,
+          ...(nutrition.summary ? [
+            {
+              type: 'box',
+              layout: 'vertical',
+              margin: 'lg',
+              backgroundColor: '#f8fafc',
+              paddingAll: 'md',
+              cornerRadius: '8px',
+              contents: [
+                { type: 'text', text: '💡 คำแนะนำโภชนาการ:', color: '#475569', size: 'xs', weight: 'bold' },
+                { type: 'text', text: nutrition.summary, wrap: true, color: '#334155', size: 'sm', margin: 'xs' }
+              ]
+            }
+          ] : [])
+        ]
+      }
+    }
+  };
+};
+
+const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Promise<FoodNutritionResult> => {
+  const apiKeys = await getGeminiApiKeys();
+  if (apiKeys.length === 0) {
+    throw new Error('ไม่พบการตั้งค่า Gemini API Key ในระบบ (Firestore หรือ Environment Variables)');
+  }
+
+  const prompt = `คุณคือระบบ AI วิเคราะห์โภชนาการอาหารประจำ FitJourney โปรดวิเคราะห์รูปอาหารนี้และตอบกลับเฉพาะข้อมูล JSON ในรูปแบบต่อไปนี้เท่านั้น (ห้ามใส่ markdown codeblock หรือข้อความอื่น):
+{
+  "foodName": "ชื่อเมนูอาหารภาษาไทย",
+  "calories": 450,
+  "protein": 20,
+  "carbs": 50,
+  "fat": 15,
+  "summary": "คำแนะนำสั้นๆ สไตล์โค้ชสุขภาพแบบเป็นกันเอง (1-2 ประโยค)"
+}`;
+
+  const models = [
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-2.5-flash-lite',
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
+    'gemma-4-26b-a4b-it'
+  ];
+  let lastError: any = null;
+
+  for (const apiKey of apiKeys) {
+    for (const model of models) {
+      try {
+        const response = await axios.post(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            contents: [
+              {
+                parts: [
+                  { inlineData: { mimeType, data: base64Image } },
+                  { text: prompt },
+                ],
+              },
+            ],
+          },
+          {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 15000,
+          }
+        );
+
+        let rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (rawText) {
+          rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          try {
+            const parsed = JSON.parse(rawText);
+            return {
+              foodName: String(parsed.foodName || 'อาหารทั่วไป'),
+              calories: Math.round(Number(parsed.calories)) || 0,
+              protein: Math.round(Number(parsed.protein)) || 0,
+              carbs: Math.round(Number(parsed.carbs)) || 0,
+              fat: Math.round(Number(parsed.fat)) || 0,
+              summary: String(parsed.summary || 'มื้ออาหารน่าทาน รักษาสมดุลโภชนาการต่อไปนะครับ!'),
+            };
+          } catch (jsonErr) {
+            return {
+              foodName: 'เมนูอาหาร',
+              calories: 350,
+              protein: 15,
+              carbs: 40,
+              fat: 10,
+              summary: rawText.slice(0, 200),
+            };
+          }
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`[Gemini Bot] Model ${model} failed, trying next...`, err.response?.data || err.message);
+      }
+    }
+  }
+
+  throw lastError || new Error('ไม่สามารถประมวลผลผ่าน Gemini API ได้ในขณะนี้');
+};
+
 const buildBillingFlexMessage = (billing: {
   id: string;
   name: string;
@@ -208,9 +410,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     if (req.query.check === 'env') {
+      const geminiKeys = await getGeminiApiKeys();
       return res.status(200).json({
         hasAccessToken: !!process.env.LINE_CHANNEL_ACCESS_TOKEN,
         hasChannelSecret: !!process.env.LINE_CHANNEL_SECRET,
+        hasGeminiKey: geminiKeys.length > 0,
+        geminiKeysCount: geminiKeys.length,
         accessTokenLength: process.env.LINE_CHANNEL_ACCESS_TOKEN?.length || 0,
         channelSecretLength: process.env.LINE_CHANNEL_SECRET?.length || 0,
       });
@@ -251,6 +456,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const userId = event.source?.userId;
     let eventId = '';
     let isRsvpAction = false;
+
+    if (event.type === 'message' && event.message?.type === 'image') {
+      const messageId = event.message?.id;
+      if (!replyToken || !messageId) continue;
+
+      try {
+        const { base64, mimeType } = await fetchLineImageBase64(messageId);
+        const nutritionData = await analyzeFoodNutrition(base64, mimeType);
+        const flexMessage = buildFoodAnalysisFlexMessage(nutritionData);
+        await replyToLine(replyToken, [flexMessage]);
+      } catch (err: any) {
+        console.error('[Food AI Analysis Error]:', err.response?.data || err.message);
+        const errorMessage = err.message?.includes('GEMINI_API_KEY')
+          ? '⚠️ ระบบวิเคราะห์อาหารยังไม่ได้ตั้งค่า GEMINI_API_KEY ใน Vercel กรุณาแจ้งผู้ดูแลระบบ'
+          : '❌ ไม่สามารถวิเคราะห์รูปอาหารได้ในขณะนี้ กรุณาลองใหม่อีกครั้งครับ';
+        try {
+          await replyToLine(replyToken, [{ type: 'text', text: errorMessage }]);
+        } catch (replyErr: any) {
+          console.error('[Food AI Error Reply Failed]:', replyErr.response?.data || replyErr.message);
+        }
+      }
+      continue;
+    }
 
     if (event.type === 'postback') {
       const data: string = event.postback?.data || '';
