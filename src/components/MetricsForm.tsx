@@ -1185,14 +1185,6 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
                     </div>
                   </div>
                   <div 
-                    onClick={() => { handleChange({ target: { name: 'name', value: '__NEW_TRAINEE__' } } as any); setDropdownOpen(false); setSearchQuery(''); }}
-                    style={{ padding: '0.75rem 1rem', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', color: 'var(--primary)', fontWeight: 'bold', transition: 'background 0.2s' }}
-                    onMouseOver={(e) => e.currentTarget.style.background = '#f8fafc'}
-                    onMouseOut={(e) => e.currentTarget.style.background = '#fff'}
-                  >
-                    ลูกเทรนแบบกำหนดเอง
-                  </div>
-                  <div 
                     onClick={() => { handleChange({ target: { name: 'name', value: '__SELF__' } } as any); setDropdownOpen(false); setSearchQuery(''); }}
                     style={{ padding: '0.75rem 1rem', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }}
                     onMouseOver={(e) => e.currentTarget.style.background = '#f8fafc'}
@@ -1465,6 +1457,27 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
             <span style={{ fontSize: '2.5rem' }}>👥</span>
             <h4 style={{ margin: 0, color: '#475569', fontSize: '1.1rem' }}>ยังไม่ได้เลือกลูกเทรน</h4>
             <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8' }}>กรุณาเลือกชื่อลูกเทรนที่ต้องการบันทึกข้อมูลทางด้านบนก่อนครับ</p>
+            <button
+              type="button"
+              onClick={() => setShowManualRegister(true)}
+              style={{
+                marginTop: '0.5rem',
+                padding: '0.65rem 1.25rem',
+                borderRadius: '12px',
+                background: 'var(--primary)',
+                color: '#fff',
+                border: 'none',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                boxShadow: '0 4px 12px rgba(255, 65, 108, 0.25)'
+              }}
+            >
+              ➕ เพิ่มลูกเทรนใหม่
+            </button>
           </div>
         ) : (
           <>
