@@ -68,6 +68,7 @@ const getGeminiApiKeys = async (): Promise<string[]> => {
 };
 
 interface FoodNutritionResult {
+  isFood: boolean;
   foodName: string;
   calories: number;
   protein: number;
@@ -144,21 +145,32 @@ const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult) => {
   };
 };
 
-const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Promise<FoodNutritionResult> => {
+const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Promise<FoodNutritionResult | null> => {
   const apiKeys = await getGeminiApiKeys();
   if (apiKeys.length === 0) {
     throw new Error('ไม่พบการตั้งค่า Gemini API Key ในระบบ (Firestore หรือ Environment Variables)');
   }
 
-  const prompt = `คุณคือระบบ AI วิเคราะห์โภชนาการอาหารประจำ FitJourney โปรดวิเคราะห์รูปอาหารนี้และตอบกลับเฉพาะข้อมูล JSON ในรูปแบบต่อไปนี้เท่านั้น (ห้ามใส่ markdown codeblock หรือข้อความอื่น):
+  const prompt = `คุณคือระบบ AI ตรวจสอบและวิเคราะห์โภชนาการอาหารประจำ FitJourney โปรดตรวจสอบว่ารูปภาพนี้คือ "รูปอาหาร เครื่องดื่ม หรือขนม" หรือไม่?
+
+1. หากเป็นรูปอาหาร/เครื่องดื่ม ให้ตอบกลับ JSON ดังนี้:
 {
+  "isFood": true,
   "foodName": "ชื่อเมนูอาหารภาษาไทย",
   "calories": 450,
   "protein": 20,
   "carbs": 50,
   "fat": 15,
   "summary": "คำแนะนำสั้นๆ สไตล์โค้ชสุขภาพแบบเป็นกันเอง (1-2 ประโยค)"
-}`;
+}
+
+2. หากไม่ใช่รูปอาหาร/เครื่องดื่ม (เช่น รูปคน, สัตว์, สิ่งของ, วิว, สลิปโอนเงิน, เอกสาร, แชท):
+ให้ตอบกลับ JSON ดังนี้เท่านั้น:
+{
+  "isFood": false
+}
+
+(ห้ามใส่คำว่า \`\`\`json ให้ตอบเฉพาะ JSON สดๆ เท่านั้น)`;
 
   const models = [
     'gemini-3.5-flash-lite',
@@ -196,7 +208,11 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
           rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
           try {
             const parsed = JSON.parse(rawText);
+            if (parsed.isFood === false) {
+              return null;
+            }
             return {
+              isFood: true,
               foodName: String(parsed.foodName || 'อาหารทั่วไป'),
               calories: Math.round(Number(parsed.calories)) || 0,
               protein: Math.round(Number(parsed.protein)) || 0,
@@ -205,14 +221,7 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
               summary: String(parsed.summary || 'มื้ออาหารน่าทาน รักษาสมดุลโภชนาการต่อไปนะครับ!'),
             };
           } catch (jsonErr) {
-            return {
-              foodName: 'เมนูอาหาร',
-              calories: 350,
-              protein: 15,
-              carbs: 40,
-              fat: 10,
-              summary: rawText.slice(0, 200),
-            };
+            return null;
           }
         }
       } catch (err: any) {
@@ -464,18 +473,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         const { base64, mimeType } = await fetchLineImageBase64(messageId);
         const nutritionData = await analyzeFoodNutrition(base64, mimeType);
+        if (!nutritionData) {
+          // ไม่ใช่รูปอาหาร/เครื่องดื่ม -> ข้ามไปเงียบๆ ไม่ตอบกลับเพื่อไม่ให้รบกวนแชทกลุ่ม
+          continue;
+        }
         const flexMessage = buildFoodAnalysisFlexMessage(nutritionData);
         await replyToLine(replyToken, [flexMessage]);
       } catch (err: any) {
         console.error('[Food AI Analysis Error]:', err.response?.data || err.message);
-        const errorMessage = err.message?.includes('GEMINI_API_KEY')
-          ? '⚠️ ระบบวิเคราะห์อาหารยังไม่ได้ตั้งค่า GEMINI_API_KEY ใน Vercel กรุณาแจ้งผู้ดูแลระบบ'
-          : '❌ ไม่สามารถวิเคราะห์รูปอาหารได้ในขณะนี้ กรุณาลองใหม่อีกครั้งครับ';
-        try {
-          await replyToLine(replyToken, [{ type: 'text', text: errorMessage }]);
-        } catch (replyErr: any) {
-          console.error('[Food AI Error Reply Failed]:', replyErr.response?.data || replyErr.message);
-        }
       }
       continue;
     }
