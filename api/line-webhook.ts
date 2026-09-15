@@ -177,15 +177,15 @@ const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult, senderName
   };
 };
 
-const analyzeFoodNutrition = async (images: Array<{base64: string, mimeType: string}>): Promise<FoodNutritionResult | null> => {
+const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Promise<FoodNutritionResult | null> => {
   const apiKeys = await getGeminiApiKeys();
   if (apiKeys.length === 0) {
     throw new Error('ไม่พบการตั้งค่า Gemini API Key ในระบบ (Firestore หรือ Environment Variables)');
   }
 
-  const prompt = `คุณคือระบบ AI ตรวจสอบและวิเคราะห์โภชนาการอาหารประจำ FitJourney โปรดตรวจสอบว่ารูปภาพที่แนบมาทั้งหมดนี้คือ "รูปอาหาร เครื่องดื่ม หรือขนม" หรือไม่?
+  const prompt = `คุณคือระบบ AI ตรวจสอบและวิเคราะห์โภชนาการอาหารประจำ FitJourney โปรดตรวจสอบว่ารูปภาพนี้คือ "รูปอาหาร เครื่องดื่ม หรือขนม" หรือไม่?
 
-1. หากรูปภาพทั้งหมดหรือบางรูปเป็นรูปอาหาร (ไม่รวมเครื่องดื่ม) ให้วิเคราะห์จำแนกวัตถุดิบ/รายการอาหารแต่ละอย่างจากทุกภาพรวมกัน และคำนวณสารอาหารรวมทั้งหมด แล้วตอบกลับ JSON ดังนี้เท่านั้น:
+1. หากเป็นรูปอาหาร (ไม่รวมเครื่องดื่ม) ให้วิเคราะห์จำแนกวัตถุดิบ/รายการอาหารแต่ละอย่างในจาน และคำนวณสารอาหารรวม (รวมถึงไฟเบอร์/ใยอาหาร) แล้วตอบกลับ JSON ดังนี้เท่านั้น:
 {
   "isFood": true,
   "isBeverage": false,
@@ -231,15 +231,15 @@ const analyzeFoodNutrition = async (images: Array<{base64: string, mimeType: str
   for (const apiKey of apiKeys) {
     for (const model of models) {
       try {
-        const parts = images.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } }));
-        parts.push({ text: prompt } as any);
-
         const response = await axios.post(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
           {
             contents: [
               {
-                parts: parts,
+                parts: [
+                  { inlineData: { mimeType, data: base64Image } },
+                  { text: prompt },
+                ],
               },
             ],
           },
@@ -577,7 +577,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (replyToken) {
           await replyToLine(replyToken, [{
             type: 'text',
-            text: 'อยากลองตรวจอาหาร ดูพลังงานและสารอาหารคร่าว ๆ ไหมครับ ?',
+            text: 'อยากตรวจอาหารไหมครับ ?',
             quickReply: {
               items: [
                 {
@@ -636,33 +636,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             pendingRows.slice(0, 5).map(row => fetchLineImageBase64(row.message_id))
           );
           
-          const nutritionData = await analyzeFoodNutrition(images);
-
           await sql`DELETE FROM pending_food_images_v2 WHERE chat_id = ${chatId} AND user_id = ${userId || ''}`;
-
-          if (!nutritionData) {
-            await replyToLine(replyToken, [{
-              type: 'text',
-              text: 'รูปภาพล่าสุดที่ส่งเข้ามาในแชทนี้ไม่ใช่อาหารครับ 😅',
-            }]);
-            continue;
-          }
-
-          if (nutritionData.isFood === false) {
-            await replyToLine(replyToken, [{
-              type: 'text',
-              text: `รูปภาพที่ส่งมาไม่ใช่อาหารนะครับ มันคือ ${nutritionData.objectName || 'สิ่งของบางอย่าง'} กินไม่ได้นะครับ!`,
-            }]);
-            continue;
-          }
-
-          if (nutritionData.isBeverage === true) {
-            await replyToLine(replyToken, [{
-              type: 'text',
-              text: `ไม่สามารถตรวจสอบ ${nutritionData.foodName || 'เครื่องดื่ม'} แก้วนี้ได้ครับ ขอโทษด้วยนะครับ`,
-            }]);
-            continue;
-          }
 
           let senderName = 'ผู้ใช้งาน';
           const imageSenderId = pendingRows[0].user_id || userId;
@@ -694,8 +668,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
           }
 
-          const flexMessage = buildFoodAnalysisFlexMessage(nutritionData, senderName);
-          await replyToLine(replyToken, [flexMessage]);
+          const replyMessages: any[] = [];
+          for (const img of images) {
+            const nutritionData = await analyzeFoodNutrition(img.base64, img.mimeType);
+            
+            if (!nutritionData) {
+              replyMessages.push({
+                type: 'text',
+                text: 'รูปภาพล่าสุดที่ส่งเข้ามาในแชทนี้ไม่ใช่อาหารครับ 😅',
+              });
+            } else if (nutritionData.isFood === false) {
+              replyMessages.push({
+                type: 'text',
+                text: `รูปภาพที่ส่งมาไม่ใช่อาหารนะครับ มันคือ ${nutritionData.objectName || 'สิ่งของบางอย่าง'} กินไม่ได้นะครับ!`,
+              });
+            } else if (nutritionData.isBeverage === true) {
+              replyMessages.push({
+                type: 'text',
+                text: `ไม่สามารถตรวจสอบ ${nutritionData.foodName || 'เครื่องดื่ม'} แก้วนี้ได้ครับ ขอโทษด้วยนะครับ`,
+              });
+            } else {
+              replyMessages.push(buildFoodAnalysisFlexMessage(nutritionData, senderName));
+            }
+          }
+
+          if (replyMessages.length > 0) {
+            await replyToLine(replyToken, replyMessages);
+          }
         } catch (err: any) {
           console.error('[Trigger Food Check Error]:', err.response?.data || err.message);
           try {
