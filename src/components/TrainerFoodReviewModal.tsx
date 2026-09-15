@@ -366,7 +366,7 @@ export default function TrainerFoodReviewModal({ trainerId, initialTraineeId, on
             },
             {
               type: "text",
-              text: `ของ ${traineeName}`,
+              text: `ของ ${traineeName}${nutrition?.modelUsed ? ` | วิเคราะห์ด้วย ${nutrition.modelUsed}` : ''}`,
               size: "xs",
               color: "#94a3b8",
               margin: "xs"
@@ -614,7 +614,7 @@ export default function TrainerFoodReviewModal({ trainerId, initialTraineeId, on
       if (foodData && Object.keys(foodData).length > 0) {
         setAiNutritionData(prev => ({
           ...prev,
-          [log.id]: foodData
+          [log.id]: { ...foodData, modelUsed: res.modelUsed }
         }));
       } else {
         alert('AI ไม่สามารถวิเคราะห์ภาพนี้ได้ หรือคำตอบไม่ถูกต้อง');

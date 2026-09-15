@@ -86,9 +86,10 @@ interface FoodNutritionResult {
   fiber: number;
   items: FoodItemBreakdown[];
   summary: string;
+  modelUsed?: string;
 }
 
-const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult) => {
+const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult, senderName: string = 'ผู้ใช้งาน') => {
   const calories = Math.round(Number(nutrition.calories)) || 0;
   const protein = Number(nutrition.protein) || 0;
   const carbs = Number(nutrition.carbs) || 0;
@@ -151,7 +152,7 @@ const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult) => {
         layout: 'vertical',
         contents: [
           { type: 'text', text: 'ผลการตรวจอาหาร', weight: 'bold', size: 'xl', color: '#1DB446' },
-          { type: 'text', text: 'วิเคราะห์ด้วย AI', size: 'xs', color: '#94a3b8', margin: 'xs' },
+          { type: 'text', text: `ของ ${senderName}${nutrition.modelUsed ? ` | วิเคราะห์ด้วย ${nutrition.modelUsed}` : ''}`, size: 'xs', color: '#94a3b8', margin: 'xs' },
           nutritionBox,
           ...(itemsBox ? [itemsBox] : []),
           ...(nutrition.summary ? [
@@ -265,6 +266,7 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
               fiber: Math.round(Number(parsed.fiber)) || 0,
               items,
               summary: String(parsed.summary || 'มื้ออาหารน่าทาน รักษาสมดุลโภชนาการต่อไปนะครับ!'),
+              modelUsed: model
             };
           } catch (jsonErr) {
             return null;
@@ -599,7 +601,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             continue;
           }
 
-          const flexMessage = buildFoodAnalysisFlexMessage(nutritionData);
+          let senderName = 'ผู้ใช้งาน';
+          const imageSenderId = pendingRows[0].user_id || userId;
+          
+          if (imageSenderId && LINE_CHANNEL_ACCESS_TOKEN) {
+            try {
+              // Get profile of the person who actually sent the image (or fallback to the one who typed command)
+              const profileRes = await axios.get(`https://api.line.me/v2/bot/profile/${imageSenderId}`, {
+                headers: { Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` }
+              });
+              senderName = profileRes.data.displayName || senderName;
+            } catch (e: any) {
+              console.warn('[Profile Fetch Failed]:', e.response?.data || e.message);
+            }
+          }
+
+          const flexMessage = buildFoodAnalysisFlexMessage(nutritionData, senderName);
           await replyToLine(replyToken, [flexMessage]);
         } catch (err: any) {
           console.error('[Trigger Food Check Error]:', err.response?.data || err.message);
