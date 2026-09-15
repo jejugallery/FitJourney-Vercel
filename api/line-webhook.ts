@@ -177,15 +177,15 @@ const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult, senderName
   };
 };
 
-const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Promise<FoodNutritionResult | null> => {
+const analyzeFoodNutrition = async (images: Array<{base64: string, mimeType: string}>): Promise<FoodNutritionResult | null> => {
   const apiKeys = await getGeminiApiKeys();
   if (apiKeys.length === 0) {
     throw new Error('ไม่พบการตั้งค่า Gemini API Key ในระบบ (Firestore หรือ Environment Variables)');
   }
 
-  const prompt = `คุณคือระบบ AI ตรวจสอบและวิเคราะห์โภชนาการอาหารประจำ FitJourney โปรดตรวจสอบว่ารูปภาพนี้คือ "รูปอาหาร เครื่องดื่ม หรือขนม" หรือไม่?
+  const prompt = `คุณคือระบบ AI ตรวจสอบและวิเคราะห์โภชนาการอาหารประจำ FitJourney โปรดตรวจสอบว่ารูปภาพที่แนบมาทั้งหมดนี้คือ "รูปอาหาร เครื่องดื่ม หรือขนม" หรือไม่?
 
-1. หากเป็นรูปอาหาร (ไม่รวมเครื่องดื่ม) ให้วิเคราะห์จำแนกวัตถุดิบ/รายการอาหารแต่ละอย่างในจาน และคำนวณสารอาหารรวม (รวมถึงไฟเบอร์/ใยอาหาร) แล้วตอบกลับ JSON ดังนี้เท่านั้น:
+1. หากรูปภาพทั้งหมดหรือบางรูปเป็นรูปอาหาร (ไม่รวมเครื่องดื่ม) ให้วิเคราะห์จำแนกวัตถุดิบ/รายการอาหารแต่ละอย่างจากทุกภาพรวมกัน และคำนวณสารอาหารรวมทั้งหมด แล้วตอบกลับ JSON ดังนี้เท่านั้น:
 {
   "isFood": true,
   "isBeverage": false,
@@ -231,15 +231,15 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
   for (const apiKey of apiKeys) {
     for (const model of models) {
       try {
+        const parts = images.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } }));
+        parts.push({ text: prompt } as any);
+
         const response = await axios.post(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
           {
             contents: [
               {
-                parts: [
-                  { inlineData: { mimeType, data: base64Image } },
-                  { text: prompt },
-                ],
+                parts: parts,
               },
             ],
           },
@@ -314,9 +314,9 @@ const ensurePendingImagesTable = () => {
   if (!pendingTablePromise) {
     pendingTablePromise = (async () => {
       await sql`
-        CREATE TABLE IF NOT EXISTS pending_food_images (
-          chat_id TEXT PRIMARY KEY,
-          message_id TEXT NOT NULL,
+        CREATE TABLE IF NOT EXISTS pending_food_images_v2 (
+          message_id TEXT PRIMARY KEY,
+          chat_id TEXT NOT NULL,
           user_id TEXT NOT NULL,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
@@ -569,13 +569,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         await ensurePendingImagesTable();
         await sql`
-          INSERT INTO pending_food_images (chat_id, message_id, user_id, created_at)
+          INSERT INTO pending_food_images_v2 (chat_id, message_id, user_id, created_at)
           VALUES (${chatId}, ${messageId}, ${userId || ''}, CURRENT_TIMESTAMP)
-          ON CONFLICT (chat_id) DO UPDATE SET
-            message_id = EXCLUDED.message_id,
-            user_id = EXCLUDED.user_id,
-            created_at = CURRENT_TIMESTAMP
+          ON CONFLICT (message_id) DO NOTHING
         `;
+
+        if (replyToken) {
+          await replyToLine(replyToken, [{
+            type: 'text',
+            text: 'อยากลองตรวจอาหาร ดูพลังงานและสารอาหารคร่าว ๆ ไหมครับ ?',
+            quickReply: {
+              items: [
+                {
+                  type: 'action',
+                  action: {
+                    type: 'message',
+                    label: '🔍 ตรวจอาหาร',
+                    text: 'ตรวจอาหาร'
+                  }
+                }
+              ]
+            }
+          }]);
+        }
       } catch (err: any) {
         console.error('[Pending Food Image Save Error]:', err.message);
       }
@@ -601,24 +617,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         try {
           await ensurePendingImagesTable();
           const pendingRows = await sql`
-            SELECT * FROM pending_food_images
-            WHERE chat_id = ${chatId} AND created_at > (CURRENT_TIMESTAMP - INTERVAL '2 hours')
+            SELECT * FROM pending_food_images_v2
+            WHERE chat_id = ${chatId} 
+              AND user_id = ${userId || ''}
+              AND created_at > (CURRENT_TIMESTAMP - INTERVAL '2 hours')
+            ORDER BY created_at ASC
           `;
 
           if (pendingRows.length === 0) {
             await replyToLine(replyToken, [{
               type: 'text',
-              text: 'ยังไม่พบรูปภาพอาหารล่าสุดในแชทนี้ครับ กรุณาส่งรูปอาหารก่อน แล้วค่อยพิมพ์ "ตรวจอาหาร"',
+              text: 'ยังไม่พบรูปภาพอาหารของคุณครับ กรุณาส่งรูปอาหารก่อน แล้วค่อยพิมพ์ "ตรวจอาหาร"',
             }]);
             continue;
           }
 
-          const pendingMsgId = pendingRows[0].message_id;
+          const images = await Promise.all(
+            pendingRows.slice(0, 5).map(row => fetchLineImageBase64(row.message_id))
+          );
+          
+          const nutritionData = await analyzeFoodNutrition(images);
 
-          const { base64, mimeType } = await fetchLineImageBase64(pendingMsgId);
-          const nutritionData = await analyzeFoodNutrition(base64, mimeType);
-
-          await sql`DELETE FROM pending_food_images WHERE chat_id = ${chatId}`;
+          await sql`DELETE FROM pending_food_images_v2 WHERE chat_id = ${chatId} AND user_id = ${userId || ''}`;
 
           if (!nutritionData) {
             await replyToLine(replyToken, [{
