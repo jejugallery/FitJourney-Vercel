@@ -574,24 +574,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ON CONFLICT (message_id) DO NOTHING
         `;
 
-        if (replyToken) {
-          await replyToLine(replyToken, [{
-            type: 'text',
-            text: 'อยากตรวจอาหารไหมครับ ?',
-            quickReply: {
-              items: [
-                {
-                  type: 'action',
-                  action: {
-                    type: 'message',
-                    label: '🔍 ตรวจอาหาร',
-                    text: 'ตรวจอาหาร'
-                  }
-                }
-              ]
-            }
-          }]);
-        }
       } catch (err: any) {
         console.error('[Pending Food Image Save Error]:', err.message);
       }
@@ -619,7 +601,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const pendingRows = await sql`
             SELECT * FROM pending_food_images_v2
             WHERE chat_id = ${chatId} 
-              AND user_id = ${userId || ''}
               AND created_at > (CURRENT_TIMESTAMP - INTERVAL '30 minutes')
             ORDER BY created_at ASC
           `;
@@ -627,19 +608,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (pendingRows.length === 0) {
             await replyToLine(replyToken, [{
               type: 'text',
-              text: 'ยังไม่พบรูปภาพอาหารของคุณครับ กรุณาส่งรูปอาหารก่อน แล้วค่อยพิมพ์ "ตรวจอาหาร"',
+              text: 'ยังไม่พบรูปภาพอาหารในแชทนี้ครับ กรุณาส่งรูปอาหารก่อน แล้วค่อยพิมพ์ "ตรวจอาหาร"',
             }]);
             continue;
           }
 
+          const latestUserId = pendingRows[pendingRows.length - 1].user_id;
+          const userPendingRows = pendingRows.filter(r => r.user_id === latestUserId);
+
           const images = await Promise.all(
-            pendingRows.slice(0, 5).map(row => fetchLineImageBase64(row.message_id))
+            userPendingRows.slice(-5).map(row => fetchLineImageBase64(row.message_id))
           );
           
-          await sql`DELETE FROM pending_food_images_v2 WHERE chat_id = ${chatId} AND user_id = ${userId || ''}`;
+          await sql`DELETE FROM pending_food_images_v2 WHERE chat_id = ${chatId} AND user_id = ${latestUserId}`;
 
           let senderName = 'ผู้ใช้งาน';
-          const imageSenderId = pendingRows[0].user_id || userId;
+          const imageSenderId = latestUserId || userId;
           
           if (imageSenderId && LINE_CHANNEL_ACCESS_TOKEN) {
             try {
