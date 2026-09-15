@@ -649,13 +649,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           
           if (imageSenderId && LINE_CHANNEL_ACCESS_TOKEN) {
             try {
-              // Get profile of the person who actually sent the image (or fallback to the one who typed command)
-              const profileRes = await axios.get(`https://api.line.me/v2/bot/profile/${imageSenderId}`, {
+              let profileUrl = `https://api.line.me/v2/bot/profile/${imageSenderId}`;
+              if (event.source?.groupId) {
+                profileUrl = `https://api.line.me/v2/bot/group/${event.source.groupId}/member/${imageSenderId}`;
+              } else if (event.source?.roomId) {
+                profileUrl = `https://api.line.me/v2/bot/room/${event.source.roomId}/member/${imageSenderId}`;
+              }
+              
+              const profileRes = await axios.get(profileUrl, {
                 headers: { Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` }
               });
               senderName = profileRes.data.displayName || senderName;
             } catch (e: any) {
               console.warn('[Profile Fetch Failed]:', e.response?.data || e.message);
+              // Fallback to direct profile fetch
+              try {
+                const fallbackRes = await axios.get(`https://api.line.me/v2/bot/profile/${imageSenderId}`, {
+                  headers: { Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` }
+                });
+                senderName = fallbackRes.data.displayName || senderName;
+              } catch (e2) {
+                // Ignore fallback error
+              }
             }
           }
 
