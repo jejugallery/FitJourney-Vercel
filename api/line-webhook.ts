@@ -620,7 +620,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             SELECT * FROM pending_food_images_v2
             WHERE chat_id = ${chatId} 
               AND user_id = ${userId || ''}
-              AND created_at > (CURRENT_TIMESTAMP - INTERVAL '2 hours')
+              AND created_at > (CURRENT_TIMESTAMP - INTERVAL '30 minutes')
             ORDER BY created_at ASC
           `;
 
