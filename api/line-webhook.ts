@@ -78,14 +78,16 @@ interface FoodItemBreakdown {
 
 interface FoodNutritionResult {
   isFood: boolean;
-  foodName: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  items: FoodItemBreakdown[];
-  summary: string;
+  isBeverage?: boolean;
+  objectName?: string;
+  foodName?: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  fiber?: number;
+  items?: FoodItemBreakdown[];
+  summary?: string;
   modelUsed?: string;
 }
 
@@ -183,9 +185,10 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
 
   const prompt = `คุณคือระบบ AI ตรวจสอบและวิเคราะห์โภชนาการอาหารประจำ FitJourney โปรดตรวจสอบว่ารูปภาพนี้คือ "รูปอาหาร เครื่องดื่ม หรือขนม" หรือไม่?
 
-1. หากเป็นรูปอาหาร/เครื่องดื่ม ให้วิเคราะห์จำแนกวัตถุดิบ/รายการอาหารแต่ละอย่างในจาน และคำนวณสารอาหารรวม (รวมถึงไฟเบอร์/ใยอาหาร) แล้วตอบกลับ JSON ดังนี้เท่านั้น:
+1. หากเป็นรูปอาหาร (ไม่รวมเครื่องดื่ม) ให้วิเคราะห์จำแนกวัตถุดิบ/รายการอาหารแต่ละอย่างในจาน และคำนวณสารอาหารรวม (รวมถึงไฟเบอร์/ใยอาหาร) แล้วตอบกลับ JSON ดังนี้เท่านั้น:
 {
   "isFood": true,
+  "isBeverage": false,
   "foodName": "ชื่อเมนูอาหารหลักภาษาไทย",
   "calories": 450,
   "protein": 25,
@@ -199,10 +202,18 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
   "summary": "คำแนะนำสั้นๆ สไตล์โค้ชสุขภาพแบบเป็นกันเอง (1-2 ประโยค)"
 }
 
-2. หากไม่ใช่รูปอาหาร/เครื่องดื่ม (เช่น รูปคน, สัตว์, สิ่งของ, วิว, สลิปโอนเงิน, เอกสาร, แชท):
-ให้ตอบกลับ JSON ดังนี้เท่านั้น:
+2. หากเป็นรูป "เครื่องดื่ม" ให้ตอบกลับ JSON ดังนี้เท่านั้น:
 {
-  "isFood": false
+  "isFood": true,
+  "isBeverage": true,
+  "foodName": "ชื่อเครื่องดื่มภาษาไทย"
+}
+
+3. หากไม่ใช่รูปอาหารหรือเครื่องดื่มเลย (เช่น รูปคน, สัตว์, สิ่งของ, วิว, สลิปโอนเงิน, เอกสาร, แชท):
+ให้วิเคราะห์ว่าสิ่งนั้นคืออะไร และตอบกลับ JSON ดังนี้เท่านั้น:
+{
+  "isFood": false,
+  "objectName": "ชื่อสิ่งของหรือสิ่งที่เห็นในภาพภาษาไทย"
 }
 
 (ห้ามใส่คำว่า \`\`\`json ให้ตอบเฉพาะตัวข้อความ JSON สดๆ เท่านั้น)`;
@@ -243,9 +254,24 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
           rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
           try {
             const parsed = JSON.parse(rawText);
+            
             if (parsed.isFood === false) {
-              return null;
+              return {
+                isFood: false,
+                objectName: parsed.objectName || 'สิ่งของบางอย่าง',
+                modelUsed: model
+              };
             }
+
+            if (parsed.isBeverage === true) {
+              return {
+                isFood: true,
+                isBeverage: true,
+                foodName: parsed.foodName || 'เครื่องดื่ม',
+                modelUsed: model
+              };
+            }
+
             const rawItems = Array.isArray(parsed.items) ? parsed.items : [];
             const items: FoodItemBreakdown[] = rawItems.map((item: any) => ({
               name: String(item.name || 'รายการอาหาร'),
@@ -258,6 +284,7 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
 
             return {
               isFood: true,
+              isBeverage: false,
               foodName: String(parsed.foodName || 'อาหารทั่วไป'),
               calories: Math.round(Number(parsed.calories)) || 0,
               protein: Math.round(Number(parsed.protein)) || 0,
@@ -597,6 +624,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             await replyToLine(replyToken, [{
               type: 'text',
               text: 'รูปภาพล่าสุดที่ส่งเข้ามาในแชทนี้ไม่ใช่อาหารครับ 😅',
+            }]);
+            continue;
+          }
+
+          if (nutritionData.isFood === false) {
+            await replyToLine(replyToken, [{
+              type: 'text',
+              text: `รูปภาพที่ส่งมาไม่ใช่อาหารนะครับ มันคือ ${nutritionData.objectName || 'สิ่งของบางอย่าง'} กินไม่ได้นะครับ!`,
+            }]);
+            continue;
+          }
+
+          if (nutritionData.isBeverage === true) {
+            await replyToLine(replyToken, [{
+              type: 'text',
+              text: `ไม่สามารถตรวจสอบ ${nutritionData.foodName || 'เครื่องดื่ม'} แก้วนี้ได้ครับ ขอโทษด้วยนะครับ`,
             }]);
             continue;
           }
