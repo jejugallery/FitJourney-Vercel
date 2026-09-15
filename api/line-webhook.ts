@@ -668,28 +668,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
           }
 
+          const isMulti = images.length > 1;
           const replyMessages: any[] = [];
+          
           for (const img of images) {
             const nutritionData = await analyzeFoodNutrition(img.base64, img.mimeType);
             
             if (!nutritionData) {
-              replyMessages.push({
-                type: 'text',
-                text: 'รูปภาพล่าสุดที่ส่งเข้ามาในแชทนี้ไม่ใช่อาหารครับ 😅',
-              });
+              if (!isMulti) {
+                replyMessages.push({
+                  type: 'text',
+                  text: 'รูปภาพล่าสุดที่ส่งเข้ามาในแชทนี้ไม่ใช่อาหารครับ 😅',
+                });
+              }
             } else if (nutritionData.isFood === false) {
-              replyMessages.push({
-                type: 'text',
-                text: `รูปภาพที่ส่งมาไม่ใช่อาหารนะครับ มันคือ ${nutritionData.objectName || 'สิ่งของบางอย่าง'} กินไม่ได้นะครับ!`,
-              });
+              if (!isMulti) {
+                replyMessages.push({
+                  type: 'text',
+                  text: `รูปภาพที่ส่งมาไม่ใช่อาหารนะครับ มันคือ ${nutritionData.objectName || 'สิ่งของบางอย่าง'} กินไม่ได้นะครับ!`,
+                });
+              }
             } else if (nutritionData.isBeverage === true) {
-              replyMessages.push({
-                type: 'text',
-                text: `ไม่สามารถตรวจสอบ ${nutritionData.foodName || 'เครื่องดื่ม'} แก้วนี้ได้ครับ ขอโทษด้วยนะครับ`,
-              });
+              if (!isMulti) {
+                replyMessages.push({
+                  type: 'text',
+                  text: `ไม่สามารถตรวจสอบ ${nutritionData.foodName || 'เครื่องดื่ม'} แก้วนี้ได้ครับ ขอโทษด้วยนะครับ`,
+                });
+              }
             } else {
               replyMessages.push(buildFoodAnalysisFlexMessage(nutritionData, senderName));
             }
+          }
+
+          if (replyMessages.length === 0 && isMulti) {
+            replyMessages.push({
+              type: 'text',
+              text: 'ไม่มีรูปภาพไหนเป็นอาหารเลยครับ 😅',
+            });
           }
 
           if (replyMessages.length > 0) {
