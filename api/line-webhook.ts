@@ -601,7 +601,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const pendingRows = await sql`
             SELECT * FROM pending_food_images_v2
             WHERE chat_id = ${chatId} 
-              AND created_at > (CURRENT_TIMESTAMP - INTERVAL '30 minutes')
+              AND created_at > (CURRENT_TIMESTAMP - INTERVAL '2 hours')
             ORDER BY created_at ASC
           `;
 
