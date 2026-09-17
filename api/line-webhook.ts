@@ -392,8 +392,15 @@ const recommendFoodNutrition = async (nutrientFocus: string, timeOfDay: string):
     throw new Error('ไม่พบการตั้งค่า Gemini API Key ในระบบ');
   }
 
+  let specialInstruction = '';
+  if (timeOfDay === 'มื้อเช้า') {
+    specialInstruction = '\n\n**ข้อบังคับ:** สำหรับเมนูที่ 3 ให้แนะนำเป็น "บอดี้คีย์ 1 ซอง + นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว" (300 kcal, P 33g, C 23g, F 6.5g, Fiber 5g) เสมอ และให้คุณแต่งประโยคอธิบายเหตุผล (reason) ให้แตกต่างกันไปในแต่ละครั้ง โดยอ้างอิงความโดดเด่นของสารอาหารเหล่านี้';
+  } else if (nutrientFocus === 'โปรตีน') {
+    specialInstruction = '\n\n**ข้อบังคับ:** สำหรับเมนูที่ 3 ให้แนะนำเป็น "นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว ชงผสมกับน้ำสะอาดเย็น ๆ" (80 kcal, P 17g, C 1g, F 0g) เสมอ และให้คุณแต่งประโยคอธิบายเหตุผล (reason) ให้แตกต่างกันไปในแต่ละครั้ง โดยอ้างอิงความโดดเด่นของโปรตีนเพียวที่ไม่มีไขมันและน้ำตาล';
+  }
+
   const prompt = `คุณคือระบบ AI ผู้เชี่ยวชาญด้านโภชนาการประจำ FitJourney
-โจทย์: ผู้ใช้ต้องการคำแนะนำเมนูอาหารสำหรับช่วงเวลา "${timeOfDay}" โดยต้องการเน้นสารอาหาร "${nutrientFocus}" เป็นพิเศษ
+โจทย์: ผู้ใช้ต้องการคำแนะนำเมนูอาหารสำหรับช่วงเวลา "${timeOfDay}" โดยต้องการเน้นสารอาหาร "${nutrientFocus}" เป็นพิเศษ${specialInstruction}
 
 โปรดแนะนำเมนูอาหารไทยหรืออาหารทั่วไปที่หาทานได้ง่าย จำนวน 3 เมนู ที่เหมาะสมกับความต้องการนี้ พร้อมระบุโภชนาการโดยประมาณ และเหตุผลสั้นๆ ว่าทำไมถึงแนะนำเมนูนี้สำหรับผู้ที่ต้องการเน้น ${nutrientFocus}
 ตอบกลับเป็น JSON format ดังนี้เท่านั้น (ห้ามมีคำอธิบายอื่น ห้ามใส่ \`\`\`json):
@@ -443,6 +450,7 @@ const recommendFoodNutrition = async (nutrientFocus: string, timeOfDay: string):
             const parsed = JSON.parse(rawText);
             if (parsed.menus && parsed.menus.length > 0) {
               if (timeOfDay === 'มื้อเช้า') {
+                const aiReason = parsed.menus[2]?.reason || parsed.menus[1]?.reason || "มื้อเช้าดี ๆ สารอาหารครบ 5 หมู่ ใช้เวลาเตรียมไม่นาน ดื่มทานง่าย อิ่มนานเพราะมีโปรตีนสูง มีคาร์บและไขมันดี แถมมีไฟเบอร์สูงด้วย";
                 parsed.menus = parsed.menus.slice(0, 2);
                 parsed.menus.push({
                   name: "บอดี้คีย์ 1 ซอง + นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว ชงผสมกับน้ำเย็น ๆ",
@@ -451,9 +459,10 @@ const recommendFoodNutrition = async (nutrientFocus: string, timeOfDay: string):
                   carbs: 23,
                   fat: 6.5,
                   fiber: 5,
-                  reason: "มื้อเช้าดี ๆ สารอาหารครบ 5 หมู่ ใช้เวลาเตรียมไม่นาน ดื่มทานง่าย อิ่มนานเพราะมีโปรตีนสูง มีคาร์บและไขมันดี แถมมีไฟเบอร์สูงด้วย"
+                  reason: aiReason
                 });
               } else if (nutrientFocus === 'โปรตีน') {
+                const aiReason = parsed.menus[2]?.reason || parsed.menus[1]?.reason || "ได้โปรตีนเพียว ๆ เน้น ๆ ไม่มีน้ำตาล ไม่มีไขมัน คลีนสุด ๆ เหมาะสำหรับคนอยากหุ่นลีนมากเลยครับ";
                 parsed.menus = parsed.menus.slice(0, 2);
                 parsed.menus.push({
                   name: "นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว ชงผสมกับน้ำสะอาดเย็น ๆ",
@@ -462,7 +471,7 @@ const recommendFoodNutrition = async (nutrientFocus: string, timeOfDay: string):
                   carbs: 1,
                   fat: 0,
                   fiber: 'ไม่ระบุ',
-                  reason: "ได้โปรตีนเพียว ๆ เน้น ๆ ไม่มีน้ำตาล ไม่มีไขมัน คลีนสุด ๆ เหมาะสำหรับคนอยากหุ่นลีนมากเลยครับ"
+                  reason: aiReason
                 });
               }
             }
