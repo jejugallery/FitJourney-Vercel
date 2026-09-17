@@ -151,7 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const updated = await sql`
         WITH updated_course AS (
           UPDATE supplement_courses
-          SET trainee_id = ${trainee.userId}, trainee_name = ${traineeName}, subtotal = ${subtotal}, discount_total = ${discountTotal}, total = ${total}, cashback_percent = ${cashbackPercent}, cashback_amount = ${cashbackAmount}, updated_at = CURRENT_TIMESTAMP
+          SET trainee_id = ${trainee.userId}, trainee_name = ${traineeName}, subtotal = ${subtotal}, discount_total = ${discountTotal}, total = ${total}, cashback_percent = ${cashbackPercent}, cashback_amount = ${cashbackAmount}
           WHERE id = ${id}
           RETURNING *
         ), input_items AS (
