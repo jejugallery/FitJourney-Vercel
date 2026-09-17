@@ -177,6 +177,83 @@ const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult, senderName
   };
 };
 
+export interface FoodRecommendationResult {
+  menus: {
+    name: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+    reason: string;
+  }[];
+  summary: string;
+  modelUsed?: string;
+}
+
+const buildFoodRecommendationFlexMessage = (recommendation: FoodRecommendationResult, senderName: string, nutrientFocus: string): any => {
+  const menuBoxes = recommendation.menus.map((menu, index) => {
+    return {
+      type: 'box',
+      layout: 'vertical',
+      margin: 'lg',
+      spacing: 'sm',
+      contents: [
+        { type: 'text', text: `${index + 1}. ${menu.name}`, weight: 'bold', size: 'md', color: '#1e293b', wrap: true },
+        {
+          type: 'box',
+          layout: 'horizontal',
+          spacing: 'sm',
+          contents: [
+            { type: 'text', text: `🔥 ${menu.calories} kcal`, size: 'xs', color: '#64748b' },
+            { type: 'text', text: `🥩 P: ${menu.protein}g`, size: 'xs', color: '#ef4444' },
+            { type: 'text', text: `🍚 C: ${menu.carbs}g`, size: 'xs', color: '#3b82f6' }
+          ]
+        },
+        {
+          type: 'box',
+          layout: 'horizontal',
+          spacing: 'sm',
+          contents: [
+            { type: 'text', text: `🥑 F: ${menu.fat}g`, size: 'xs', color: '#eab308' },
+            { type: 'text', text: `🥦 Fiber: ${menu.fiber}g`, size: 'xs', color: '#22c55e' }
+          ]
+        },
+        { type: 'text', text: menu.reason, size: 'xs', color: '#475569', wrap: true, margin: 'md' }
+      ]
+    };
+  });
+
+  return {
+    type: 'flex',
+    altText: `แนะนำเมนูเน้น ${nutrientFocus}`,
+    contents: {
+      type: 'bubble',
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          { type: 'text', text: `เมนูแนะนำเน้น ${nutrientFocus}`, weight: 'bold', size: 'xl', color: '#1DB446', wrap: true },
+          { type: 'text', text: `สำหรับ ${senderName}${recommendation.modelUsed ? ` | แนะนำโดย ${recommendation.modelUsed}` : ''}`, size: 'xs', color: '#94a3b8', margin: 'xs' },
+          ...menuBoxes,
+          {
+            type: 'box',
+            layout: 'vertical',
+            margin: 'xl',
+            backgroundColor: '#f1f5f9',
+            paddingAll: 'md',
+            cornerRadius: '8px',
+            contents: [
+              { type: 'text', text: '💡 สรุป:', color: '#475569', size: 'xs', weight: 'bold' },
+              { type: 'text', text: recommendation.summary, wrap: true, color: '#334155', size: 'sm', margin: 'xs' }
+            ]
+          }
+        ]
+      }
+    }
+  };
+};
+
 const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Promise<FoodNutritionResult | null> => {
   const apiKeys = await getGeminiApiKeys();
   if (apiKeys.length === 0) {
@@ -306,6 +383,77 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Prom
     }
   }
 
+  throw lastError || new Error('ไม่สามารถประมวลผลผ่าน Gemini API ได้ในขณะนี้');
+};
+
+const recommendFoodNutrition = async (nutrientFocus: string, timeOfDay: string): Promise<FoodRecommendationResult | null> => {
+  const apiKeys = await getGeminiApiKeys();
+  if (apiKeys.length === 0) {
+    throw new Error('ไม่พบการตั้งค่า Gemini API Key ในระบบ');
+  }
+
+  const prompt = `คุณคือระบบ AI ผู้เชี่ยวชาญด้านโภชนาการประจำ FitJourney
+โจทย์: ผู้ใช้ต้องการคำแนะนำเมนูอาหารสำหรับช่วงเวลา "${timeOfDay}" โดยต้องการเน้นสารอาหาร "${nutrientFocus}" เป็นพิเศษ
+
+โปรดแนะนำเมนูอาหารไทยหรืออาหารทั่วไปที่หาทานได้ง่าย จำนวน 3 เมนู ที่เหมาะสมกับความต้องการนี้ พร้อมระบุโภชนาการโดยประมาณ และเหตุผลสั้นๆ ว่าทำไมถึงแนะนำเมนูนี้สำหรับผู้ที่ต้องการเน้น ${nutrientFocus}
+ตอบกลับเป็น JSON format ดังนี้เท่านั้น (ห้ามมีคำอธิบายอื่น ห้ามใส่ \`\`\`json):
+{
+  "menus": [
+    {
+      "name": "ชื่อเมนู 1",
+      "calories": 350,
+      "protein": 30,
+      "carbs": 20,
+      "fat": 10,
+      "fiber": 5,
+      "reason": "เหตุผลสั้นๆ ที่แนะนำเมนูนี้"
+    },
+    ... (รวม 3 เมนู)
+  ],
+  "summary": "คำแนะนำหรือข้อควรระวังภาพรวมสั้นๆ สไตล์โค้ชสุขภาพ (1-2 ประโยค)"
+}`;
+
+  const models = [
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-2.5-flash-lite',
+    'gemma-4-26b-a4b-it'
+  ];
+  let lastError: any = null;
+
+  for (const apiKey of apiKeys) {
+    for (const model of models) {
+      try {
+        const response = await axios.post(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            contents: [
+              { parts: [{ text: prompt }] },
+            ],
+          },
+          { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+        );
+
+        let rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (rawText) {
+          rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          try {
+            const parsed = JSON.parse(rawText);
+            return {
+              ...parsed,
+              modelUsed: model
+            };
+          } catch (jsonErr) {
+            // parsing error, try next model
+          }
+        }
+      } catch (err: any) {
+        lastError = err;
+      }
+    }
+  }
   throw lastError || new Error('ไม่สามารถประมวลผลผ่าน Gemini API ได้ในขณะนี้');
 };
 
@@ -590,6 +738,72 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else if (event.type === 'message' && event.message?.type === 'text') {
       const text = event.message.text || '';
       const trimmedText = text.trim();
+
+      if (trimmedText.includes('กินอะไรดี') || trimmedText.includes('กินไรดี')) {
+        if (!replyToken) continue;
+        try {
+          await replyToLine(replyToken, [{
+            type: 'text',
+            text: 'ให้ผมช่วยแนะนำไหมครับ คุณอยากเพิ่มสารอาหารไหนเป็นพิเศษไหม ?',
+            quickReply: {
+              items: [
+                { type: 'action', action: { type: 'message', label: 'โปรตีน', text: 'แนะนำอาหาร: โปรตีน' } },
+                { type: 'action', action: { type: 'message', label: 'คาร์บ', text: 'แนะนำอาหาร: คาร์บ' } },
+                { type: 'action', action: { type: 'message', label: 'ไขมันดี', text: 'แนะนำอาหาร: ไขมันดี' } },
+                { type: 'action', action: { type: 'message', label: 'ไฟเบอร์', text: 'แนะนำอาหาร: ไฟเบอร์' } }
+              ]
+            }
+          }]);
+        } catch (err: any) {
+          console.error('[Error replying to กินอะไรดี]:', err.message);
+        }
+        continue;
+      }
+
+      if (trimmedText.startsWith('แนะนำอาหาร:')) {
+        if (!replyToken) continue;
+        const nutrient = trimmedText.split(':')[1]?.trim() || 'โปรตีน';
+        const now = new Date();
+        const hour = now.getUTCHours() + 7; // UTC+7
+        let timeOfDay = 'ทั่วไป';
+        if (hour >= 5 && hour < 11) timeOfDay = 'มื้อเช้า';
+        else if (hour >= 11 && hour < 15) timeOfDay = 'มื้อเที่ยง';
+        else if (hour >= 15 && hour < 21) timeOfDay = 'มื้อเย็น';
+        else timeOfDay = 'มื้อดึก';
+
+        let senderName = 'ผู้ใช้งาน';
+        const senderId = event.source?.userId;
+        if (senderId && LINE_CHANNEL_ACCESS_TOKEN) {
+          try {
+            let profileUrl = `https://api.line.me/v2/bot/profile/${senderId}`;
+            if (event.source?.groupId) profileUrl = `https://api.line.me/v2/bot/group/${event.source.groupId}/member/${senderId}`;
+            else if (event.source?.roomId) profileUrl = `https://api.line.me/v2/bot/room/${event.source.roomId}/member/${senderId}`;
+            const profileRes = await axios.get(profileUrl, { headers: { Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } });
+            senderName = profileRes.data.displayName || senderName;
+          } catch (e) {
+            try {
+              const fallbackRes = await axios.get(`https://api.line.me/v2/bot/profile/${senderId}`, { headers: { Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } });
+              senderName = fallbackRes.data.displayName || senderName;
+            } catch (e2) {}
+          }
+        }
+
+        try {
+          const recommendation = await recommendFoodNutrition(nutrient, timeOfDay);
+          if (recommendation) {
+            const flexMessage = buildFoodRecommendationFlexMessage(recommendation, senderName, nutrient);
+            await replyToLine(replyToken, [flexMessage]);
+          } else {
+            await replyToLine(replyToken, [{ type: 'text', text: 'ขออภัยครับ ไม่สามารถแนะนำเมนูอาหารได้ในขณะนี้' }]);
+          }
+        } catch (err: any) {
+          console.error('[Error recommending food]:', err.message);
+          try {
+            await replyToLine(replyToken, [{ type: 'text', text: 'ขออภัยครับ ระบบ AI เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง' }]);
+          } catch (e) {}
+        }
+        continue;
+      }
 
       if (trimmedText === 'ตรวจอาหาร' || trimmedText.startsWith('ตรวจอาหาร')) {
         if (!replyToken) continue;
