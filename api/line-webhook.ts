@@ -184,7 +184,7 @@ export interface FoodRecommendationResult {
     protein: number;
     carbs: number;
     fat: number;
-    fiber: number;
+    fiber: number | string;
     reason: string;
   }[];
   summary: string;
@@ -216,7 +216,7 @@ const buildFoodRecommendationFlexMessage = (recommendation: FoodRecommendationRe
           spacing: 'sm',
           contents: [
             { type: 'text', text: `🥑 F: ${menu.fat}g`, size: 'xs', color: '#eab308' },
-            { type: 'text', text: `🥦 Fiber: ${menu.fiber}g`, size: 'xs', color: '#22c55e' }
+            { type: 'text', text: `🥦 Fiber: ${menu.fiber === 'ไม่ระบุ' ? 'ไม่ระบุ' : menu.fiber + 'g'}`, size: 'xs', color: '#22c55e' }
           ]
         },
         { type: 'text', text: menu.reason, size: 'xs', color: '#475569', wrap: true, margin: 'md' }
@@ -441,6 +441,31 @@ const recommendFoodNutrition = async (nutrientFocus: string, timeOfDay: string):
           rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
           try {
             const parsed = JSON.parse(rawText);
+            if (parsed.menus && parsed.menus.length > 0) {
+              if (timeOfDay === 'มื้อเช้า') {
+                parsed.menus = parsed.menus.slice(0, 2);
+                parsed.menus.push({
+                  name: "บอดี้คีย์ 1 ซอง + นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว ชงผสมกับน้ำเย็น ๆ",
+                  calories: 300,
+                  protein: 33,
+                  carbs: 23,
+                  fat: 6.5,
+                  fiber: 5,
+                  reason: "มื้อเช้าดี ๆ สารอาหารครบ 5 หมู่ ใช้เวลาเตรียมไม่นาน ดื่มทานง่าย อิ่มนานเพราะมีโปรตีนสูง มีคาร์บและไขมันดี แถมมีไฟเบอร์สูงด้วย"
+                });
+              } else if (nutrientFocus === 'โปรตีน') {
+                parsed.menus = parsed.menus.slice(0, 2);
+                parsed.menus.push({
+                  name: "นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว ชงผสมกับน้ำสะอาดเย็น ๆ",
+                  calories: 80,
+                  protein: 17,
+                  carbs: 1,
+                  fat: 0,
+                  fiber: 'ไม่ระบุ',
+                  reason: "ได้โปรตีนเพียว ๆ เน้น ๆ ไม่มีน้ำตาล ไม่มีไขมัน คลีนสุด ๆ เหมาะสำหรับคนอยากหุ่นลีนมากเลยครับ"
+                });
+              }
+            }
             return {
               ...parsed,
               modelUsed: model
