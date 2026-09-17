@@ -394,9 +394,9 @@ const recommendFoodNutrition = async (nutrientFocus: string, timeOfDay: string):
 
   let specialInstruction = '';
   if (timeOfDay === 'มื้อเช้า') {
-    specialInstruction = '\n\n**ข้อบังคับ:** สำหรับเมนูที่ 3 ให้แนะนำเป็น "บอดี้คีย์ 1 ซอง + นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว" (300 kcal, P 33g, C 23g, F 6.5g, Fiber 5g) เสมอ และให้คุณแต่งประโยคอธิบายเหตุผล (reason) ให้แตกต่างกันไปในแต่ละครั้ง โดยอ้างอิงความโดดเด่นของสารอาหารเหล่านี้';
+    specialInstruction = '\n\n**ข้อบังคับ:** สำหรับเมนูที่ 3 ให้ตั้งชื่อเมนู (name) โดยขึ้นต้นด้วย "บอดี้คีย์ 1 ซอง + นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว" แล้วตามด้วยคำแนะนำการชงกับน้ำเย็นด้วยภาษาที่หลากหลายไม่ซ้ำกัน (พลังงาน 300 kcal, P 33g, C 23g, F 6.5g, Fiber 5g) เสมอ และให้คุณแต่งประโยคอธิบายเหตุผล (reason) ให้แตกต่างกันไปในแต่ละครั้ง โดยอ้างอิงความโดดเด่นของสารอาหารเหล่านี้';
   } else if (nutrientFocus === 'โปรตีน') {
-    specialInstruction = '\n\n**ข้อบังคับ:** สำหรับเมนูที่ 3 ให้แนะนำเป็น "นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว ชงผสมกับน้ำสะอาดเย็น ๆ" (80 kcal, P 17g, C 1g, F 0g) เสมอ และให้คุณแต่งประโยคอธิบายเหตุผล (reason) ให้แตกต่างกันไปในแต่ละครั้ง โดยอ้างอิงความโดดเด่นของโปรตีนเพียวที่ไม่มีไขมันและน้ำตาล';
+    specialInstruction = '\n\n**ข้อบังคับ:** สำหรับเมนูที่ 3 ให้ตั้งชื่อเมนู (name) โดยขึ้นต้นด้วย "นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว" แล้วตามด้วยคำแนะนำการชงกับน้ำเย็นด้วยภาษาที่หลากหลายไม่ซ้ำกัน (พลังงาน 80 kcal, P 17g, C 1g, F 0g) เสมอ และให้คุณแต่งประโยคอธิบายเหตุผล (reason) ให้แตกต่างกันไปในแต่ละครั้ง โดยอ้างอิงความโดดเด่นของโปรตีนเพียวที่ไม่มีไขมันและน้ำตาล';
   }
 
   const prompt = `คุณคือระบบ AI ผู้เชี่ยวชาญด้านโภชนาการประจำ FitJourney
@@ -451,9 +451,10 @@ const recommendFoodNutrition = async (nutrientFocus: string, timeOfDay: string):
             if (parsed.menus && parsed.menus.length > 0) {
               if (timeOfDay === 'มื้อเช้า') {
                 const aiReason = parsed.menus[2]?.reason || parsed.menus[1]?.reason || "มื้อเช้าดี ๆ สารอาหารครบ 5 หมู่ ใช้เวลาเตรียมไม่นาน ดื่มทานง่าย อิ่มนานเพราะมีโปรตีนสูง มีคาร์บและไขมันดี แถมมีไฟเบอร์สูงด้วย";
+                const aiName = parsed.menus[2]?.name || "บอดี้คีย์ 1 ซอง + นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว ชงผสมกับน้ำเย็น ๆ";
                 parsed.menus = parsed.menus.slice(0, 2);
                 parsed.menus.push({
-                  name: "บอดี้คีย์ 1 ซอง + นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว ชงผสมกับน้ำเย็น ๆ",
+                  name: aiName,
                   calories: 300,
                   protein: 33,
                   carbs: 23,
@@ -463,9 +464,10 @@ const recommendFoodNutrition = async (nutrientFocus: string, timeOfDay: string):
                 });
               } else if (nutrientFocus === 'โปรตีน') {
                 const aiReason = parsed.menus[2]?.reason || parsed.menus[1]?.reason || "ได้โปรตีนเพียว ๆ เน้น ๆ ไม่มีน้ำตาล ไม่มีไขมัน คลีนสุด ๆ เหมาะสำหรับคนอยากหุ่นลีนมากเลยครับ";
+                const aiName = parsed.menus[2]?.name || "นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว ชงผสมกับน้ำสะอาดเย็น ๆ";
                 parsed.menus = parsed.menus.slice(0, 2);
                 parsed.menus.push({
-                  name: "นิวทริไลท์ ออลแพลนท์ โปรตีน 1 ช้อนเขียว ชงผสมกับน้ำสะอาดเย็น ๆ",
+                  name: aiName,
                   calories: 80,
                   protein: 17,
                   carbs: 1,
