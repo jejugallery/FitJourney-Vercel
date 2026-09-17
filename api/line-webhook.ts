@@ -481,6 +481,12 @@ const recommendFoodNutrition = async (nutrientFocus: string, timeOfDay: string):
                 });
               }
             }
+            if (parsed.menus && Array.isArray(parsed.menus)) {
+              for (let i = parsed.menus.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [parsed.menus[i], parsed.menus[j]] = [parsed.menus[j], parsed.menus[i]];
+              }
+            }
             return {
               ...parsed,
               modelUsed: model
