@@ -23,6 +23,23 @@ const replyToLine = async (replyToken: string, messages: any[]) => {
   );
 };
 
+const pushToLine = async (to: string, messages: any[]) => {
+  if (!LINE_CHANNEL_ACCESS_TOKEN) {
+    throw new Error('LINE_CHANNEL_ACCESS_TOKEN is not configured');
+  }
+
+  await axios.post(
+    'https://api.line.me/v2/bot/message/push',
+    { to, messages },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`,
+      },
+    },
+  );
+};
+
 const fetchLineImageBase64 = async (messageId: string): Promise<{ base64: string; mimeType: string }> => {
   if (!LINE_CHANNEL_ACCESS_TOKEN) {
     throw new Error('LINE_CHANNEL_ACCESS_TOKEN is not configured');
@@ -903,13 +920,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 } catch (e) {}
               }
 
+              // Send immediate acknowledgement
+              try {
+                await replyToLine(replyToken, [{ type: 'text', text: 'รับทราบครับ เดี๋ยวคำนวณให้ใหม่นะครับ รอสักครู่นะครับ ⏳' }]);
+              } catch (ackErr: any) {
+                console.error('[Ack Error]:', ackErr.message);
+              }
+
               const nutritionData = await analyzeFoodNutrition(img.base64, img.mimeType, extraContext);
               
               if (nutritionData && nutritionData.isFood !== false) {
                 const flexMessage = buildFoodAnalysisFlexMessage(nutritionData, senderName);
-                await replyToLine(replyToken, [flexMessage]);
+                await pushToLine(chatId, [flexMessage]);
               } else {
-                 await replyToLine(replyToken, [{ type: 'text', text: 'ไม่สามารถวิเคราะห์ข้อมูลใหม่ได้ครับ หรือระบบมองว่าไม่ใช่รูปอาหารแล้ว 😅' }]);
+                 await pushToLine(chatId, [{ type: 'text', text: 'ไม่สามารถวิเคราะห์ข้อมูลใหม่ได้ครับ หรือระบบมองว่าไม่ใช่รูปอาหารแล้ว 😅' }]);
               }
               continue;
             }
