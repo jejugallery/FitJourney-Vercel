@@ -254,15 +254,18 @@ const buildFoodRecommendationFlexMessage = (recommendation: FoodRecommendationRe
   };
 };
 
-const analyzeFoodNutrition = async (base64Image: string, mimeType: string): Promise<FoodNutritionResult | null> => {
+const analyzeFoodNutrition = async (base64Image: string, mimeType: string, extraContext?: string): Promise<FoodNutritionResult | null> => {
   const apiKeys = await getGeminiApiKeys();
   if (apiKeys.length === 0) {
     throw new Error('ไม่พบการตั้งค่า Gemini API Key ในระบบ (Firestore หรือ Environment Variables)');
   }
 
-  const prompt = `คุณคือระบบ AI ตรวจสอบและวิเคราะห์โภชนาการอาหารประจำ FitJourney โปรดตรวจสอบว่ารูปภาพนี้คือ "รูปอาหาร เครื่องดื่ม หรือขนม" หรือไม่?
-
-1. หากเป็นรูปอาหาร (ไม่รวมเครื่องดื่ม) ให้วิเคราะห์จำแนกวัตถุดิบ/รายการอาหารแต่ละอย่างในจาน และคำนวณสารอาหารรวม (รวมถึงไฟเบอร์/ใยอาหาร) แล้วตอบกลับ JSON ดังนี้เท่านั้น:
+  let prompt = `คุณคือระบบ AI ตรวจสอบและวิเคราะห์โภชนาการอาหารประจำ FitJourney โปรดตรวจสอบว่ารูปภาพนี้คือ "รูปอาหาร เครื่องดื่ม หรือขนม" หรือไม่?\n`;
+  if (extraContext) {
+    prompt += `\n**ข้อมูลเพิ่มเติมจากผู้ใช้งาน (นำมาใช้วิเคราะห์ปรับปรุงร่วมกับภาพเสมอ ห้ามละเลย):** "${extraContext}"\n`;
+  }
+  prompt += `
+1. หากเป็นรูปอาหาร (ไม่รวมเครื่องดื่ม) ให้วิเคราะห์จำแนกวัตถุดิบ/รายการอาหารแต่ละอย่างในจาน และคำนวณสารอาหารรวม (รวมถึงไฟเบอร์/ใยอาหาร) แล้วตอบกลับ JSON ดังนี้เท่านั้น:`;
 {
   "isFood": true,
   "isBeverage": false,
@@ -513,6 +516,15 @@ const ensurePendingImagesTable = () => {
           chat_id TEXT NOT NULL,
           user_id TEXT NOT NULL,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS last_analyzed_food (
+          chat_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          message_id TEXT NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (chat_id, user_id)
         );
       `;
     })().catch(err => {
@@ -851,6 +863,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         continue;
       }
 
+      const isReanalyze = (event.message.mention?.mentees?.length > 0) || (trimmedText.startsWith('เพิ่มเติม'));
+      if (isReanalyze) {
+        if (!replyToken) continue;
+        const chatId = event.source?.groupId || event.source?.roomId || event.source?.userId;
+        const userId = event.source?.userId;
+        if (!chatId || !userId) continue;
+
+        const extraContext = trimmedText.replace(/@\S+/g, '').replace('เพิ่มเติม', '').trim();
+        
+        if (extraContext.length > 0) {
+          try {
+            await ensurePendingImagesTable();
+            const lastAnalyzedRows = await sql`
+              SELECT * FROM last_analyzed_food
+              WHERE chat_id = ${chatId}
+              ORDER BY created_at DESC
+              LIMIT 1
+            `;
+
+            if (lastAnalyzedRows.length > 0) {
+              const lastMessageId = lastAnalyzedRows[0].message_id;
+              const img = await fetchLineImageBase64(lastMessageId);
+              
+              let senderName = 'ผู้ใช้งาน';
+              if (userId && LINE_CHANNEL_ACCESS_TOKEN) {
+                try {
+                  const profileRes = await axios.get(`https://api.line.me/v2/bot/profile/${userId}`, { headers: { Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` } });
+                  senderName = profileRes.data.displayName || senderName;
+                } catch (e) {}
+              }
+
+              const nutritionData = await analyzeFoodNutrition(img.base64, img.mimeType, extraContext);
+              
+              if (nutritionData && nutritionData.isFood !== false) {
+                const flexMessage = buildFoodAnalysisFlexMessage(nutritionData, senderName);
+                await replyToLine(replyToken, [flexMessage]);
+              } else {
+                 await replyToLine(replyToken, [{ type: 'text', text: 'ไม่สามารถวิเคราะห์ข้อมูลใหม่ได้ครับ หรือระบบมองว่าไม่ใช่รูปอาหารแล้ว 😅' }]);
+              }
+              continue;
+            }
+          } catch (err: any) {
+             console.error('[Reanalyze error]:', err.message);
+          }
+        }
+      }
+
       if (trimmedText === 'ตรวจอาหาร' || trimmedText.startsWith('ตรวจอาหาร')) {
         if (!replyToken) continue;
         const chatId = event.source?.groupId || event.source?.roomId || event.source?.userId;
@@ -881,6 +940,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           );
           
           await sql`DELETE FROM pending_food_images_v2 WHERE chat_id = ${chatId} AND user_id = ${latestUserId}`;
+
+          const lastMessageId = userPendingRows[userPendingRows.length - 1].message_id;
+          await sql`
+            INSERT INTO last_analyzed_food (chat_id, user_id, message_id)
+            VALUES (${chatId}, ${latestUserId}, ${lastMessageId})
+            ON CONFLICT (chat_id, user_id) 
+            DO UPDATE SET message_id = EXCLUDED.message_id, created_at = CURRENT_TIMESTAMP
+          `;
 
           let senderName = 'ผู้ใช้งาน';
           const imageSenderId = latestUserId || userId;
