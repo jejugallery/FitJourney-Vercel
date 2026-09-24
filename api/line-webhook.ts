@@ -870,7 +870,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const userId = event.source?.userId;
         if (!chatId || !userId) continue;
 
-        const extraContext = trimmedText.replace(/@\S+/g, '').replace('เพิ่มเติม', '').trim();
+        let extraContext = trimmedText;
+        if (event.message.mention && Array.isArray(event.message.mention.mentees)) {
+          const mentees = [...event.message.mention.mentees].sort((a: any, b: any) => b.index - a.index);
+          for (const m of mentees) {
+            if (typeof m.index === 'number' && typeof m.length === 'number') {
+              extraContext = extraContext.substring(0, m.index) + extraContext.substring(m.index + m.length);
+            }
+          }
+        }
+        extraContext = extraContext.replace(/@Fit\s*Journey\s*Thailand/ig, '').replace(/@\S+/g, '').replace('เพิ่มเติม', '').trim();
         
         if (extraContext.length > 0) {
           try {
