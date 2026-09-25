@@ -881,7 +881,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const hasManualMention = /@fit\s*journey|@bot|@บอท/i.test(trimmedText);
-      const isReanalyze = (event.message.mention?.mentees?.length > 0) || (trimmedText.startsWith('เพิ่มเติม')) || hasManualMention;
+      const isReply = !!event.message?.quotedMessageId;
+      const isReanalyze = (event.message.mention?.mentees?.length > 0) || (trimmedText.startsWith('เพิ่มเติม')) || hasManualMention || isReply;
       if (isReanalyze) {
         if (!replyToken) continue;
         const chatId = event.source?.groupId || event.source?.roomId || event.source?.userId;
