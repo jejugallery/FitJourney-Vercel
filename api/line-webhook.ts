@@ -187,7 +187,25 @@ const buildFoodAnalysisFlexMessage = (nutrition: FoodNutritionResult, senderName
                 { type: 'text', text: nutrition.summary, wrap: true, color: '#334155', size: 'sm', margin: 'xs' }
               ]
             }
-          ] : [])
+          ] : []),
+          {
+            type: 'box',
+            layout: 'vertical',
+            margin: 'lg',
+            paddingAll: 'sm',
+            backgroundColor: '#f8fafc',
+            cornerRadius: '8px',
+            contents: [
+              {
+                type: 'text',
+                text: 'ถ้ามีข้อมูลไม่ตรง reply ข้อความนี้ บอกรายละเอียดให้ผมเพิ่มได้เลยนะครับ เดี๋ยวผมรีบแก้ไขให้เลย ✏️',
+                wrap: true,
+                color: '#64748b',
+                size: 'xxs',
+                align: 'center'
+              }
+            ]
+          }
         ]
       }
     }
@@ -977,6 +995,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             continue;
           }
 
+          // Send immediate acknowledgment
+          try {
+            await replyToLine(replyToken, [{ type: 'text', text: 'ได้เลยครับ รอสักครู่นะครับ เดี๋ยวผมขอสแกนดูแป๊บนึง 🔎' }]);
+          } catch (ackErr: any) {
+            console.error('[Ack Error]:', ackErr.message);
+          }
+
           const latestUserId = pendingRows[pendingRows.length - 1].user_id;
           const userPendingRows = pendingRows.filter(r => r.user_id === latestUserId);
 
@@ -1064,17 +1089,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
 
           if (replyMessages.length > 0) {
-            await replyToLine(replyToken, replyMessages);
+            await pushToLine(chatId, replyMessages);
           }
         } catch (err: any) {
           console.error('[Trigger Food Check Error]:', err.response?.data || err.message);
           try {
-            await replyToLine(replyToken, [{
+            await pushToLine(chatId, [{
               type: 'text',
               text: '❌ เกิดข้อผิดพลาดในการวิเคราะห์รูปอาหาร กรุณาลองใหม่อีกครั้งครับ',
             }]);
           } catch (replyErr: any) {
-            console.error('[Error Reply Failed]:', replyErr.response?.data || replyErr.message);
+            console.error('[Error Push Failed]:', replyErr.response?.data || replyErr.message);
           }
         }
         continue;
