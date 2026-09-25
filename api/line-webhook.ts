@@ -880,7 +880,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         continue;
       }
 
-      const isReanalyze = (event.message.mention?.mentees?.length > 0) || (trimmedText.startsWith('เพิ่มเติม'));
+      const hasManualMention = /@fit\s*journey|@bot|@บอท/i.test(trimmedText);
+      const isReanalyze = (event.message.mention?.mentees?.length > 0) || (trimmedText.startsWith('เพิ่มเติม')) || hasManualMention;
       if (isReanalyze) {
         if (!replyToken) continue;
         const chatId = event.source?.groupId || event.source?.roomId || event.source?.userId;
@@ -936,10 +937,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                  await pushToLine(chatId, [{ type: 'text', text: 'ไม่สามารถวิเคราะห์ข้อมูลใหม่ได้ครับ หรือระบบมองว่าไม่ใช่รูปอาหารแล้ว 😅' }]);
               }
               continue;
+            } else {
+               await replyToLine(replyToken, [{ type: 'text', text: 'ยังไม่พบรูปอาหารที่เพิ่งตรวจไปครับ กรุณาส่งรูปอาหารแล้วพิมพ์ "ตรวจอาหาร" ก่อนทำการแก้ไขข้อมูลนะครับ 😅' }]);
+               continue;
             }
           } catch (err: any) {
              console.error('[Reanalyze error]:', err.message);
+             try {
+               await replyToLine(replyToken, [{ type: 'text', text: 'ขออภัยครับ เกิดข้อผิดพลาดในการวิเคราะห์ใหม่ กรุณาลองอีกครั้งครับ' }]);
+             } catch (e) {}
+             continue;
           }
+        } else {
+           await replyToLine(replyToken, [{ type: 'text', text: 'พิมพ์รายละเอียดที่ต้องการให้คำนวณใหม่ต่อท้ายด้วยนะครับ เช่น "@FitJourney อันนี้ไม่ใส่น้ำตาล ใช้น้ำมันมะกอก"' }]);
+           continue;
         }
       }
 
