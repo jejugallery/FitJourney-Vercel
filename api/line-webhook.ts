@@ -6,12 +6,12 @@ import * as crypto from 'crypto';
 const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
 const DEFAULT_LIFF_URL = 'https://liff.line.me/2010284484-jvUDlx0u';
 
-const replyToLine = async (replyToken: string, messages: any[]) => {
+const replyToLine = async (replyToken: string, messages: any[]): Promise<any> => {
   if (!LINE_CHANNEL_ACCESS_TOKEN) {
     throw new Error('LINE_CHANNEL_ACCESS_TOKEN is not configured');
   }
 
-  await axios.post(
+  const response = await axios.post(
     'https://api.line.me/v2/bot/message/reply',
     { replyToken, messages },
     {
@@ -21,14 +21,15 @@ const replyToLine = async (replyToken: string, messages: any[]) => {
       },
     },
   );
+  return response.data;
 };
 
-const pushToLine = async (to: string, messages: any[]) => {
+const pushToLine = async (to: string, messages: any[]): Promise<any> => {
   if (!LINE_CHANNEL_ACCESS_TOKEN) {
     throw new Error('LINE_CHANNEL_ACCESS_TOKEN is not configured');
   }
 
-  await axios.post(
+  const response = await axios.post(
     'https://api.line.me/v2/bot/message/push',
     { to, messages },
     {
@@ -38,6 +39,7 @@ const pushToLine = async (to: string, messages: any[]) => {
       },
     },
   );
+  return response.data;
 };
 
 const fetchLineImageBase64 = async (messageId: string): Promise<{ base64: string; mimeType: string }> => {
@@ -562,12 +564,40 @@ const ensurePendingImagesTable = () => {
           PRIMARY KEY (chat_id, user_id)
         );
       `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS food_analysis_flex_messages (
+          flex_message_id TEXT PRIMARY KEY,
+          chat_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          image_message_id TEXT NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `;
     })().catch(err => {
       pendingTablePromise = null;
       console.error('[Database] Create pending_food_images table error:', err);
     });
   }
   return pendingTablePromise;
+};
+
+const saveFoodAnalysisFlexMessage = async (
+  flexMessageId: string,
+  chatId: string,
+  userId: string,
+  imageMessageId: string
+) => {
+  if (!flexMessageId) return;
+  try {
+    await ensurePendingImagesTable();
+    await sql`
+      INSERT INTO food_analysis_flex_messages (flex_message_id, chat_id, user_id, image_message_id)
+      VALUES (${flexMessageId}, ${chatId}, ${userId}, ${imageMessageId})
+      ON CONFLICT (flex_message_id) DO NOTHING
+    `;
+  } catch (err: any) {
+    console.error('[Save Food Flex Message Error]:', err.message);
+  }
 };
 
 const buildBillingFlexMessage = (billing: {
@@ -899,8 +929,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const hasManualMention = /@fit\s*journey|@bot|@บอท/i.test(trimmedText);
-      const isReply = !!event.message?.quotedMessageId;
-      const isReanalyze = (event.message.mention?.mentees?.length > 0) || (trimmedText.startsWith('เพิ่มเติม')) || hasManualMention || isReply;
+      const quotedMessageId = event.message?.quotedMessageId;
+      
+      let isReplyingToFoodFlex = false;
+      let targetImageMessageId: string | null = null;
+
+      if (quotedMessageId) {
+        try {
+          await ensurePendingImagesTable();
+          const flexRows = await sql`
+            SELECT image_message_id FROM food_analysis_flex_messages
+            WHERE flex_message_id = ${quotedMessageId}
+            LIMIT 1
+          `;
+          if (flexRows.length > 0) {
+            isReplyingToFoodFlex = true;
+            targetImageMessageId = flexRows[0].image_message_id;
+          }
+        } catch (err: any) {
+          console.error('[Check Food Flex Reply Error]:', err.message);
+        }
+      }
+
+      const isReanalyze = (event.message.mention?.mentees?.length > 0) || (trimmedText.startsWith('เพิ่มเติม')) || hasManualMention || isReplyingToFoodFlex;
       if (isReanalyze) {
         if (!replyToken) continue;
         const chatId = event.source?.groupId || event.source?.roomId || event.source?.userId;
@@ -921,16 +972,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (extraContext.length > 0) {
           try {
             await ensurePendingImagesTable();
-            const lastAnalyzedRows = await sql`
-              SELECT * FROM last_analyzed_food
-              WHERE chat_id = ${chatId}
-              ORDER BY created_at DESC
-              LIMIT 1
-            `;
 
-            if (lastAnalyzedRows.length > 0) {
-              const lastMessageId = lastAnalyzedRows[0].message_id;
-              const img = await fetchLineImageBase64(lastMessageId);
+            if (!targetImageMessageId) {
+              const lastAnalyzedRows = await sql`
+                SELECT * FROM last_analyzed_food
+                WHERE chat_id = ${chatId}
+                ORDER BY created_at DESC
+                LIMIT 1
+              `;
+              if (lastAnalyzedRows.length > 0) {
+                targetImageMessageId = lastAnalyzedRows[0].message_id;
+              }
+            }
+
+            if (targetImageMessageId) {
+              const img = await fetchLineImageBase64(targetImageMessageId);
               
               let senderName = 'ผู้ใช้งาน';
               if (userId && LINE_CHANNEL_ACCESS_TOKEN) {
@@ -951,7 +1007,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               
               if (nutritionData && nutritionData.isFood !== false) {
                 const flexMessage = buildFoodAnalysisFlexMessage(nutritionData, senderName);
-                await pushToLine(chatId, [flexMessage]);
+                const pushRes = await pushToLine(chatId, [flexMessage]);
+                const sentId = pushRes?.sentMessages?.[0]?.id;
+                if (sentId && targetImageMessageId) {
+                  await saveFoodAnalysisFlexMessage(sentId, chatId, userId, targetImageMessageId);
+                }
               } else {
                  await pushToLine(chatId, [{ type: 'text', text: 'ไม่สามารถวิเคราะห์ข้อมูลใหม่ได้ครับ หรือระบบมองว่าไม่ใช่รูปอาหารแล้ว 😅' }]);
               }
@@ -1051,8 +1111,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           const isMulti = images.length > 1;
           const replyMessages: any[] = [];
+          const flexItems: { flexMessage: any; imageMessageId: string }[] = [];
           
-          for (const img of images) {
+          const recentUserPendingRows = userPendingRows.slice(-5);
+          for (let i = 0; i < images.length; i++) {
+            const img = images[i];
+            const imgRow = recentUserPendingRows[i];
             const nutritionData = await analyzeFoodNutrition(img.base64, img.mimeType);
             
             if (!nutritionData) {
@@ -1077,7 +1141,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
               }
             } else {
-              replyMessages.push(buildFoodAnalysisFlexMessage(nutritionData, senderName));
+              const flexMsg = buildFoodAnalysisFlexMessage(nutritionData, senderName);
+              replyMessages.push(flexMsg);
+              if (imgRow?.message_id) {
+                flexItems.push({ flexMessage: flexMsg, imageMessageId: imgRow.message_id });
+              }
             }
           }
 
@@ -1089,7 +1157,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
 
           if (replyMessages.length > 0) {
-            await pushToLine(chatId, replyMessages);
+            const pushRes = await pushToLine(chatId, replyMessages);
+            const sentMessages = pushRes?.sentMessages || [];
+            let flexIdx = 0;
+            for (let mIdx = 0; mIdx < replyMessages.length; mIdx++) {
+              const msg = replyMessages[mIdx];
+              if (msg.type === 'flex' && sentMessages[mIdx]?.id) {
+                const flexItem = flexItems[flexIdx];
+                if (flexItem) {
+                  await saveFoodAnalysisFlexMessage(
+                    sentMessages[mIdx].id,
+                    chatId,
+                    latestUserId || userId || '',
+                    flexItem.imageMessageId
+                  );
+                  flexIdx++;
+                }
+              }
+            }
           }
         } catch (err: any) {
           console.error('[Trigger Food Check Error]:', err.response?.data || err.message);
