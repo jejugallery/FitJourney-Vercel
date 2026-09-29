@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+export const maxDuration = 60; // ป้องกันปัญหา Vercel Timeout (10 วิ) ตอนรอ AI วิเคราะห์รูป
 import { sql } from './_db.js';
 import axios from 'axios';
 import * as crypto from 'crypto';
