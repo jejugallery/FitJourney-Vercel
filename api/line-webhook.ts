@@ -43,6 +43,24 @@ const pushToLine = async (to: string, messages: any[]): Promise<any> => {
   return response.data;
 };
 
+const showLoadingAnimation = async (chatId: string, loadingSeconds: number = 20): Promise<void> => {
+  if (!LINE_CHANNEL_ACCESS_TOKEN) return;
+  try {
+    await axios.post(
+      'https://api.line.me/v2/bot/chat/loading/start',
+      { chatId, loadingSeconds },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`,
+        },
+      }
+    );
+  } catch (err: any) {
+    console.warn('[Loading Animation Error]:', err.response?.data || err.message);
+  }
+};
+
 const fetchLineImageBase64 = async (messageId: string): Promise<{ base64: string; mimeType: string }> => {
   if (!LINE_CHANNEL_ACCESS_TOKEN) {
     throw new Error('LINE_CHANNEL_ACCESS_TOKEN is not configured');
@@ -1011,7 +1029,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 } catch (e) {}
               }
 
-              // Removed immediate acknowledgment to save replyToken for the final result
+              // Use LINE Loading Animation API to show typing dots (100% Free, doesn't use replyToken)
+              await showLoadingAnimation(chatId, 20);
 
               const nutritionData = await analyzeFoodNutrition(img.base64, img.mimeType, extraContext);
               
@@ -1065,7 +1084,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             continue;
           }
 
-          // Removed immediate acknowledgment to save replyToken for the final result
+          // Use LINE Loading Animation API to show typing dots (100% Free, doesn't use replyToken)
+          await showLoadingAnimation(chatId, 20);
 
           const latestUserId = pendingRows[pendingRows.length - 1].user_id;
           const userPendingRows = pendingRows.filter(r => r.user_id === latestUserId);
