@@ -83,6 +83,12 @@ const getGeminiApiKeys = async (): Promise<string[]> => {
       '';
     apiKeys = keysString.split(',').map((k: string) => k.trim()).filter(Boolean);
   }
+  if (apiKeys.length > 0) {
+    for (let i = apiKeys.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [apiKeys[i], apiKeys[j]] = [apiKeys[j], apiKeys[i]];
+    }
+  }
 
   return apiKeys;
 };
@@ -420,6 +426,10 @@ const analyzeFoodNutrition = async (base64Image: string, mimeType: string, extra
       } catch (err: any) {
         lastError = err;
         console.warn(`[Gemini Bot] Model ${model} failed, trying next...`, err.response?.data || err.message);
+        if (err.response?.status === 429) {
+          console.warn(`[Gemini Bot] Key rate limited (429), switching to next API key...`);
+          break;
+        }
       }
     }
   }
@@ -538,6 +548,10 @@ const recommendFoodNutrition = async (nutrientFocus: string, timeOfDay: string):
         }
       } catch (err: any) {
         lastError = err;
+        if (err.response?.status === 429) {
+          console.warn(`[Gemini Bot] Key rate limited (429), switching to next API key...`);
+          break;
+        }
       }
     }
   }
