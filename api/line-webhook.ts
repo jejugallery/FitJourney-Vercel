@@ -1011,24 +1011,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 } catch (e) {}
               }
 
-              // Send immediate acknowledgement
-              try {
-                await replyToLine(replyToken, [{ type: 'text', text: 'รับทราบครับ เดี๋ยวคำนวณให้ใหม่นะครับ รอสักครู่นะครับ ⏳' }]);
-              } catch (ackErr: any) {
-                console.error('[Ack Error]:', ackErr.message);
-              }
+              // Removed immediate acknowledgment to save replyToken for the final result
 
               const nutritionData = await analyzeFoodNutrition(img.base64, img.mimeType, extraContext);
               
               if (nutritionData && nutritionData.isFood !== false) {
                 const flexMessage = buildFoodAnalysisFlexMessage(nutritionData, senderName);
-                const pushRes = await pushToLine(chatId, [flexMessage]);
+                const pushRes = await replyToLine(replyToken, [flexMessage]);
                 const sentId = pushRes?.sentMessages?.[0]?.id;
                 if (sentId && targetImageMessageId) {
                   await saveFoodAnalysisFlexMessage(sentId, chatId, userId, targetImageMessageId);
                 }
               } else {
-                 await pushToLine(chatId, [{ type: 'text', text: 'ไม่สามารถวิเคราะห์ข้อมูลใหม่ได้ครับ หรือระบบมองว่าไม่ใช่รูปอาหารแล้ว 😅' }]);
+                 await replyToLine(replyToken, [{ type: 'text', text: 'ไม่สามารถวิเคราะห์ข้อมูลใหม่ได้ครับ หรือระบบมองว่าไม่ใช่รูปอาหารแล้ว 😅' }]);
               }
               continue;
             } else {
@@ -1070,12 +1065,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             continue;
           }
 
-          // Send immediate acknowledgment
-          try {
-            await replyToLine(replyToken, [{ type: 'text', text: 'ได้เลยครับ รอสักครู่นะครับ เดี๋ยวผมขอสแกนดูแป๊บนึง 🔎' }]);
-          } catch (ackErr: any) {
-            console.error('[Ack Error]:', ackErr.message);
-          }
+          // Removed immediate acknowledgment to save replyToken for the final result
 
           const latestUserId = pendingRows[pendingRows.length - 1].user_id;
           const userPendingRows = pendingRows.filter(r => r.user_id === latestUserId);
@@ -1172,7 +1162,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
 
           if (replyMessages.length > 0) {
-            const pushRes = await pushToLine(chatId, replyMessages);
+            const pushRes = await replyToLine(replyToken, replyMessages);
             const sentMessages = pushRes?.sentMessages || [];
             let flexIdx = 0;
             for (let mIdx = 0; mIdx < replyMessages.length; mIdx++) {
@@ -1194,7 +1184,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         } catch (err: any) {
           console.error('[Trigger Food Check Error]:', err.response?.data || err.message);
           try {
-            await pushToLine(chatId, [{
+            await replyToLine(replyToken, [{
               type: 'text',
               text: '❌ เกิดข้อผิดพลาดในการวิเคราะห์รูปอาหาร กรุณาลองใหม่อีกครั้งครับ',
             }]);
