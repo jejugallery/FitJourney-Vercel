@@ -6,6 +6,7 @@ import * as crypto from 'crypto';
 
 const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
 const DEFAULT_LIFF_URL = 'https://liff.line.me/2010284484-jvUDlx0u';
+const SHARE_KNOWLEDGE_LIFF_URL = 'https://liff.line.me/2010284484-IctOVPHw';
 
 const replyToLine = async (replyToken: string, messages: any[]): Promise<any> => {
   if (!LINE_CHANNEL_ACCESS_TOKEN) {
@@ -769,6 +770,209 @@ const buildBillingFlexMessage = (billing: {
   };
 };
 
+let healthKnowledgesTablePromise: Promise<void> | null = null;
+const ensureHealthKnowledgesTable = () => {
+  if (!healthKnowledgesTablePromise) {
+    healthKnowledgesTablePromise = (async () => {
+      await sql`
+        CREATE TABLE IF NOT EXISTS health_knowledges (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          category TEXT,
+          video_url TEXT,
+          video_thumbnail_url TEXT,
+          description TEXT,
+          is_challenge BOOLEAN DEFAULT FALSE,
+          created_by TEXT,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `;
+    })().catch(err => {
+      healthKnowledgesTablePromise = null;
+      console.error('[Database] Create health_knowledges table error:', err);
+    });
+  }
+  return healthKnowledgesTablePromise;
+};
+
+const extractYoutubeInfo = (text: string): { videoId: string; url: string } | null => {
+  if (!text) return null;
+  const regExp = /(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i;
+  const match = text.match(regExp);
+  if (match && match[1] && match[1].length === 11) {
+    const videoId = match[1];
+    return {
+      videoId,
+      url: `https://www.youtube.com/watch?v=${videoId}`
+    };
+  }
+  return null;
+};
+
+const fetchYoutubeMetadata = async (videoId: string): Promise<{ title: string; thumbnailUrl: string }> => {
+  const fallbackThumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+  let title = 'ฟังลิงก์ Challenge';
+  let thumbnailUrl = fallbackThumbnail;
+
+  try {
+    const oembedRes = await axios.get(
+      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
+      { timeout: 4000 }
+    );
+    if (oembedRes.data?.title) {
+      title = oembedRes.data.title;
+    }
+    if (oembedRes.data?.thumbnail_url) {
+      thumbnailUrl = oembedRes.data.thumbnail_url;
+    }
+    return { title, thumbnailUrl };
+  } catch (e) {}
+
+  try {
+    const noembedRes = await axios.get(
+      `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`,
+      { timeout: 4000 }
+    );
+    if (noembedRes.data?.title) {
+      title = noembedRes.data.title;
+    }
+  } catch (e) {}
+
+  return { title, thumbnailUrl };
+};
+
+const buildChallengeFlexMessage = (
+  knowledgeId: string,
+  title: string,
+  thumbnailUrl: string,
+  videoUrl?: string
+) => {
+  const liffUrl = `${SHARE_KNOWLEDGE_LIFF_URL}?knowledgeId=${knowledgeId}`;
+  return {
+    type: 'flex',
+    altText: `🏆 ฟังลิงก์ Challenge: ${title}`,
+    contents: {
+      type: 'bubble',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#E11D48',
+        paddingAll: 'sm',
+        contents: [
+          {
+            type: 'text',
+            text: 'ฟังลิงก์ Challenge',
+            color: '#FFFFFF',
+            weight: 'bold',
+            size: 'sm',
+            align: 'center'
+          }
+        ]
+      },
+      hero: {
+        type: 'image',
+        url: thumbnailUrl || 'https://i.ytimg.com/vi/placeholder/maxresdefault.jpg',
+        size: 'full',
+        aspectRatio: '16:9',
+        aspectMode: 'cover',
+        action: {
+          type: 'uri',
+          uri: liffUrl
+        }
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'xs',
+        contents: [
+          {
+            type: 'text',
+            text: title,
+            weight: 'bold',
+            size: 'md',
+            wrap: true
+          },
+          {
+            type: 'separator',
+            margin: 'md',
+            color: '#e2e8f0'
+          },
+          {
+            type: 'text',
+            text: 'ชวนฟังลิงก์นี้ แชร์สิ่งที่ได้รับ ส่งต่อความฮอตให้เพื่อน ๆ ในกลุ่มกัน',
+            size: 'xs',
+            color: '#718096',
+            wrap: true,
+            margin: 'md',
+            lineSpacing: '4px'
+          }
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            spacing: 'md',
+            alignItems: 'center',
+            contents: [
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#FF416C',
+                cornerRadius: 'xxl',
+                paddingAll: '10px',
+                flex: 1,
+                action: {
+                  type: 'uri',
+                  label: 'กดฟังเลยตอนนี้',
+                  uri: liffUrl
+                },
+                contents: [
+                  {
+                    type: 'text',
+                    text: 'กดฟังเลยตอนนี้',
+                    color: '#ffffff',
+                    weight: 'bold',
+                    size: 'sm',
+                    align: 'center'
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#10B981',
+            cornerRadius: 'xxl',
+            paddingAll: '10px',
+            margin: 'sm',
+            action: {
+              type: 'uri',
+              label: 'แชร์สิ่งที่ได้',
+              uri: liffUrl
+            },
+            contents: [
+              {
+                type: 'text',
+                text: 'แชร์สิ่งที่ได้ 📝',
+                color: '#ffffff',
+                weight: 'bold',
+                size: 'sm',
+                align: 'center'
+              }
+            ]
+          }
+        ]
+      }
+    }
+  };
+};
+
 const isVideoUrl = (url: string | null | undefined): boolean => {
   if (!url) return false;
   if (url.includes('/video/upload/')) return true;
@@ -894,6 +1098,72 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else if (event.type === 'message' && event.message?.type === 'text') {
       const text = event.message.text || '';
       const trimmedText = text.trim();
+
+      // YouTube Link Detection -> Create & Save Challenge Knowledge + Reply with Challenge Flex Message
+      const ytInfo = extractYoutubeInfo(trimmedText);
+      if (ytInfo) {
+        if (!replyToken) continue;
+        const chatId = event.source?.groupId || event.source?.roomId || event.source?.userId;
+        try {
+          const { videoId, url: canonicalUrl } = ytInfo;
+          await ensureHealthKnowledgesTable();
+          const { title: ytTitle, thumbnailUrl } = await fetchYoutubeMetadata(videoId);
+
+          // Check if link already exists in health_knowledges
+          let knowledgeId: string = '';
+          let finalTitle = ytTitle;
+          let finalThumbnail = thumbnailUrl;
+
+          const existingRows = await sql`
+            SELECT id, title, video_thumbnail_url FROM health_knowledges
+            WHERE video_url LIKE ${'%' + videoId + '%'}
+            ORDER BY created_at DESC
+            LIMIT 1
+          `;
+
+          if (existingRows.length > 0) {
+            knowledgeId = existingRows[0].id;
+            finalTitle = existingRows[0].title || ytTitle;
+            finalThumbnail = existingRows[0].video_thumbnail_url || thumbnailUrl;
+            await sql`
+              UPDATE health_knowledges
+              SET is_challenge = true, category = 'business'
+              WHERE id = ${knowledgeId}
+            `;
+          } else {
+            knowledgeId = crypto.randomBytes(10).toString('hex');
+            await sql`
+              INSERT INTO health_knowledges (
+                id, title, category, video_url, video_thumbnail_url, description, is_challenge, created_by, created_at
+              ) VALUES (
+                ${knowledgeId},
+                ${finalTitle},
+                'business',
+                ${canonicalUrl},
+                ${finalThumbnail},
+                '',
+                true,
+                ${userId || 'line_bot'},
+                CURRENT_TIMESTAMP
+              )
+            `;
+          }
+
+          const flexMsg = buildChallengeFlexMessage(knowledgeId, finalTitle, finalThumbnail, canonicalUrl);
+
+          try {
+            await replyToLine(replyToken, [flexMsg]);
+          } catch (replyErr: any) {
+            console.warn('[YouTube Challenge Reply failed, fallback to push]:', replyErr.message);
+            if (chatId) {
+              await pushToLine(chatId, [flexMsg]);
+            }
+          }
+        } catch (err: any) {
+          console.error('[Error handling YouTube challenge]:', err.message);
+        }
+        continue;
+      }
 
       if (trimmedText.includes('กินอะไรดี') || trimmedText.includes('กินไรดี')) {
         if (!replyToken) continue;

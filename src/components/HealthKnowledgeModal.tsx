@@ -953,6 +953,25 @@ export default function HealthKnowledgeModal({ onClose, userId }: HealthKnowledg
                               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                               onError={handleListImageError}
                             />
+                            {item.isChallenge && (
+                              <div style={{
+                                position: 'absolute',
+                                top: '8px',
+                                left: '8px',
+                                backgroundColor: '#E11D48',
+                                color: '#FFFFFF',
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                              }}>
+                                🏆 ฟังลิงก์ Challenge
+                              </div>
+                            )}
                           </div>
 
                           {/* Content Column */}
