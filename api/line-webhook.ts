@@ -1007,130 +1007,155 @@ const getMediaVideoLoopUrl = (url: string | null | undefined): string => {
   return url;
 };
 
-const buildSpyGameFlexMessage = (roomId: string) => {
-  const gameUrl = `${DEFAULT_LIFF_URL}/spy-game?roomId=${encodeURIComponent(roomId)}`;
+const POETIC_ROOM_NAMES = [
+  'สายลมที่พัดผ่าน',
+  'แสงจันทร์กระจ่าง',
+  'ประกายดาวราตรี',
+  'หยาดน้ำค้างยามเช้า',
+  'ลำธารเงียบสงบ',
+  'กลิ่นหอมดอกโมก',
+  'สนธยาสีคราม',
+  'หมอกขาวเหนือยอดดอย',
+  'ท่วงทำนองสายฝน',
+  'อรุณรุ่งเรืองรอง',
+  'คลื่นกระทบฝั่ง',
+  'บทกวีแห่งสายน้ำ',
+  'ไอหมอกฤดูหนาว',
+  'เสียงกระซิบแห่งขุนเขา',
+  'เมฆลอยละล่อง',
+  'หิ่งห้อยใต้แสงดาว',
+  'แสงตะวันอบอุ่น',
+  'เงาจันทร์ในธารน้ำ',
+  'กลีบกุหลาบแรกแย้ม',
+  'เงาไม้ใต้ร่มเย็น'
+];
+
+const generatePoeticRoomName = async (): Promise<string> => {
+  const fallback = POETIC_ROOM_NAMES[Math.floor(Math.random() * POETIC_ROOM_NAMES.length)];
+  try {
+    const apiKeys = await getGeminiApiKeys();
+    if (apiKeys.length === 0) return fallback;
+    const model = 'gemini-2.5-flash-lite';
+    const prompt = 'คิดชื่อห้องเกมภาษาไทยสั้นๆ สไตล์บทกวี ไพเราะ มีความหมาย ซาบซึ้ง ความยาว 2-4 คำ เช่น สายลมที่พัดผ่าน, แสงจันทร์กระจ่าง, ประกายดาวราตรี ตอบมาแค่ชื่อเดียวสั้นๆ ไม่มีเครื่องหมายคำพูด ไม่มีคำอธิบาย';
+    const res = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKeys[0]}`,
+      { contents: [{ parts: [{ text: prompt }] }] },
+      { headers: { 'Content-Type': 'application/json' }, timeout: 1500 }
+    );
+    const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()?.replace(/["'«»“”\n]/g, '');
+    if (text && text.length >= 2 && text.length <= 30) {
+      return text;
+    }
+  } catch (e) {
+    // fallback
+  }
+  return fallback;
+};
+
+const buildSpyGameFlexMessage = (roomId: string, roomName: string) => {
+  const gameUrl = `${DEFAULT_LIFF_URL}/spy-game?roomId=${encodeURIComponent(roomId)}&roomName=${encodeURIComponent(roomName)}`;
   return {
     type: 'flex',
-    altText: '🕵️ อยากเล่นเกมจับสายลับไหม? กดเล่นเลย!',
+    altText: `🕵️ ห้อง "${roomName}" - อยากเล่นเกมจับสายลับไหม? กดเล่นเลย!`,
     contents: {
       type: 'bubble',
       size: 'mega',
       header: {
         type: 'box',
         layout: 'vertical',
-        backgroundColor: '#0F172A',
-        paddingAll: 'md',
-        contents: [
-          {
-            type: 'box',
-            layout: 'horizontal',
-            alignItems: 'center',
-            spacing: 'sm',
-            contents: [
-              {
-                type: 'text',
-                text: '🕵️‍♂️',
-                size: 'lg',
-                flex: 0
-              },
-              {
-                type: 'text',
-                text: 'เกมจับสายลับ (UNDERCOVER)',
-                weight: 'bold',
-                color: '#38BDF8',
-                size: 'sm',
-                flex: 1
-              }
-            ]
-          }
-        ]
-      },
-      hero: {
-        type: 'box',
-        layout: 'vertical',
-        backgroundColor: '#1E293B',
-        paddingAll: 'xl',
-        alignItems: 'center',
-        justifyContent: 'center',
+        backgroundColor: '#FF416C',
+        paddingAll: 'sm',
         contents: [
           {
             type: 'text',
-            text: '🃏 🔍 🤫',
-            size: 'xxl',
+            text: '🕵️‍♂️ เกมจับสายลับ (UNDERCOVER)',
+            color: '#FFFFFF',
+            weight: 'bold',
+            size: 'sm',
             align: 'center'
-          },
-          {
-            type: 'text',
-            text: 'ใครคือสายลับในกลุ่มพวกเรา?',
-            size: 'xs',
-            color: '#94A3B8',
-            align: 'center',
-            margin: 'sm'
           }
         ]
       },
       body: {
         type: 'box',
         layout: 'vertical',
-        spacing: 'md',
-        paddingAll: 'xl',
         backgroundColor: '#FFFFFF',
+        paddingAll: 'xl',
+        alignItems: 'center',
         contents: [
-          {
-            type: 'text',
-            text: 'อยากเล่นเกมจับสายลับไหม ?',
-            weight: 'bold',
-            size: 'lg',
-            color: '#0F172A',
-            align: 'center'
-          },
-          {
-            type: 'text',
-            text: 'เกมปาร์ตี้สุดมันส์! มีเพียง 1 คนเท่านั้นที่จะได้คำต่างจากคนอื่น จับพิรุธแล้วโหวตหาตัวสายลับให้เจอ!',
-            size: 'sm',
-            color: '#64748B',
-            wrap: true,
-            align: 'center',
-            lineSpacing: '4px'
-          },
           {
             type: 'box',
             layout: 'horizontal',
-            backgroundColor: '#F1F5F9',
-            cornerRadius: 'md',
-            paddingAll: 'sm',
-            margin: 'md',
+            backgroundColor: '#FFF1F4',
+            borderColor: '#FFE4E6',
+            borderWidth: '1px',
+            cornerRadius: 'xxl',
+            paddingStart: '16px',
+            paddingEnd: '16px',
+            paddingTop: '6px',
+            paddingBottom: '6px',
+            alignItems: 'center',
             justifyContent: 'center',
             contents: [
               {
                 type: 'text',
-                text: `รหัสห้อง: #${roomId.toUpperCase()}`,
-                size: 'xs',
-                color: '#475569',
+                text: `🌸 ห้อง "${roomName}"`,
                 weight: 'bold',
+                size: 'sm',
+                color: '#FF416C',
                 align: 'center'
               }
             ]
+          },
+          {
+            type: 'text',
+            text: 'อยากเล่นเกมจับสายลับไหม ?',
+            weight: 'bold',
+            size: 'xl',
+            color: '#1E293B',
+            align: 'center',
+            margin: 'lg'
+          },
+          {
+            type: 'text',
+            text: 'ใครคือสายลับตัวจริงในกลุ่มพวกเรา? 🤫',
+            size: 'xs',
+            color: '#64748B',
+            align: 'center',
+            margin: 'sm'
           }
         ]
       },
       footer: {
         type: 'box',
         layout: 'vertical',
-        spacing: 'sm',
-        paddingAll: 'lg',
         backgroundColor: '#FFFFFF',
+        paddingStart: 'xl',
+        paddingEnd: 'xl',
+        paddingBottom: 'xl',
+        paddingTop: 'none',
         contents: [
           {
-            type: 'button',
-            style: 'primary',
-            color: '#E11D48',
-            height: 'sm',
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#FF416C',
+            cornerRadius: 'xxl',
+            paddingAll: '12px',
             action: {
               type: 'uri',
               label: 'เล่นเลย 🎮',
               uri: gameUrl
-            }
+            },
+            contents: [
+              {
+                type: 'text',
+                text: 'เล่นเลย 🎮',
+                color: '#FFFFFF',
+                weight: 'bold',
+                size: 'md',
+                align: 'center'
+              }
+            ]
           }
         ]
       }
@@ -1301,7 +1326,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!replyToken) continue;
         const chatId = event.source?.groupId || event.source?.roomId || event.source?.userId;
         const roomId = 'sg_' + crypto.randomBytes(3).toString('hex');
-        const flexMsg = buildSpyGameFlexMessage(roomId);
+        const roomName = await generatePoeticRoomName();
+        const flexMsg = buildSpyGameFlexMessage(roomId, roomName);
         try {
           await replyToLine(replyToken, [flexMsg]);
         } catch (replyErr: any) {

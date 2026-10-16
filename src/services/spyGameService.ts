@@ -31,6 +31,7 @@ export interface SpyPlayer {
 
 export interface SpyRoom {
   id: string;
+  roomName?: string;
   hostId: string;
   hostName: string;
   category: 'food' | 'daily';
@@ -40,6 +41,44 @@ export interface SpyRoom {
   spyUserId?: string;
   createdAt?: any;
   updatedAt?: any;
+}
+
+export const POETIC_ROOM_NAMES = [
+  'สายลมที่พัดผ่าน',
+  'แสงจันทร์กระจ่าง',
+  'ประกายดาวราตรี',
+  'หยาดน้ำค้างยามเช้า',
+  'ลำธารเงียบสงบ',
+  'กลิ่นหอมดอกโมก',
+  'สนธยาสีคราม',
+  'หมอกขาวเหนือยอดดอย',
+  'ท่วงทำนองสายฝน',
+  'อรุณรุ่งเรืองรอง',
+  'คลื่นกระทบฝั่ง',
+  'บทกวีแห่งสายน้ำ',
+  'ไอหมอกฤดูหนาว',
+  'เสียงกระซิบแห่งขุนเขา',
+  'เมฆลอยละล่อง',
+  'หิ่งห้อยใต้แสงดาว',
+  'แสงตะวันอบอุ่น',
+  'เงาจันทร์ในธารน้ำ',
+  'กลีบกุหลาบแรกแย้ม',
+  'เงาไม้ใต้ร่มเย็น'
+];
+
+export async function generatePoeticRoomNameWithAI(): Promise<string> {
+  const fallback = POETIC_ROOM_NAMES[Math.floor(Math.random() * POETIC_ROOM_NAMES.length)];
+  try {
+    const prompt = 'คิดชื่อห้องเกมภาษาไทยสั้นๆ สไตล์บทกวี ไพเราะ มีความหมาย ซาบซึ้ง ความยาว 2-4 คำ เช่น สายลมที่พัดผ่าน, แสงจันทร์กระจ่าง, ประกายดาวราตรี ตอบมาแค่ชื่อเดียวสั้นๆ ไม่มีเครื่องหมายคำพูด ไม่มีคำอธิบาย';
+    const res = await fetchGeminiWithFallback(['gemini-2.5-flash-lite', 'gemini-1.5-flash'], [{ parts: [{ text: prompt }] }]);
+    const text = res.rawText?.trim()?.replace(/["'«»“”\n]/g, '');
+    if (text && text.length >= 2 && text.length <= 30) {
+      return text;
+    }
+  } catch (e) {
+    // fallback
+  }
+  return fallback;
 }
 
 export const FALLBACK_WORDS: Record<string, [string, string][]> = {
@@ -138,7 +177,8 @@ export async function generateSpyWordsWithAI(category: 'food' | 'daily'): Promis
  */
 export async function joinSpyGameRoom(
   roomId: string,
-  user: { userId: string; displayName: string; pictureUrl?: string }
+  user: { userId: string; displayName: string; pictureUrl?: string },
+  suggestedRoomName?: string
 ): Promise<void> {
   const cleanRoomId = roomId.trim().toLowerCase();
   const roomRef = doc(db, 'spy_game_rooms', cleanRoomId);
@@ -148,8 +188,10 @@ export async function joinSpyGameRoom(
 
   if (!roomSnap.exists()) {
     // Room doesn't exist: Current user is the host and creates the room
+    const poeticName = suggestedRoomName?.trim() || (await generatePoeticRoomNameWithAI());
     await setDoc(roomRef, {
       id: cleanRoomId,
+      roomName: poeticName,
       hostId: user.userId,
       hostName: user.displayName,
       category: 'food',
@@ -177,6 +219,12 @@ export async function joinSpyGameRoom(
     const playerSnap = await getDoc(playerRef);
 
     const isHost = roomData.hostId === user.userId;
+
+    if (!roomData.roomName && suggestedRoomName?.trim()) {
+      await updateDoc(roomRef, {
+        roomName: suggestedRoomName.trim(),
+      });
+    }
 
     if (!playerSnap.exists()) {
       await setDoc(playerRef, {

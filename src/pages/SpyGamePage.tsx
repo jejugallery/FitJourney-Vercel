@@ -19,6 +19,7 @@ export default function SpyGamePage() {
   const [searchParams] = useSearchParams();
   const rawRoomId = params.roomId || searchParams.get('roomId') || '';
   const roomId = rawRoomId.trim().toLowerCase();
+  const initialRoomName = searchParams.get('roomName') || searchParams.get('name') || '';
 
   const { profile, loading: liffLoading } = useLiff();
 
@@ -74,11 +75,15 @@ export default function SpyGamePage() {
 
     const initRoom = async () => {
       try {
-        await joinSpyGameRoom(roomId, {
-          userId: activeUserId,
-          displayName: activeDisplayName,
-          pictureUrl: activePictureUrl,
-        });
+        await joinSpyGameRoom(
+          roomId,
+          {
+            userId: activeUserId,
+            displayName: activeDisplayName,
+            pictureUrl: activePictureUrl,
+          },
+          initialRoomName
+        );
 
         if (!isMounted) return;
 
@@ -196,21 +201,21 @@ export default function SpyGamePage() {
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#090D16',
-        color: '#F8FAFC',
+        backgroundColor: '#F8FAFC',
+        color: '#1E293B',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '24px',
         textAlign: 'center',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
+        fontFamily: 'Inter, system-ui, sans-serif'
       }}>
         <div style={{ fontSize: '3.5rem', marginBottom: '16px' }}>🕵️‍♂️</div>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '8px', color: '#38BDF8' }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '8px', color: '#FF416C' }}>
           เกมจับสายลับ
         </h1>
-        <p style={{ color: '#94A3B8', fontSize: '0.95rem', maxWidth: '320px', lineHeight: 1.6, marginBottom: '24px' }}>
+        <p style={{ color: '#64748B', fontSize: '0.95rem', maxWidth: '320px', lineHeight: 1.6, marginBottom: '24px' }}>
           กรุณาเข้าห้องเกมผ่านลิงก์ในไลน์ หรือพิมพ์คำว่า <strong>"จับสายลับ"</strong> ในแชทไลน์กลุ่มเพื่อรับลิงก์เข้าห้อง
         </p>
       </div>
@@ -222,26 +227,30 @@ export default function SpyGamePage() {
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#090D16',
-        color: '#F8FAFC',
+        backgroundColor: '#F8FAFC',
+        color: '#1E293B',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '24px',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
+        fontFamily: 'Inter, system-ui, sans-serif'
       }}>
         <div style={{
-          width: '64px',
-          height: '64px',
+          width: '56px',
+          height: '56px',
           borderRadius: '50%',
-          border: '4px solid #1E293B',
-          borderTopColor: '#E11D48',
+          border: '4px solid #F1F5F9',
+          borderTopColor: '#FF416C',
           animation: 'spin 1s linear infinite',
           marginBottom: '20px'
         }} />
-        <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#38BDF8' }}>กำลังโหลดห้องเกม...</h2>
-        <p style={{ color: '#64748B', fontSize: '0.85rem', marginTop: '6px' }}>ห้อง #{roomId.toUpperCase()}</p>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#1E293B' }}>กำลังโหลดห้องเกม...</h2>
+        {initialRoomName && (
+          <p style={{ color: '#FF416C', fontSize: '0.9rem', marginTop: '6px', fontWeight: 600 }}>
+            🌸 ห้อง "{initialRoomName}"
+          </p>
+        )}
         <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -250,34 +259,35 @@ export default function SpyGamePage() {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#090D16',
-      backgroundImage: 'radial-gradient(ellipse at 50% 0%, #1e1b4b 0%, #090D16 75%)',
-      color: '#F8FAFC',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
+      backgroundColor: '#F8FAFC',
+      backgroundImage: 'radial-gradient(circle at top right, rgba(255,65,108,0.06), transparent 45%), radial-gradient(circle at bottom left, rgba(255,75,43,0.06), transparent 45%)',
+      color: '#1E293B',
+      fontFamily: 'Inter, system-ui, sans-serif',
       paddingBottom: '40px',
       boxSizing: 'border-box'
     }}>
       {/* Top Header */}
       <header style={{
-        padding: '16px 20px',
+        padding: '14px 20px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid #E2E8F0',
+        backdropFilter: 'blur(12px)',
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        backgroundColor: 'rgba(9, 13, 22, 0.85)'
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '1.5rem' }}>🕵️‍♂️</span>
           <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1px', color: '#38BDF8' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '1px', color: '#FF416C' }}>
               UNDERCOVER
             </div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#FFFFFF' }}>
-              ห้อง #{roomId.toUpperCase()}
+            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B' }}>
+              {room?.roomName ? `🌸 ห้อง "${room.roomName}"` : 'เกมจับสายลับ'}
             </div>
           </div>
         </div>
@@ -285,12 +295,12 @@ export default function SpyGamePage() {
         <button
           onClick={handleCopyLink}
           style={{
-            background: copiedLink ? '#10B981' : 'rgba(255,255,255,0.08)',
-            color: '#FFFFFF',
-            border: '1px solid rgba(255,255,255,0.15)',
-            padding: '6px 12px',
+            background: copiedLink ? '#10B981' : '#FFF1F4',
+            color: copiedLink ? '#FFFFFF' : '#FF416C',
+            border: copiedLink ? '1px solid #10B981' : '1px solid #FECDD3',
+            padding: '6px 14px',
             borderRadius: '20px',
-            fontSize: '0.75rem',
+            fontSize: '0.78rem',
             fontWeight: 700,
             cursor: 'pointer',
             transition: 'all 0.2s',
@@ -309,12 +319,12 @@ export default function SpyGamePage() {
         {/* Error Alert */}
         {errorMsg && (
           <div style={{
-            background: 'rgba(225, 29, 72, 0.2)',
-            border: '1px solid #E11D48',
+            background: '#FEF2F2',
+            border: '1px solid #FECACA',
             borderRadius: '12px',
             padding: '12px 16px',
             marginBottom: '16px',
-            color: '#FDA4AF',
+            color: '#DC2626',
             fontSize: '0.85rem',
             display: 'flex',
             alignItems: 'center',
@@ -323,7 +333,7 @@ export default function SpyGamePage() {
             <span>⚠️ {errorMsg}</span>
             <button
               onClick={() => setErrorMsg(null)}
-              style={{ background: 'none', border: 'none', color: '#FDA4AF', cursor: 'pointer', fontSize: '1rem' }}
+              style={{ background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', fontSize: '1rem' }}
             >
               ✕
             </button>
@@ -337,58 +347,66 @@ export default function SpyGamePage() {
             {/* Host Banner */}
             {isHost ? (
               <div style={{
-                background: 'linear-gradient(135deg, rgba(225, 29, 72, 0.2) 0%, rgba(244, 63, 94, 0.05) 100%)',
-                border: '1px solid rgba(225, 29, 72, 0.4)',
-                borderRadius: '16px',
-                padding: '16px',
-                textAlign: 'center'
+                background: 'linear-gradient(135deg, #FFF1F4 0%, #FFF7F5 100%)',
+                border: '1px solid #FECDD3',
+                borderRadius: '18px',
+                padding: '18px',
+                textAlign: 'center',
+                boxShadow: '0 4px 15px rgba(255, 65, 108, 0.06)'
               }}>
-                <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>👑</div>
-                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FDA4AF' }}>
-                  คุณคือ Host ของห้องนี้
+                <div style={{ fontSize: '1.6rem', marginBottom: '4px' }}>👑</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#E11D48' }}>
+                  {room?.roomName ? `คุณคือ Host ห้อง "${room.roomName}"` : 'คุณคือ Host ของห้องนี้'}
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#CBD5E1', marginTop: '4px' }}>
+                <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: '4px' }}>
                   เลือกหมวดหมู่คำศัพท์ด้านล่าง แล้วกดเริ่มเกมเมื่อเพื่อนพร้อม
                 </div>
               </div>
             ) : (
               <div style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '16px',
-                padding: '14px 16px',
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                borderRadius: '18px',
+                padding: '16px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px'
+                gap: '12px',
+                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
               }}>
                 <div style={{ fontSize: '1.8rem' }}>👑</div>
                 <div>
-                  <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>ผู้สร้างห้อง (Host)</div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#F8FAFC' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#64748B' }}>ผู้สร้างห้อง (Host)</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B' }}>
                     {room?.hostName || 'กำลังรอ...'}
                   </div>
+                  {room?.roomName && (
+                    <div style={{ fontSize: '0.75rem', color: '#FF416C', fontWeight: 600, marginTop: '2px' }}>
+                      🌸 ห้อง "{room.roomName}"
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
             {/* Category Selector */}
             <div style={{
-              background: 'rgba(255,255,255,0.03)',
+              background: '#FFFFFF',
               borderRadius: '20px',
               padding: '18px',
-              border: '1px solid rgba(255,255,255,0.08)'
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
             }}>
               <div style={{
                 fontSize: '0.85rem',
                 fontWeight: 700,
-                color: '#94A3B8',
+                color: '#475569',
                 marginBottom: '12px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
               }}>
                 <span>หมวดหมู่คำศัพท์ (Category)</span>
-                {isHost && <span style={{ fontSize: '0.75rem', color: '#E11D48', fontWeight: 600 }}>แตะเพื่อเลือก</span>}
+                {isHost && <span style={{ fontSize: '0.75rem', color: '#FF416C', fontWeight: 600 }}>แตะเพื่อเลือก</span>}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -399,26 +417,23 @@ export default function SpyGamePage() {
                   onClick={() => handleSelectCategory('food')}
                   style={{
                     background: room?.category === 'food'
-                      ? 'linear-gradient(135deg, #E11D48 0%, #BE123C 100%)'
-                      : 'rgba(255,255,255,0.05)',
+                      ? 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)'
+                      : '#F8FAFC',
                     border: room?.category === 'food'
-                      ? '2px solid #FDA4AF'
-                      : '1px solid rgba(255,255,255,0.1)',
+                      ? '2px solid #FF416C'
+                      : '1px solid #E2E8F0',
                     borderRadius: '16px',
-                    padding: '16px 12px',
-                    color: '#FFFFFF',
+                    padding: '20px 12px',
+                    color: room?.category === 'food' ? '#FFFFFF' : '#475569',
                     cursor: isHost ? 'pointer' : 'default',
                     textAlign: 'center',
                     transition: 'all 0.2s',
-                    boxShadow: room?.category === 'food' ? '0 8px 20px rgba(225, 29, 72, 0.35)' : 'none',
+                    boxShadow: room?.category === 'food' ? '0 8px 20px rgba(255, 65, 108, 0.3)' : 'none',
                     transform: room?.category === 'food' ? 'scale(1.02)' : 'scale(1)'
                   }}
                 >
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🍲</div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>อาหาร</div>
-                  <div style={{ fontSize: '0.7rem', color: room?.category === 'food' ? '#FFE4E6' : '#64748B', marginTop: '4px' }}>
-                    ข้าวมันไก่, ชาบู, ส้มตำ ฯลฯ
-                  </div>
+                  <div style={{ fontSize: '2.2rem', marginBottom: '8px' }}>🍲</div>
+                  <div style={{ fontWeight: 800, fontSize: '1rem' }}>อาหาร</div>
                 </button>
 
                 {/* Daily Essentials Category */}
@@ -428,41 +443,39 @@ export default function SpyGamePage() {
                   onClick={() => handleSelectCategory('daily')}
                   style={{
                     background: room?.category === 'daily'
-                      ? 'linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)'
-                      : 'rgba(255,255,255,0.05)',
+                      ? 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)'
+                      : '#F8FAFC',
                     border: room?.category === 'daily'
-                      ? '2px solid #A5B4FC'
-                      : '1px solid rgba(255,255,255,0.1)',
+                      ? '2px solid #FF416C'
+                      : '1px solid #E2E8F0',
                     borderRadius: '16px',
-                    padding: '16px 12px',
-                    color: '#FFFFFF',
+                    padding: '20px 12px',
+                    color: room?.category === 'daily' ? '#FFFFFF' : '#475569',
                     cursor: isHost ? 'pointer' : 'default',
                     textAlign: 'center',
                     transition: 'all 0.2s',
-                    boxShadow: room?.category === 'daily' ? '0 8px 20px rgba(79, 70, 229, 0.35)' : 'none',
+                    boxShadow: room?.category === 'daily' ? '0 8px 20px rgba(255, 65, 108, 0.3)' : 'none',
                     transform: room?.category === 'daily' ? 'scale(1.02)' : 'scale(1)'
                   }}
                 >
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🧴</div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>ของใช้ในชีวิต</div>
-                  <div style={{ fontSize: '0.7rem', color: room?.category === 'daily' ? '#E0E7FF' : '#64748B', marginTop: '4px' }}>
-                    แปรงสีฟัน, สบู่, ช้อนส้อม ฯลฯ
-                  </div>
+                  <div style={{ fontSize: '2.2rem', marginBottom: '8px' }}>🧴</div>
+                  <div style={{ fontWeight: 800, fontSize: '1rem' }}>ของใช้ในชีวิตประจำวัน</div>
                 </button>
               </div>
             </div>
 
             {/* Players in Lobby */}
             <div style={{
-              background: 'rgba(255,255,255,0.03)',
+              background: '#FFFFFF',
               borderRadius: '20px',
               padding: '18px',
-              border: '1px solid rgba(255,255,255,0.08)'
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
             }}>
               <div style={{
                 fontSize: '0.85rem',
                 fontWeight: 700,
-                color: '#94A3B8',
+                color: '#475569',
                 marginBottom: '14px',
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -479,9 +492,9 @@ export default function SpyGamePage() {
                     <div
                       key={p.user_id}
                       style={{
-                        background: isMe ? 'rgba(56, 189, 248, 0.1)' : 'rgba(255,255,255,0.04)',
-                        border: isMe ? '1px solid #38BDF8' : '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: '12px',
+                        background: isMe ? '#FFF1F4' : '#F8FAFC',
+                        border: isMe ? '1px solid #FECDD3' : '1px solid #E2E8F0',
+                        borderRadius: '14px',
                         padding: '10px',
                         display: 'flex',
                         alignItems: 'center',
@@ -493,25 +506,25 @@ export default function SpyGamePage() {
                         width: '34px',
                         height: '34px',
                         borderRadius: '50%',
-                        backgroundColor: '#1E293B',
+                        backgroundColor: '#E2E8F0',
                         backgroundImage: p.picture_url ? `url(${p.picture_url})` : 'none',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '0.9rem',
+                        fontSize: '0.85rem',
                         fontWeight: 700,
-                        color: '#94A3B8',
+                        color: '#64748B',
                         flexShrink: 0
                       }}>
                         {!p.picture_url && p.display_name.charAt(0)}
                       </div>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{
-                          fontSize: '0.8rem',
+                          fontSize: '0.82rem',
                           fontWeight: 700,
-                          color: isMe ? '#38BDF8' : '#F8FAFC',
+                          color: isMe ? '#E11D48' : '#1E293B',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis'
@@ -519,7 +532,7 @@ export default function SpyGamePage() {
                           {p.display_name} {isMe ? '(คุณ)' : ''}
                         </div>
                         {p.is_host && (
-                          <div style={{ fontSize: '0.65rem', color: '#F59E0B', fontWeight: 600 }}>👑 Host</div>
+                          <div style={{ fontSize: '0.65rem', color: '#D97706', fontWeight: 600 }}>👑 Host</div>
                         )}
                       </div>
                     </div>
@@ -536,9 +549,9 @@ export default function SpyGamePage() {
                 disabled={startingGame || players.length < 2}
                 style={{
                   background: players.length < 2
-                    ? 'rgba(255,255,255,0.1)'
-                    : 'linear-gradient(135deg, #E11D48 0%, #BE123C 100%)',
-                  color: players.length < 2 ? '#64748B' : '#FFFFFF',
+                    ? '#E2E8F0'
+                    : 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
+                  color: players.length < 2 ? '#94A3B8' : '#FFFFFF',
                   border: 'none',
                   borderRadius: '16px',
                   padding: '16px',
@@ -546,7 +559,7 @@ export default function SpyGamePage() {
                   fontWeight: 800,
                   cursor: players.length < 2 || startingGame ? 'not-allowed' : 'pointer',
                   width: '100%',
-                  boxShadow: players.length >= 2 ? '0 10px 25px rgba(225, 29, 72, 0.4)' : 'none',
+                  boxShadow: players.length >= 2 ? '0 10px 24px rgba(255, 65, 108, 0.35)' : 'none',
                   transition: 'all 0.2s',
                   display: 'flex',
                   alignItems: 'center',
@@ -562,14 +575,15 @@ export default function SpyGamePage() {
               </button>
             ) : (
               <div style={{
-                background: 'rgba(255,255,255,0.03)',
+                background: '#FFFFFF',
                 borderRadius: '16px',
                 padding: '20px',
                 textAlign: 'center',
-                border: '1px dashed rgba(255,255,255,0.15)'
+                border: '1px dashed #CBD5E1',
+                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
               }}>
-                <div style={{ fontSize: '1.5rem', marginBottom: '8px', animation: 'bounce 2s infinite' }}>⏳</div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#38BDF8' }}>
+                <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>⏳</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B' }}>
                   กำลังรอ Host เริ่มเกม...
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '4px' }}>
@@ -584,22 +598,29 @@ export default function SpyGamePage() {
         {room?.status === 'playing' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
 
-            {/* Category Banner */}
+            {/* Room Name & Category Banner */}
             <div style={{
-              background: 'rgba(255,255,255,0.06)',
-              padding: '6px 16px',
+              background: '#FFFFFF',
+              padding: '8px 18px',
               borderRadius: '20px',
-              fontSize: '0.8rem',
+              fontSize: '0.82rem',
               fontWeight: 700,
-              color: '#38BDF8',
-              border: '1px solid rgba(56, 189, 248, 0.2)',
+              color: '#334155',
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '8px'
             }}>
+              {room?.roomName && (
+                <>
+                  <span style={{ color: '#FF416C' }}>🌸 {room.roomName}</span>
+                  <span style={{ color: '#CBD5E1' }}>•</span>
+                </>
+              )}
               <span>{room?.category === 'daily' ? '🧴 หมวดของใช้ในชีวิตประจำวัน' : '🍲 หมวดอาหาร'}</span>
-              <span>•</span>
-              <span>ผู้เล่น {players.length} คน (มี 1 สายลับ)</span>
+              <span style={{ color: '#CBD5E1' }}>•</span>
+              <span style={{ color: '#64748B' }}>ผู้เล่น {players.length} คน</span>
             </div>
 
             {/* 3D Flip Card Container */}
@@ -632,9 +653,9 @@ export default function SpyGamePage() {
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
                   borderRadius: '24px',
-                  background: 'linear-gradient(145deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
-                  border: '2px solid rgba(56, 189, 248, 0.4)',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(56, 189, 248, 0.1)',
+                  background: 'linear-gradient(145deg, #FF416C 0%, #FF4B2B 100%)',
+                  border: '3px solid #FFFFFF',
+                  boxShadow: '0 20px 45px rgba(255, 65, 108, 0.3), 0 4px 12px rgba(15, 23, 42, 0.08)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -643,7 +664,7 @@ export default function SpyGamePage() {
                   boxSizing: 'border-box'
                 }}>
                   {/* Card Corner Accents */}
-                  <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#38BDF8', opacity: 0.7 }}>
+                  <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'rgba(255,255,255,0.85)', fontWeight: 800 }}>
                     <span>♠</span>
                     <span>UNDERCOVER</span>
                     <span>♠</span>
@@ -652,36 +673,35 @@ export default function SpyGamePage() {
                   {/* Card Center Emblem */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div style={{
-                      width: '100px',
-                      height: '100px',
+                      width: '96px',
+                      height: '96px',
                       borderRadius: '50%',
-                      background: 'radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%)',
-                      border: '2px dashed rgba(56, 189, 248, 0.5)',
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      border: '2px dashed rgba(255, 255, 255, 0.6)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '3rem',
                       marginBottom: '16px',
-                      boxShadow: '0 0 25px rgba(56, 189, 248, 0.2)'
+                      boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)'
                     }}>
                       🕵️‍♂️
                     </div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F8FAFC', letterSpacing: '0.5px' }}>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FFFFFF', letterSpacing: '0.5px' }}>
                       การ์ดคำศัพท์ลับ
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: '#94A3B8', marginTop: '6px' }}>
+                    <div style={{ fontSize: '0.82rem', color: '#FFE4E6', marginTop: '6px' }}>
                       แตะการ์ดเพื่อเปิดดูคำของคุณ
                     </div>
                   </div>
 
                   {/* Card Footer Warning */}
                   <div style={{
-                    background: 'rgba(225, 29, 72, 0.15)',
-                    border: '1px solid rgba(225, 29, 72, 0.3)',
+                    background: 'rgba(0, 0, 0, 0.18)',
                     borderRadius: '12px',
                     padding: '8px 14px',
                     fontSize: '0.75rem',
-                    color: '#FDA4AF',
+                    color: '#FFFFFF',
                     fontWeight: 600,
                     display: 'flex',
                     alignItems: 'center',
@@ -700,9 +720,9 @@ export default function SpyGamePage() {
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
                   borderRadius: '24px',
-                  background: 'linear-gradient(145deg, #1e1b4b 0%, #0f172a 60%, #1e1b4b 100%)',
-                  border: '2px solid #F59E0B',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.6), inset 0 0 30px rgba(245, 158, 11, 0.15)',
+                  background: '#FFFFFF',
+                  border: '3px solid #FF416C',
+                  boxShadow: '0 20px 45px rgba(255, 65, 108, 0.18), 0 4px 12px rgba(15, 23, 42, 0.05)',
                   transform: 'rotateY(180deg)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -717,38 +737,37 @@ export default function SpyGamePage() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    borderBottom: '1px solid rgba(245, 158, 11, 0.2)',
+                    borderBottom: '1px solid #FFE4E6',
                     paddingBottom: '10px'
                   }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#F59E0B' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#FF416C' }}>
                       {room?.category === 'daily' ? '🧴 ของใช้' : '🍲 อาหาร'}
                     </span>
-                    <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
                       คำของคุณ
                     </span>
                   </div>
 
                   {/* Card Front Word Display */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                    <div style={{ fontSize: '0.85rem', color: '#94A3B8', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '12px', fontWeight: 600 }}>
                       คำศัพท์ของคุณคือ
                     </div>
 
                     <div style={{
-                      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(225, 29, 72, 0.2) 100%)',
-                      border: '2px solid #F59E0B',
+                      background: '#FFF1F4',
+                      border: '2px solid #FECDD3',
                       borderRadius: '16px',
                       padding: '20px 16px',
                       width: '100%',
                       boxSizing: 'border-box',
-                      boxShadow: '0 0 25px rgba(245, 158, 11, 0.25)'
+                      boxShadow: '0 4px 15px rgba(255, 65, 108, 0.1)'
                     }}>
                       <div style={{
-                        fontSize: '1.75rem',
+                        fontSize: '1.8rem',
                         fontWeight: 900,
-                        color: '#FFFFFF',
+                        color: '#E11D48',
                         letterSpacing: '1px',
-                        textShadow: '0 2px 10px rgba(0,0,0,0.5)',
                         wordBreak: 'break-word'
                       }}>
                         {myPlayer?.word || 'กำลังรอคำศัพท์...'}
@@ -756,8 +775,8 @@ export default function SpyGamePage() {
                     </div>
 
                     <div style={{
-                      fontSize: '0.75rem',
-                      color: '#CBD5E1',
+                      fontSize: '0.78rem',
+                      color: '#64748B',
                       marginTop: '16px',
                       lineHeight: 1.5,
                       maxWidth: '240px'
@@ -775,9 +794,9 @@ export default function SpyGamePage() {
                       toggleFlip();
                     }}
                     style={{
-                      background: 'rgba(255,255,255,0.1)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      color: '#FFFFFF',
+                      background: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
+                      color: '#475569',
                       borderRadius: '20px',
                       padding: '8px 16px',
                       fontSize: '0.8rem',
@@ -800,22 +819,23 @@ export default function SpyGamePage() {
               แตะที่การ์ดเพื่อ คว่ำ หรือ หงายการ์ด ได้ตลอดเวลา
             </div>
 
-            {/* Game Rules Accordion Box */}
+            {/* Game Rules Box */}
             <div style={{
               width: '100%',
-              background: 'rgba(255,255,255,0.03)',
+              background: '#FFFFFF',
               borderRadius: '16px',
               padding: '16px',
-              border: '1px solid rgba(255,255,255,0.08)'
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
             }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#38BDF8', marginBottom: '8px' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#FF416C', marginBottom: '8px' }}>
                 📋 วิธีการเล่น:
               </div>
               <ol style={{
                 margin: 0,
                 paddingLeft: '20px',
                 fontSize: '0.8rem',
-                color: '#CBD5E1',
+                color: '#475569',
                 lineHeight: 1.6
               }}>
                 <li>ผู้เล่นทุกคนได้คำที่คล้ายกัน แต่มี <strong>1 คนเป็นสายลับ</strong> ที่ได้คำต่างออกไป</li>
@@ -835,12 +855,12 @@ export default function SpyGamePage() {
                     background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                     color: '#FFFFFF',
                     border: 'none',
-                    borderRadius: '14px',
-                    padding: '14px',
+                    borderRadius: '16px',
+                    padding: '16px',
                     fontSize: '1rem',
                     fontWeight: 800,
                     cursor: 'pointer',
-                    boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)',
+                    boxShadow: '0 8px 20px rgba(16, 185, 129, 0.25)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -860,18 +880,23 @@ export default function SpyGamePage() {
             
             {/* Header Result */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(225, 29, 72, 0.2) 100%)',
-              border: '2px solid #F59E0B',
+              background: 'linear-gradient(135deg, #FFF1F4 0%, #FFF7F5 100%)',
+              border: '2px solid #FECDD3',
               borderRadius: '20px',
               padding: '24px 16px',
               textAlign: 'center',
-              boxShadow: '0 10px 30px rgba(245, 158, 11, 0.2)'
+              boxShadow: '0 10px 30px rgba(255, 65, 108, 0.08)'
             }}>
               <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🎉</div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#FFFFFF', margin: '0 0 8px 0' }}>
+              <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#E11D48', margin: '0 0 8px 0' }}>
                 เฉลยผลเกมจับสายลับ!
               </h2>
-              <div style={{ fontSize: '0.85rem', color: '#CBD5E1' }}>
+              {room?.roomName && (
+                <div style={{ fontSize: '0.85rem', color: '#FF416C', fontWeight: 700, marginBottom: '4px' }}>
+                  🌸 ห้อง "{room.roomName}"
+                </div>
+              )}
+              <div style={{ fontSize: '0.85rem', color: '#64748B' }}>
                 ใครกันนะที่เนียนที่สุดในกลุ่ม?
               </div>
             </div>
@@ -880,32 +905,34 @@ export default function SpyGamePage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               {/* Citizens Word */}
               <div style={{
-                background: 'rgba(56, 189, 248, 0.1)',
-                border: '1px solid #38BDF8',
+                background: '#F0FDF4',
+                border: '1px solid #BBF7D0',
                 borderRadius: '16px',
                 padding: '16px',
-                textAlign: 'center'
+                textAlign: 'center',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.05)'
               }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#38BDF8', marginBottom: '6px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#166534', marginBottom: '6px' }}>
                   👥 คำของพลเมือง
                 </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#15803D' }}>
                   {room?.commonWord}
                 </div>
               </div>
 
               {/* Spy Word */}
               <div style={{
-                background: 'rgba(225, 29, 72, 0.15)',
-                border: '1px solid #E11D48',
+                background: '#FFF1F4',
+                border: '1px solid #FECDD3',
                 borderRadius: '16px',
                 padding: '16px',
-                textAlign: 'center'
+                textAlign: 'center',
+                boxShadow: '0 2px 8px rgba(225, 29, 72, 0.05)'
               }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#FDA4AF', marginBottom: '6px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9F1239', marginBottom: '6px' }}>
                   🕵️‍♂️ คำของสายลับ
                 </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#E11D48' }}>
                   {room?.spyWord}
                 </div>
               </div>
@@ -913,12 +940,13 @@ export default function SpyGamePage() {
 
             {/* Players and Roles list */}
             <div style={{
-              background: 'rgba(255,255,255,0.03)',
+              background: '#FFFFFF',
               borderRadius: '20px',
               padding: '18px',
-              border: '1px solid rgba(255,255,255,0.08)'
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
             }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#94A3B8', marginBottom: '14px' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '14px' }}>
                 บทบาทของผู้เล่นทุกคน
               </div>
 
@@ -930,8 +958,8 @@ export default function SpyGamePage() {
                     <div
                       key={p.user_id}
                       style={{
-                        background: isSpy ? 'rgba(225, 29, 72, 0.15)' : 'rgba(255,255,255,0.04)',
-                        border: isSpy ? '1px solid #E11D48' : '1px solid rgba(255,255,255,0.08)',
+                        background: isSpy ? '#FFF1F4' : '#F8FAFC',
+                        border: isSpy ? '1px solid #FECDD3' : '1px solid #E2E8F0',
                         borderRadius: '12px',
                         padding: '12px 14px',
                         display: 'flex',
@@ -944,24 +972,24 @@ export default function SpyGamePage() {
                           width: '36px',
                           height: '36px',
                           borderRadius: '50%',
-                          backgroundColor: '#1E293B',
+                          backgroundColor: '#E2E8F0',
                           backgroundImage: p.picture_url ? `url(${p.picture_url})` : 'none',
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '0.9rem',
+                          fontSize: '0.85rem',
                           fontWeight: 700,
-                          color: '#94A3B8'
+                          color: '#64748B'
                         }}>
                           {!p.picture_url && p.display_name.charAt(0)}
                         </div>
                         <div>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#F8FAFC' }}>
+                          <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1E293B' }}>
                             {p.display_name} {isMe ? '(คุณ)' : ''}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: isSpy ? '#FDA4AF' : '#94A3B8' }}>
+                          <div style={{ fontSize: '0.75rem', color: isSpy ? '#E11D48' : '#64748B' }}>
                             คำที่ได้: {p.word}
                           </div>
                         </div>
@@ -972,9 +1000,9 @@ export default function SpyGamePage() {
                         borderRadius: '12px',
                         fontSize: '0.75rem',
                         fontWeight: 800,
-                        backgroundColor: isSpy ? '#E11D48' : 'rgba(56, 189, 248, 0.15)',
-                        color: isSpy ? '#FFFFFF' : '#38BDF8',
-                        border: isSpy ? 'none' : '1px solid rgba(56, 189, 248, 0.3)'
+                        backgroundColor: isSpy ? '#E11D48' : '#F1F5F9',
+                        color: isSpy ? '#FFFFFF' : '#475569',
+                        border: isSpy ? 'none' : '1px solid #E2E8F0'
                       }}>
                         {isSpy ? '🕵️‍♂️ สายลับ' : '👥 พลเมือง'}
                       </div>
@@ -991,7 +1019,7 @@ export default function SpyGamePage() {
                 onClick={handleReset}
                 style={{
                   width: '100%',
-                  background: 'linear-gradient(135deg, #E11D48 0%, #BE123C 100%)',
+                  background: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '16px',
@@ -999,7 +1027,7 @@ export default function SpyGamePage() {
                   fontSize: '1.05rem',
                   fontWeight: 800,
                   cursor: 'pointer',
-                  boxShadow: '0 8px 20px rgba(225, 29, 72, 0.35)',
+                  boxShadow: '0 8px 24px rgba(255, 65, 108, 0.35)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1009,7 +1037,7 @@ export default function SpyGamePage() {
                 🔄 เล่นรอบใหม่ (ผู้เล่นเดิม)
               </button>
             ) : (
-              <div style={{ textAlign: 'center', color: '#94A3B8', fontSize: '0.85rem' }}>
+              <div style={{ textAlign: 'center', color: '#64748B', fontSize: '0.85rem' }}>
                 กำลังรอ Host เริ่มเล่นรอบใหม่...
               </div>
             )}
@@ -1026,7 +1054,7 @@ export default function SpyGamePage() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.85)',
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
           backdropFilter: 'blur(8px)',
           display: 'flex',
           alignItems: 'center',
@@ -1037,21 +1065,21 @@ export default function SpyGamePage() {
           <form
             onSubmit={handleSaveGuestName}
             style={{
-              background: '#0F172A',
-              border: '1px solid rgba(255,255,255,0.15)',
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
               borderRadius: '24px',
-              padding: '24px',
+              padding: '28px 24px',
               width: '100%',
               maxWidth: '340px',
               textAlign: 'center',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.8)'
+              boxShadow: '0 20px 60px rgba(15, 23, 42, 0.25)'
             }}
           >
             <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🕵️‍♂️</div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#38BDF8', margin: '0 0 6px 0' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: '0 0 6px 0' }}>
               ยินดีต้อนรับสู่เกมจับสายลับ
             </h3>
-            <p style={{ fontSize: '0.85rem', color: '#94A3B8', margin: '0 0 16px 0' }}>
+            <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0 0 18px 0' }}>
               กรุณากรอกชื่อเล่นของคุณเพื่อเข้าร่วมห้อง
             </p>
 
@@ -1065,9 +1093,9 @@ export default function SpyGamePage() {
                 width: '100%',
                 padding: '12px 14px',
                 borderRadius: '12px',
-                border: '1px solid rgba(255,255,255,0.2)',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                color: '#FFFFFF',
+                border: '1px solid #CBD5E1',
+                backgroundColor: '#F8FAFC',
+                color: '#1E293B',
                 fontSize: '1rem',
                 outline: 'none',
                 boxSizing: 'border-box',
@@ -1079,14 +1107,15 @@ export default function SpyGamePage() {
               type="submit"
               style={{
                 width: '100%',
-                background: 'linear-gradient(135deg, #E11D48 0%, #BE123C 100%)',
+                background: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
                 color: '#FFFFFF',
                 border: 'none',
                 borderRadius: '12px',
-                padding: '12px',
+                padding: '14px',
                 fontSize: '1rem',
                 fontWeight: 700,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                boxShadow: '0 6px 18px rgba(255, 65, 108, 0.3)'
               }}
             >
               เข้าห้องเล่นเลย 🎮
