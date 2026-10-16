@@ -1007,8 +1007,10 @@ export default function SpyGamePage() {
                   WebkitBackfaceVisibility: 'hidden',
                   borderRadius: '24px',
                   background: '#FFFFFF',
-                  border: '3px solid #FF416C',
-                  boxShadow: '0 20px 45px rgba(255, 65, 108, 0.18), 0 4px 12px rgba(15, 23, 42, 0.05)',
+                  border: (myPlayer?.isSpy || myPlayer?.is_spy) ? '3px solid #EF4444' : '3px solid #FF416C',
+                  boxShadow: (myPlayer?.isSpy || myPlayer?.is_spy)
+                    ? '0 20px 45px rgba(239, 68, 68, 0.22), 0 4px 12px rgba(15, 23, 42, 0.05)'
+                    : '0 20px 45px rgba(255, 65, 108, 0.18), 0 4px 12px rgba(15, 23, 42, 0.05)',
                   transform: 'rotateY(180deg)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1023,54 +1025,111 @@ export default function SpyGamePage() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    borderBottom: '1px solid #FFE4E6',
+                    borderBottom: (myPlayer?.isSpy || myPlayer?.is_spy) ? '1px solid #FEE2E2' : '1px solid #FFE4E6',
                     paddingBottom: '10px'
                   }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#FF416C' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: (myPlayer?.isSpy || myPlayer?.is_spy) ? '#DC2626' : '#FF416C' }}>
                       {room?.category === 'daily' ? '🧴 ของใช้' : '🍲 อาหาร'}
                     </span>
-                    <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                      คำของคุณ
+                    <span style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      color: (myPlayer?.isSpy || myPlayer?.is_spy) ? '#DC2626' : '#64748B',
+                      background: (myPlayer?.isSpy || myPlayer?.is_spy) ? '#FEE2E2' : 'transparent',
+                      padding: (myPlayer?.isSpy || myPlayer?.is_spy) ? '3px 10px' : '0',
+                      borderRadius: '12px'
+                    }}>
+                      {(myPlayer?.isSpy || myPlayer?.is_spy) ? '🕵️‍♂️ SPY' : 'คำของคุณ'}
                     </span>
                   </div>
 
                   {/* Card Front Word Display */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                    <div style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '12px', fontWeight: 600 }}>
-                      คำศัพท์ของคุณคือ
-                    </div>
+                  {(myPlayer?.isSpy || myPlayer?.is_spy) ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                      <div style={{ fontSize: '0.85rem', color: '#DC2626', marginBottom: '10px', fontWeight: 800 }}>
+                        🕵️‍♂️ คุณคือสายลับ!
+                      </div>
 
-                    <div style={{
-                      background: '#FFF1F4',
-                      border: '2px solid #FECDD3',
-                      borderRadius: '16px',
-                      padding: '20px 16px',
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      boxShadow: '0 4px 15px rgba(255, 65, 108, 0.1)'
-                    }}>
                       <div style={{
-                        fontSize: '1.8rem',
-                        fontWeight: 900,
-                        color: '#E11D48',
-                        letterSpacing: '1px',
-                        wordBreak: 'break-word'
+                        background: 'linear-gradient(135deg, #1E293B, #0F172A)',
+                        border: '2px solid #EF4444',
+                        borderRadius: '16px',
+                        padding: '18px 14px',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        boxShadow: '0 8px 25px rgba(220, 38, 38, 0.25)'
                       }}>
-                        {myPlayer?.word || 'กำลังรอคำศัพท์...'}
+                        <div style={{
+                          fontSize: '1.45rem',
+                          fontWeight: 900,
+                          color: '#F87171',
+                          letterSpacing: '1px',
+                          marginBottom: '4px'
+                        }}>
+                          ไม่มีคำศัพท์ในการ์ด
+                        </div>
+                        <div style={{
+                          fontSize: '0.78rem',
+                          color: '#94A3B8',
+                          fontWeight: 500
+                        }}>
+                          (ไม่มีคำศัพท์ / Blank Spy)
+                        </div>
+                      </div>
+
+                      <div style={{
+                        fontSize: '0.78rem',
+                        color: '#475569',
+                        marginTop: '14px',
+                        lineHeight: 1.5,
+                        maxWidth: '250px',
+                        background: '#FEF2F2',
+                        border: '1px dashed #FCA5A5',
+                        borderRadius: '12px',
+                        padding: '10px 12px'
+                      }}>
+                        🤫 <strong style={{ color: '#DC2626' }}>ภารกิจของคุณ:</strong><br/>
+                        คุณไม่มีคำศัพท์! ตั้งใจฟังคำใบ้ของเพื่อนให้ดี แล้วแกล้งเนียนใบ้ตามอย่าให้ใครจับได้!
                       </div>
                     </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                      <div style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '12px', fontWeight: 600 }}>
+                        คำศัพท์ของคุณคือ
+                      </div>
 
-                    <div style={{
-                      fontSize: '0.78rem',
-                      color: '#64748B',
-                      marginTop: '16px',
-                      lineHeight: 1.5,
-                      maxWidth: '240px'
-                    }}>
-                      🎯 จำคำนี้ไว้ให้ดี!<br/>
-                      ห้ามพูดคำนี้ตรงๆ แต่ให้ใบ้สั้นๆ 1 ประโยค
+                      <div style={{
+                        background: '#FFF1F4',
+                        border: '2px solid #FECDD3',
+                        borderRadius: '16px',
+                        padding: '20px 16px',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        boxShadow: '0 4px 15px rgba(255, 65, 108, 0.1)'
+                      }}>
+                        <div style={{
+                          fontSize: '1.8rem',
+                          fontWeight: 900,
+                          color: '#E11D48',
+                          letterSpacing: '1px',
+                          wordBreak: 'break-word'
+                        }}>
+                          {myPlayer?.word || 'กำลังรอคำศัพท์...'}
+                        </div>
+                      </div>
+
+                      <div style={{
+                        fontSize: '0.78rem',
+                        color: '#64748B',
+                        marginTop: '16px',
+                        lineHeight: 1.5,
+                        maxWidth: '240px'
+                      }}>
+                        🎯 จำคำนี้ไว้ให้ดี!<br/>
+                        ห้ามพูดคำนี้ตรงๆ แต่ให้ใบ้สั้นๆ 1 ประโยค
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Card Front Button to Flip Back */}
                   <button
@@ -1124,8 +1183,8 @@ export default function SpyGamePage() {
                 color: '#475569',
                 lineHeight: 1.6
               }}>
-                <li>ผู้เล่นทุกคนได้คำที่คล้ายกัน แต่มี <strong>1 คนเป็นสายลับ</strong> ที่ได้คำต่างออกไป</li>
-                <li>ผลัดกันพูดใบ้คำของตัวเองคนละ 1 ประโยค (ห้ามพูดคำตรงๆ)</li>
+                <li>ผู้เล่นทุกคนได้คำศัพท์เดียวกัน แต่มี <strong>1 คนเป็นสายลับที่ไม่มีคำศัพท์เลย!</strong></li>
+                <li>ผลัดกันพูดใบ้คำของตัวเองคนละ 1 ประโยค (สายลับต้องแอบฟังเพื่อนแล้วเนียนใบ้ตาม)</li>
                 <li>เมื่อพูดครบ ให้ปรึกษากันแล้วโหวตชี้ตัวคนที่คิดว่าเป็นสายลับ!</li>
               </ol>
             </div>
@@ -1216,10 +1275,10 @@ export default function SpyGamePage() {
                 boxShadow: '0 2px 8px rgba(225, 29, 72, 0.05)'
               }}>
                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9F1239', marginBottom: '6px' }}>
-                  🕵️‍♂️ คำของสายลับ
+                  🕵️‍♂️ สายลับ
                 </div>
                 <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#E11D48' }}>
-                  {room?.spyWord}
+                  {room?.spyWord || 'ไม่มีคำศัพท์ (SPY)'}
                 </div>
               </div>
             </div>
@@ -1276,7 +1335,7 @@ export default function SpyGamePage() {
                             {p.display_name} {isMe ? '(คุณ)' : ''}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: isSpy ? '#E11D48' : '#64748B' }}>
-                            คำที่ได้: {p.word}
+                            {isSpy ? 'ไม่มีคำศัพท์ (SPY)' : `คำที่ได้: ${p.word}`}
                           </div>
                         </div>
                       </div>

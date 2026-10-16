@@ -134,26 +134,25 @@ export const FALLBACK_WORDS: Record<string, [string, string][]> = {
 export function getRandomFallbackWords(category: string): { commonWord: string; spyWord: string } {
   const list = FALLBACK_WORDS[category] || FALLBACK_WORDS.food;
   const pair = list[Math.floor(Math.random() * list.length)];
-  const swap = Math.random() < 0.5;
+  const pick = Math.random() < 0.5 ? pair[0] : pair[1];
   return {
-    commonWord: swap ? pair[1] : pair[0],
-    spyWord: swap ? pair[0] : pair[1],
+    commonWord: pick,
+    spyWord: 'ไม่มีคำศัพท์ (SPY)',
   };
 }
 
 export async function generateSpyWordsWithAI(category: 'food' | 'daily'): Promise<{ commonWord: string; spyWord: string }> {
   const categoryName = category === 'daily' ? 'ของใช้ในชีวิตประจำวัน' : 'อาหาร';
-  const prompt = `คิดคำศัพท์ภาษาไทย 2 คำ ในหมวดหมู่ "${categoryName}" สำหรับเล่นเกมจับสายลับ (Undercover / Spy Game)
+  const prompt = `คิดคำศัพท์ภาษาไทย 1 คำ ในหมวดหมู่ "${categoryName}" สำหรับเล่นเกมจับสายลับ (Undercover / Spy Game โดยผู้เล่นสายลับจะไม่มีคำศัพท์ในการ์ด)
 ข้อกำหนดสำคัญ:
-1. คำ 2 คำนี้ต้องเป็นสิ่งของหรืออาหารประเภทเดียวกันหรือคล้ายคลึงกันมาก (เพื่อให้ผู้เล่นใบ้คำแล้วจับได้ยาก)
-2. เป็นคำที่คนไทยทั่วไปรู้จักดี ชัดเจน สั้นกระชับ ไม่กำกวม
-ตัวอย่างถ้าเป็นหมวดอาหาร: ข้าวมันไก่ กับ ข้าวหมกไก่, หรือ ชาบู กับ หมูกระทะ
-ตัวอย่างถ้าเป็นหมวดของใช้: แปรงสีฟัน กับ ยาสีฟัน, หรือ สบู่เหลว กับ แชมพู
+1. เป็นคำศัพท์ที่เป็นสิ่งของหรืออาหารที่คนไทยทั่วไปรู้จักดี ชัดเจน สั้นกระชับ
+2. สามารถนำไปตั้งคำใบ้ที่น่าสนใจและหลากหลายได้
+ตัวอย่างถ้าเป็นหมวดอาหาร: ข้าวมันไก่, ส้มตำ, ชาบู, ต้มยำกุ้ง, ผัดกะเพรา, หมูกระทะ
+ตัวอย่างถ้าเป็นหมวดของใช้: แปรงสีฟัน, สบู่เหลว, ไดร์เป่าผม, หมอน, นาฬิกาปลุก, แว่นตา
 
 ตอบกลับเป็น JSON เท่านั้น (ห้ามมีคำอธิบายอื่น ห้ามใส่ \`\`\`json):
 {
-  "word1": "คำแรก",
-  "word2": "คำที่สอง"
+  "word": "คำศัพท์ภาษาไทย"
 }`;
 
   try {
@@ -166,11 +165,11 @@ export async function generateSpyWordsWithAI(category: 'food' | 'daily'): Promis
     const res = await fetchGeminiWithFallback(models, [{ parts: [{ text: prompt }] }]);
     let raw = res.rawText.replace(/```json/g, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(raw);
-    if (parsed.word1 && parsed.word2 && parsed.word1.trim() !== parsed.word2.trim()) {
-      const swap = Math.random() < 0.5;
+    const word = parsed.word || parsed.word1;
+    if (word && typeof word === 'string' && word.trim()) {
       return {
-        commonWord: swap ? parsed.word2.trim() : parsed.word1.trim(),
-        spyWord: swap ? parsed.word1.trim() : parsed.word2.trim(),
+        commonWord: word.trim(),
+        spyWord: 'ไม่มีคำศัพท์ (SPY)',
       };
     }
   } catch (err) {
@@ -314,7 +313,7 @@ export async function startSpyGame(
     const playerRef = doc(db, 'spy_game_rooms', cleanRoomId, 'players', player.userId);
     batch.update(playerRef, {
       isSpy,
-      word: isSpy ? spyWord : commonWord,
+      word: isSpy ? '' : commonWord,
       cardViewed: false,
     });
   }
