@@ -44,6 +44,7 @@ export interface SpyRoom {
   commonWord?: string;
   spyWord?: string;
   spyUserId?: string;
+  usedWords?: string[];
   createdAt?: any;
   updatedAt?: any;
   lastActiveAt?: number;
@@ -88,69 +89,91 @@ export async function generatePoeticRoomNameWithAI(): Promise<string> {
   return fallback;
 }
 
-export const FALLBACK_WORDS: Record<string, [string, string][]> = {
+export const FALLBACK_WORDS: Record<string, string[]> = {
   food: [
-    ['ข้าวมันไก่', 'ข้าวหมกไก่'],
-    ['ชาบู', 'หมูกระทะ'],
-    ['ส้มตำไทย', 'ส้มตำปูปลาร้า'],
-    ['ก๋วยเตี๋ยวน้ำตก', 'ก๋วยเตี๋ยวต้มยำ'],
-    ['ผัดกะเพรา', 'ผัดพริกเผา'],
-    ['ชานมไข่มุก', 'ชาเขียวมัทฉะ'],
-    ['พิซซ่า', 'เบอร์เกอร์'],
-    ['ไอศกรีม', 'บิงซู'],
-    ['ข้าวเหนียวมะม่วง', 'ข้าวเหนียวทุเรียน'],
-    ['ต้มยำกุ้ง', 'ต้มข่าไก่'],
-    ['ไก่ทอด', 'หมูทอด'],
-    ['ผัดไทย', 'ผัดซีอิ๊ว'],
-    ['แกงเขียวหวาน', 'แกงเผ็ด'],
-    ['เฟรนช์ฟรายส์', 'มันฝรั่งทอดกรอบ'],
-    ['ซูชิ', 'ซาชิมิ'],
-    ['กาแฟดำ', 'ชาดำเย็น'],
-    ['หมูปิ้ง', 'ไก่ปิ้ง'],
-    ['โรตี', 'เครป'],
+    'ข้าวมันไก่', 'ข้าวหมกไก่', 'ข้าวขาหมู', 'ข้าวผัดกุ้ง', 'ข้าวคลุกกะปิ', 'ข้าวไข่เจียว', 'ข้าวซอย', 'ข้าวต้มปลา',
+    'ส้มตำไทย', 'ส้มตำปูปลาร้า', 'ลาบหมู', 'น้ำตกคอหมูย่าง', 'ตับหวาน', 'ซุปหน่อไม้', 'ยำวุ้นเส้น',
+    'ชาบู', 'หมูกระทะ', 'จิ้มจุ่ม', 'สุกี้ยากี้', 'หมูจุ่ม',
+    'ต้มยำกุ้ง', 'ต้มข่าไก่', 'แกงส้มชะอมกุ้ง', 'แกงเขียวหวานไก่', 'แกงมัสมั่น', 'ต้มแซ่บกระดูกอ่อน', 'แกงจืดเต้าหู้หมูสับ', 'แกงไตปลา',
+    'ผัดกะเพรา', 'ผัดซีอิ๊ว', 'ผัดไทย', 'ราดหน้า', 'ก๋วยเตี๋ยวเรือ', 'ก๋วยเตี๋ยวต้มยำ', 'บะหมี่เกี๊ยวหมูแดง', 'ผัดพริกแกง',
+    'ไก่ทอดหาดใหญ่', 'หมูปิ้ง', 'ไก่ย่าง', 'ทอดมันกุ้ง', 'คอหมูย่าง', 'ปีกไก่ทอด', 'หมูกรอบ', 'แหนมเนือง',
+    'ซูชิ', 'ราเมง', 'ทาโกะยากิ', 'ปิ้งย่างเกาหลี', 'คิมบับ', 'ต๊อกบกกี',
+    'พิซซ่า', 'เบอร์เกอร์', 'เฟรนช์ฟรายส์', 'สเต็ก', 'สปาเกตตีคาโบนาร่า',
+    'ข้าวเหนียวมะม่วง', 'บิงซู', 'ไอศกรีม', 'ชานมไข่มุก', 'โรตี', 'บัวลอย', 'ลอดช่อง', 'ปาท่องโก๋', 'กล้วยทอด', 'เครปญี่ปุ่น',
+    'ทุเรียน', 'มังคุด', 'มะม่วงน้ำปลาหวาน', 'แตงโมปั่น', 'ชาเขียวมัทฉะ', 'กาแฟโบราณ',
   ],
   daily: [
-    ['แปรงสีฟัน', 'ยาสีฟัน'],
-    ['สบู่เหลว', 'แชมพู'],
-    ['ช้อน', 'ส้อม'],
-    ['ผ้าเช็ดตัว', 'ผ้าเช็ดหน้า'],
-    ['พัดลม', 'แอร์'],
-    ['หมอนหนุน', 'หมอนข้าง'],
-    ['แก้วน้ำ', 'กระบอกน้ำ'],
-    ['หวี', 'แปรงผม'],
-    ['กรรไกร', 'คัตเตอร์'],
-    ['สมุด', 'กระดาษ'],
-    ['ปากกา', 'ดินสอ'],
-    ['รองเท้าแตะ', 'รองเท้าผ้าใบ'],
-    ['ร่ม', 'เสื้อกันฝน'],
-    ['กระเป๋าเป้', 'กระเป๋าสะพาย'],
-    ['นาฬิกาข้อมือ', 'นาฬิกาปลุก'],
-    ['แว่นตา', 'แว่นกันแดด'],
-    ['เตารีด', 'ไดร์เป่าผม'],
-    ['ทิชชู่เปียก', 'ทิชชู่แห้ง'],
+    'แปรงสีฟัน', 'ยาสีฟัน', 'สบู่เหลว', 'ยาสระผม', 'ครีมนวดผม', 'โฟมล้างหน้า', 'มีดโกนหนวด', 'ไหมขัดฟัน', 'น้ำยาบ้วนปาก',
+    'ผ้าเช็ดตัว', 'ผ้าเช็ดหน้า', 'หมวกคลุมผม', 'ไดร์เป่าผม', 'หวี', 'กรรไกรตัดเล็บ', 'ครีมทาผิว', 'น้ำหอม', 'แป้งฝุ่น',
+    'หมอนหนุน', 'หมอนข้าง', 'ผ้าห่ม', 'ผ้าปูที่นอน', 'เตียงนอน', 'นาฬิกาปลุก', 'โคมไฟหัวเตียง',
+    'แว่นตา', 'แว่นกันแดด', 'นาฬิกาข้อมือ', 'กระเป๋าสะพาย', 'กระเป๋าเป้', 'กระเป๋าสตางค์', 'หมวกแก๊ป', 'ร่มพับ', 'เสื้อกันฝน', 'รองเท้าแตะ', 'รองเท้าผ้าใบ',
+    'ช้อนส้อม', 'ตะเกียบ', 'จานชาม', 'แก้วน้ำ', 'กระบอกน้ำเก็บความเย็น', 'หลอดดูดน้ำ', 'มีดทำครัว', 'เขียง', 'กระทะ', 'หม้อหุงข้าว', 'กาต้มน้ำร้อน', 'ไมโครเวฟ',
+    'กรรไกร', 'คัตเตอร์', 'สมุดโน้ต', 'ปากกา', 'ดินสอ', 'ยางลบ', 'สก็อตเทป', 'แม็กเย็บกระดาษ', 'ไม้บรรทัด',
+    'โทรศัพท์มือถือ', 'สายชาร์จ', 'พาวเวอร์แบงค์', 'หูฟัง', 'แล็ปท็อป', 'รีโมททีวี', 'พัดลม', 'เครื่องฟอกอากาศ', 'ปลั๊กพ่วง',
+    'ไม้กวาด', 'ที่โกยผง', 'ไม้ถูพื้น', 'น้ำยาล้างจาน', 'ผงซักฟอก', 'น้ำยาปรับผ้านุ่ม', 'ถังขยะ', 'ทิชชู่เปียก', 'ทิชชู่ม้วน',
   ],
 };
 
-export function getRandomFallbackWords(category: string): { commonWord: string; spyWord: string } {
+export const SUB_THEMES: Record<string, string[]> = {
+  food: [
+    'อาหารจานเดียว / เมนูตามสั่งยอดนิยม',
+    'เมนูเส้น / ก๋วยเตี๋ยว / บะหมี่ / สปาเกตตี',
+    'สตรีทฟู้ด / เมนูของว่าง / ของทอด / ปิ้งย่างเสียบไม้',
+    'อาหารอีสานรสแซ่บ / ซีฟู้ดทะเล',
+    'เมนูต้ม / ซุป / แกงไทยรสเข้มข้น',
+    'ของหวาน / ขนมไทย / เบเกอรี่ / ไอศกรีม',
+    'เครื่องดื่ม / ชา / กาแฟ / ชานม / น้ำปั่น',
+    'อาหารนานาชาติยอดฮิตในไทย (ญี่ปุ่น, เกาหลี, ฝรั่ง)',
+    'อาหารเช้า / ของกินเล่นตามตลาดนัด',
+  ],
+  daily: [
+    'ของใช้ในห้องน้ำ / ผลิตภัณฑ์ทำความสะอาดร่างกาย',
+    'ของใช้ในห้องนอน / เครื่องนอนเพื่อการพักผ่อน',
+    'เครื่องเขียน / อุปกรณ์บนโต๊ะทำงานหรือห้องเรียน',
+    'เครื่องใช้ไฟฟ้าขนาดเล็กหรือแก็ดเจ็ตในบ้าน',
+    'ของใช้ในครัว / บนโต๊ะอาหาร',
+    'ของใช้พกติดตัว / ของสำคัญในกระเป๋าสะพาย',
+    'เครื่องแต่งกาย / รองเท้า / เครื่องประดับ',
+    'อุปกรณ์ทำความสะอาดบ้าน / ซักรีด',
+    'แกดเจ็ต / อุปกรณ์อิเล็กทรอนิกส์ส่วนบุคคล',
+  ],
+};
+
+export function getRandomFallbackWords(category: string, usedWords: string[] = []): { commonWord: string; spyWord: string } {
   const list = FALLBACK_WORDS[category] || FALLBACK_WORDS.food;
-  const pair = list[Math.floor(Math.random() * list.length)];
-  const pick = Math.random() < 0.5 ? pair[0] : pair[1];
+  const available = list.filter((w) => !usedWords.includes(w));
+  const pool = available.length > 0 ? available : list;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
   return {
     commonWord: pick,
     spyWord: 'ไม่มีคำศัพท์ (SPY)',
   };
 }
 
-export async function generateSpyWordsWithAI(category: 'food' | 'daily'): Promise<{ commonWord: string; spyWord: string }> {
+export async function generateSpyWordsWithAI(
+  category: 'food' | 'daily',
+  usedWords: string[] = []
+): Promise<{ commonWord: string; spyWord: string }> {
   const categoryName = category === 'daily' ? 'ของใช้ในชีวิตประจำวัน' : 'อาหาร';
-  const prompt = `คิดคำศัพท์ภาษาไทย 1 คำ ในหมวดหมู่ "${categoryName}" สำหรับเล่นเกมจับสายลับ (Undercover / Spy Game โดยผู้เล่นสายลับจะไม่มีคำศัพท์ในการ์ด)
-ข้อกำหนดสำคัญ:
-1. เป็นคำศัพท์ที่เป็นสิ่งของหรืออาหารที่คนไทยทั่วไปรู้จักดี ชัดเจน สั้นกระชับ
-2. สามารถนำไปตั้งคำใบ้ที่น่าสนใจและหลากหลายได้
-ตัวอย่างถ้าเป็นหมวดอาหาร: ข้าวมันไก่, ส้มตำ, ชาบู, ต้มยำกุ้ง, ผัดกะเพรา, หมูกระทะ
-ตัวอย่างถ้าเป็นหมวดของใช้: แปรงสีฟัน, สบู่เหลว, ไดร์เป่าผม, หมอน, นาฬิกาปลุก, แว่นตา
+  const subThemes = SUB_THEMES[category] || SUB_THEMES.food;
+  const randomTheme = subThemes[Math.floor(Math.random() * subThemes.length)];
+  const randomSeed = Math.floor(Math.random() * 1000000);
 
-ตอบกลับเป็น JSON เท่านั้น (ห้ามมีคำอธิบายอื่น ห้ามใส่ \`\`\`json):
+  const excludePrompt = usedWords.length > 0
+    ? `\nข้อห้ามสำคัญที่สุด: ห้ามสุ่มหรือเลือกคำต่อไปนี้เด็ดขาดเพราะเพิ่งเล่นไปแล้ว: [${usedWords.slice(-30).join(', ')}]`
+    : '';
+
+  const prompt = `คิดคำศัพท์ภาษาไทย 1 คำ ในหมวดหมู่ "${categoryName}" เพื่อใช้เล่นเกมจับสายลับ (Undercover Game)
+จุดเน้นประเภทของรอบนี้: "${randomTheme}"
+(Random Seed ID: ${randomSeed})
+${excludePrompt}
+
+ข้อกำหนดและเกณฑ์การเลือก:
+1. ต้องเป็นคำศัพท์ภาษาไทยที่คนทั่วไปรู้จักคุ้นเคยเป็นอย่างดี (ความยาว 1-4 พยางค์)
+2. มีเอกลักษณ์เฉพาะตัว ชัดเจน ไม่กำกวม เพื่อให้ผู้เล่นนำไปคิดคำใบ้ได้สนุกและหลากหลาย
+3. ห้ามซ้ำกับคำที่ระบุในข้อห้ามด้านบนอย่างเด็ดขาด และขอคำที่สดใหม่ แปลกใหม่ ไม่จำเจ
+
+ตอบกลับเป็นรูปแบบ JSON เท่านั้น (ห้ามมี markdown หรือคำอธิบายใดๆ ทั้งสิ้น):
 {
   "word": "คำศัพท์ภาษาไทย"
 }`;
@@ -160,15 +183,23 @@ export async function generateSpyWordsWithAI(category: 'food' | 'daily'): Promis
       'gemini-3.5-flash-lite',
       'gemini-2.5-flash-lite',
       'gemini-2.5-flash',
+      'gemini-2.0-flash',
       'gemini-1.5-flash',
     ];
-    const res = await fetchGeminiWithFallback(models, [{ parts: [{ text: prompt }] }]);
+    const res = await fetchGeminiWithFallback(
+      models,
+      [{ parts: [{ text: prompt }] }],
+      {
+        temperature: 1.0,
+        topP: 0.95,
+      }
+    );
     let raw = res.rawText.replace(/```json/g, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(raw);
-    const word = parsed.word || parsed.word1;
-    if (word && typeof word === 'string' && word.trim()) {
+    const word = (parsed.word || parsed.word1 || '').trim();
+    if (word && typeof word === 'string' && !usedWords.includes(word)) {
       return {
-        commonWord: word.trim(),
+        commonWord: word,
         spyWord: 'ไม่มีคำศัพท์ (SPY)',
       };
     }
@@ -176,7 +207,7 @@ export async function generateSpyWordsWithAI(category: 'food' | 'daily'): Promis
     console.warn('[SpyGame] Gemini generation failed, using fallback list:', err);
   }
 
-  return getRandomFallbackWords(category);
+  return getRandomFallbackWords(category, usedWords);
 }
 
 /**
@@ -288,7 +319,14 @@ export async function startSpyGame(
   }
 
   const cleanRoomId = roomId.trim().toLowerCase();
-  const { commonWord, spyWord } = await generateSpyWordsWithAI(category);
+  const roomRef = doc(db, 'spy_game_rooms', cleanRoomId);
+  const roomSnap = await getDoc(roomRef);
+  const currentRoomData = roomSnap.data();
+  const existingUsedWords: string[] = Array.isArray(currentRoomData?.usedWords)
+    ? currentRoomData.usedWords
+    : [];
+
+  const { commonWord, spyWord } = await generateSpyWordsWithAI(category, existingUsedWords);
 
   // Pick random spy
   const spyIndex = Math.floor(Math.random() * players.length);
@@ -296,14 +334,16 @@ export async function startSpyGame(
 
   const batch = writeBatch(db);
 
-  // Update room
-  const roomRef = doc(db, 'spy_game_rooms', cleanRoomId);
+  // Update room with new word and keep history of last 50 used words to prevent repeats
+  const updatedUsedWords = [...existingUsedWords.slice(-50), commonWord];
+
   batch.update(roomRef, {
     status: 'playing',
     category,
     commonWord,
     spyWord,
     spyUserId: spyPlayer.userId,
+    usedWords: updatedUsedWords,
     updatedAt: serverTimestamp(),
   });
 

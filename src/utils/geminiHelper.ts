@@ -9,7 +9,8 @@ export interface GeminiResponse {
 
 export async function fetchGeminiWithFallback(
   model: string | string[],
-  contents: any[]
+  contents: any[],
+  generationConfig?: any
 ): Promise<GeminiResponse> {
   const models = Array.isArray(model) ? model : [model];
   let apiKeys: string[] = [];
@@ -56,7 +57,10 @@ export async function fetchGeminiWithFallback(
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ contents }),
+            body: JSON.stringify({
+              contents,
+              ...(generationConfig ? { generationConfig } : {}),
+            }),
             signal: controller.signal,
           });
         } catch (fetchErr: any) {
