@@ -46,6 +46,9 @@ service cloud.firestore {
     match /used_slips/{document} {
       allow read, write: if true;
     }
+    match /spy_game_rooms/{document=**} {
+      allow read, write: if true;
+    }
     match /system_configs/{document} {
       allow read: if true;
       allow write: if false;
