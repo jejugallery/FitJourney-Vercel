@@ -14,8 +14,19 @@ import {
   revealSpyGame,
   resetSpyGame,
   leaveSpyGameRoom,
-  closeSpyGameRoom,
 } from '../services/spyGameService';
+
+interface ModalDialogConfig {
+  isOpen: boolean;
+  type?: 'confirm' | 'alert' | 'danger';
+  icon?: string;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm?: () => void;
+  onCancel?: () => void;
+}
 
 export default function SpyGamePage() {
   const navigate = useNavigate();
@@ -58,6 +69,72 @@ export default function SpyGamePage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [hasLeft, setHasLeft] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+
+  // Custom FitJourney Themed Pop-up Dialog State
+  const [dialog, setDialog] = useState<ModalDialogConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+  });
+
+  const showConfirm = ({
+    title,
+    message,
+    icon = '❓',
+    type = 'confirm',
+    confirmText = 'ยืนยัน',
+    cancelText = 'ยกเลิก',
+    onConfirm,
+  }: {
+    title: string;
+    message: string;
+    icon?: string;
+    type?: 'confirm' | 'danger';
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+  }) => {
+    setDialog({
+      isOpen: true,
+      type,
+      icon,
+      title,
+      message,
+      confirmText,
+      cancelText,
+      onConfirm: () => {
+        setDialog((prev) => ({ ...prev, isOpen: false }));
+        onConfirm();
+      },
+      onCancel: () => {
+        setDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
+  const showAlert = ({
+    title,
+    message,
+    icon = '⚠️',
+    confirmText = 'ตกลง',
+  }: {
+    title: string;
+    message: string;
+    icon?: string;
+    confirmText?: string;
+  }) => {
+    setDialog({
+      isOpen: true,
+      type: 'alert',
+      icon,
+      title,
+      message,
+      confirmText,
+      onConfirm: () => {
+        setDialog((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
 
   // Card Flip State
   const [isFlipped, setIsFlipped] = useState(false);
@@ -151,34 +228,58 @@ export default function SpyGamePage() {
     try {
       await updateSpyRoomCategory(roomId, category);
     } catch (err: any) {
-      alert(err.message || 'เกิดข้อผิดพลาดในการเปลี่ยนหมวดหมู่');
+      showAlert({
+        title: 'เปลี่ยนหมวดหมู่ไม่สำเร็จ',
+        message: err.message || 'เกิดข้อผิดพลาดในการเปลี่ยนหมวดหมู่',
+        icon: '⚠️',
+      });
     }
   };
 
   const handleStartGame = async () => {
     if (!isHost || !roomId) return;
     if (players.length < 2) {
-      alert('ต้องการผู้เล่นอย่างน้อย 2 คนขึ้นไปเพื่อเริ่มเกม (แนะนำ 3 คนขึ้นไป)');
+      showAlert({
+        title: 'ต้องการผู้เล่นเพิ่ม',
+        message: 'ต้องการผู้เล่นอย่างน้อย 2 คนขึ้นไปเพื่อเริ่มเกม (แนะนำ 3 คนขึ้นไป)',
+        icon: '👥',
+      });
       return;
     }
     setStartingGame(true);
     try {
       await startSpyGame(roomId, room?.category || 'food', players);
     } catch (err: any) {
-      alert(err.message || 'ไม่สามารถเริ่มเกมได้');
+      showAlert({
+        title: 'เริ่มเกมไม่สำเร็จ',
+        message: err.message || 'ไม่สามารถเริ่มเกมได้ กรุณาลองใหม่อีกครั้ง',
+        icon: '⚠️',
+      });
     } finally {
       setStartingGame(false);
     }
   };
 
-  const handleReveal = async () => {
+  const handleReveal = () => {
     if (!isHost || !roomId) return;
-    if (!window.confirm('คุณต้องการเฉลยสายลับและจบเกมรอบนี้ใช่หรือไม่?')) return;
-    try {
-      await revealSpyGame(roomId);
-    } catch (err: any) {
-      alert(err.message || 'ไม่สามารถเฉลยผลได้');
-    }
+    showConfirm({
+      title: 'เฉลยสายลับ',
+      message: 'คุณต้องการเฉลยสายลับและจบเกมรอบนี้ใช่หรือไม่?',
+      icon: '🔍',
+      confirmText: 'เฉลยเลย',
+      cancelText: 'เล่นต่อ',
+      onConfirm: async () => {
+        try {
+          await revealSpyGame(roomId);
+        } catch (err: any) {
+          showAlert({
+            title: 'เฉลยผลไม่สำเร็จ',
+            message: err.message || 'ไม่สามารถเฉลยผลได้',
+            icon: '⚠️',
+          });
+        }
+      },
+    });
   };
 
   const handleReset = async () => {
@@ -187,7 +288,11 @@ export default function SpyGamePage() {
       await resetSpyGame(roomId, players);
       setIsFlipped(false);
     } catch (err: any) {
-      alert(err.message || 'ไม่สามารถเริ่มรอบใหม่ได้');
+      showAlert({
+        title: 'เกิดข้อผิดพลาด',
+        message: err.message || 'ไม่สามารถเริ่มรอบใหม่ได้',
+        icon: '⚠️',
+      });
     }
   };
 
@@ -202,32 +307,27 @@ export default function SpyGamePage() {
     }
   };
 
-  const handleLeaveRoom = async () => {
+  const handleExitGame = () => {
     if (!roomId || !activeUserId || isExiting) return;
-    if (!window.confirm('คุณต้องการออกจากห้องเกมนี้ใช่หรือไม่?')) return;
-    setIsExiting(true);
-    setHasLeft(true);
-    try {
-      await leaveSpyGameRoom(roomId, activeUserId, players);
-    } catch (err: any) {
-      console.error('Error leaving room:', err);
-    } finally {
-      setIsExiting(false);
-    }
-  };
-
-  const handleCloseRoom = async () => {
-    if (!isHost || !roomId || isExiting) return;
-    if (!window.confirm('คุณต้องการปิดห้องนี้และลบเกมใช่หรือไม่?\nผู้เล่นทุกคนจะออกจากห้องทันที')) return;
-    setIsExiting(true);
-    setHasLeft(true);
-    try {
-      await closeSpyGameRoom(roomId);
-    } catch (err: any) {
-      console.error('Error closing room:', err);
-    } finally {
-      setIsExiting(false);
-    }
+    showConfirm({
+      title: 'ออกจากเกม',
+      message: 'คุณต้องการออกจากเกมใช่หรือไม่?',
+      icon: '🚪',
+      type: 'danger',
+      confirmText: 'ออกจากเกม',
+      cancelText: 'อยู่ต่อ',
+      onConfirm: async () => {
+        setIsExiting(true);
+        setHasLeft(true);
+        try {
+          await leaveSpyGameRoom(roomId, activeUserId, players);
+        } catch (err: any) {
+          console.error('Error leaving room:', err);
+        } finally {
+          setIsExiting(false);
+        }
+      },
+    });
   };
 
   const handleExitToHome = () => {
@@ -334,12 +434,12 @@ export default function SpyGamePage() {
           {hasLeft ? '🚪' : '🔒'}
         </div>
         <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1E293B', marginBottom: '8px' }}>
-          {hasLeft ? 'คุณออกจากห้องแล้ว' : 'ห้องนี้ถูกปิดแล้ว'}
+          {hasLeft ? 'คุณออกจากเกมแล้ว' : 'ห้องนี้ถูกปิดแล้ว'}
         </h2>
         <p style={{ color: '#64748B', fontSize: '0.92rem', maxWidth: '320px', lineHeight: 1.6, marginBottom: '28px' }}>
           {hasLeft
-            ? 'คุณได้ออกจากห้องเกมเรียบร้อยแล้ว ขอบคุณที่มาร่วมสนุกกับเพื่อน ๆ'
-            : 'Host ได้ทำการปิดห้องเกมนี้แล้ว หรือห้องเกมสิ้นสุดลงแล้ว'}
+            ? 'คุณได้ออกจากเกมเรียบร้อยแล้ว ขอบคุณที่มาร่วมสนุกกับเพื่อน ๆ'
+            : 'ห้องเกมนี้ถูกปิดแล้ว หรือเกมสิ้นสุดลงแล้ว'}
         </p>
         <button
           onClick={handleExitToHome}
@@ -685,19 +785,22 @@ export default function SpyGamePage() {
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
                   <button
                     type="button"
-                    onClick={handleCloseRoom}
+                    onClick={handleExitGame}
                     disabled={isExiting}
                     style={{
                       background: 'none',
                       border: 'none',
                       color: '#94A3B8',
-                      fontSize: '0.82rem',
+                      fontSize: '0.85rem',
                       cursor: isExiting ? 'not-allowed' : 'pointer',
-                      padding: '6px 12px',
-                      textDecoration: 'underline'
+                      padding: '8px 16px',
+                      textDecoration: 'underline',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
                     }}
                   >
-                    ✕ ปิดห้องนี้ (ลบห้องและจบเกม)
+                    🚪 ออกจากเกม
                   </button>
                 </div>
               </div>
@@ -722,19 +825,22 @@ export default function SpyGamePage() {
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
                   <button
                     type="button"
-                    onClick={handleLeaveRoom}
+                    onClick={handleExitGame}
                     disabled={isExiting}
                     style={{
                       background: 'none',
                       border: 'none',
                       color: '#94A3B8',
-                      fontSize: '0.82rem',
+                      fontSize: '0.85rem',
                       cursor: isExiting ? 'not-allowed' : 'pointer',
-                      padding: '6px 12px',
-                      textDecoration: 'underline'
+                      padding: '8px 16px',
+                      textDecoration: 'underline',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
                     }}
                   >
-                    🚪 ออกจากห้องนี้
+                    🚪 ออกจากเกม
                   </button>
                 </div>
               </div>
@@ -1188,7 +1294,7 @@ export default function SpyGamePage() {
                 </button>
                 <button
                   type="button"
-                  onClick={handleCloseRoom}
+                  onClick={handleExitGame}
                   disabled={isExiting}
                   style={{
                     width: '100%',
@@ -1206,7 +1312,7 @@ export default function SpyGamePage() {
                     gap: '8px'
                   }}
                 >
-                  ✕ ปิดห้องนี้ (จบเกมและลบห้อง)
+                  🚪 ออกจากเกม
                 </button>
               </div>
             ) : (
@@ -1216,7 +1322,7 @@ export default function SpyGamePage() {
                 </div>
                 <button
                   type="button"
-                  onClick={handleLeaveRoom}
+                  onClick={handleExitGame}
                   disabled={isExiting}
                   style={{
                     width: '100%',
@@ -1234,7 +1340,7 @@ export default function SpyGamePage() {
                     gap: '8px'
                   }}
                 >
-                  🚪 ออกจากห้อง
+                  🚪 ออกจากเกม
                 </button>
               </div>
             )}
@@ -1318,6 +1424,142 @@ export default function SpyGamePage() {
               เข้าห้องเล่นเลย 🎮
             </button>
           </form>
+        </div>
+      )}
+
+      {/* FitJourney Themed Modal / Alert Pop-up */}
+      {dialog.isOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          zIndex: 1000,
+          animation: 'fadeInDialog 0.2s ease-out'
+        }}>
+          <div style={{
+            background: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: '24px',
+            padding: '28px 24px',
+            width: '100%',
+            maxWidth: '340px',
+            textAlign: 'center',
+            boxShadow: '0 20px 60px rgba(15, 23, 42, 0.22)',
+            boxSizing: 'border-box',
+            animation: 'scaleUpDialog 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}>
+            {/* Modal Icon Badge */}
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              backgroundColor: dialog.type === 'danger' ? '#FEF2F2' : '#FFF1F4',
+              border: dialog.type === 'danger' ? '1px solid #FECACA' : '1px solid #FECDD3',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2rem',
+              margin: '0 auto 16px auto',
+              boxShadow: dialog.type === 'danger'
+                ? '0 6px 20px rgba(239, 68, 68, 0.15)'
+                : '0 6px 20px rgba(255, 65, 108, 0.15)'
+            }}>
+              {dialog.icon || (dialog.type === 'danger' ? '⚠️' : '🌸')}
+            </div>
+
+            {/* Modal Title */}
+            <h3 style={{
+              fontSize: '1.25rem',
+              fontWeight: 800,
+              color: '#1E293B',
+              margin: '0 0 8px 0',
+              letterSpacing: '-0.2px'
+            }}>
+              {dialog.title}
+            </h3>
+
+            {/* Modal Message */}
+            <p style={{
+              fontSize: '0.9rem',
+              color: '#64748B',
+              lineHeight: 1.6,
+              margin: '0 0 24px 0',
+              whiteSpace: 'pre-line'
+            }}>
+              {dialog.message}
+            </p>
+
+            {/* Modal Action Buttons */}
+            <div style={{
+              display: 'flex',
+              gap: '10px',
+              justifyContent: 'center'
+            }}>
+              {dialog.type !== 'alert' && (
+                <button
+                  type="button"
+                  onClick={dialog.onCancel}
+                  style={{
+                    flex: 1,
+                    background: '#F1F5F9',
+                    color: '#64748B',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '14px',
+                    padding: '13px',
+                    fontSize: '0.95rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {dialog.cancelText || 'ยกเลิก'}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={dialog.onConfirm}
+                style={{
+                  flex: 1,
+                  background: dialog.type === 'danger'
+                    ? 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
+                    : 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '14px',
+                  padding: '13px',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: dialog.type === 'danger'
+                    ? '0 6px 18px rgba(239, 68, 68, 0.3)'
+                    : '0 6px 18px rgba(255, 65, 108, 0.3)',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {dialog.confirmText || 'ตกลง'}
+              </button>
+            </div>
+          </div>
+          <style>{`
+            @keyframes fadeInDialog {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes scaleUpDialog {
+              from { opacity: 0; transform: scale(0.92); }
+              to { opacity: 1; transform: scale(1); }
+            }
+          `}</style>
         </div>
       )}
     </div>
