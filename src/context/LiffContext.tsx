@@ -36,9 +36,9 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initLiff = async (isRetry = false) => {
+      const path = window.location.pathname;
       try {
         const urlParams = new URLSearchParams(window.location.search);
-        const path = window.location.pathname;
 
         // LINE's LIFF apps are configured with these production endpoints:
         // SHARE_KNOWLEDGE (IctOVPHw) -> /shareKnowledge
@@ -73,6 +73,11 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await liff.init({ liffId: LIFF_ID });
         
         if (!liff.isLoggedIn()) {
+          if (path.startsWith('/spy-game')) {
+            // Allow guest access without forcing LINE login
+            setLoading(false);
+            return;
+          }
           liff.login({ redirectUri: window.location.href });
           return;
         }
@@ -87,6 +92,12 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("LIFF Init Error:", err);
         const errMsg = err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
         
+        if (path.startsWith('/spy-game')) {
+          // Allow spy game guest mode to proceed smoothly even if LIFF fails in external browser
+          setLoading(false);
+          return;
+        }
+
         if (!isRetry && (errMsg.includes("revoked") || errMsg.includes("expired") || errMsg.includes("token") || errMsg.includes("Revoked"))) {
           console.warn("LIFF Access token revoked/expired. Clearing storage and retrying...");
           const keysToRemove: string[] = [];

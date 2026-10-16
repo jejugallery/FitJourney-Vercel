@@ -50,7 +50,6 @@ export default function SpyGamePage() {
     }
     return id;
   });
-  const [showNameModal, setShowNameModal] = useState(false);
   const [tempName, setTempName] = useState('');
 
   // Active user identity
@@ -141,13 +140,6 @@ export default function SpyGamePage() {
 
   const prevStatusRef = useRef<string>('waiting');
 
-  // Trigger name prompt if not logged in LINE and no guest name
-  useEffect(() => {
-    if (!liffLoading && !profile && !guestName) {
-      setShowNameModal(true);
-    }
-  }, [liffLoading, profile, guestName]);
-
   // Realtime Firebase Firestore subscriptions
   useEffect(() => {
     if (!roomId || liffLoading || !activeDisplayName) return;
@@ -212,7 +204,6 @@ export default function SpyGamePage() {
     const trimmed = tempName.trim();
     setGuestName(trimmed);
     localStorage.setItem('spy_guest_name', trimmed);
-    setShowNameModal(false);
   };
 
   const handleCopyLink = () => {
@@ -364,6 +355,91 @@ export default function SpyGamePage() {
         <p style={{ color: '#64748B', fontSize: '0.95rem', maxWidth: '320px', lineHeight: 1.6, marginBottom: '24px' }}>
           กรุณาเข้าห้องเกมผ่านลิงก์ในไลน์ หรือพิมพ์คำว่า <strong>"จับสายลับ"</strong> ในแชทไลน์กลุ่มเพื่อรับลิงก์เข้าห้อง
         </p>
+      </div>
+    );
+  }
+
+  // Guest Name Prompt Screen if user has no LINE profile and no guest name yet
+  if (!liffLoading && !activeDisplayName) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#F8FAFC',
+        backgroundImage: 'radial-gradient(circle at top right, rgba(255,65,108,0.06), transparent 45%), radial-gradient(circle at bottom left, rgba(255,75,43,0.06), transparent 45%)',
+        color: '#1E293B',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        fontFamily: 'Inter, system-ui, sans-serif'
+      }}>
+        <form
+          onSubmit={handleSaveGuestName}
+          style={{
+            background: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: '24px',
+            padding: '32px 24px',
+            width: '100%',
+            maxWidth: '350px',
+            textAlign: 'center',
+            boxShadow: '0 20px 60px rgba(15, 23, 42, 0.12)'
+          }}
+        >
+          <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🕵️‍♂️</div>
+          <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#1E293B', margin: '0 0 6px 0' }}>
+            เข้าเล่นเกมจับสายลับ
+          </h2>
+          {initialRoomName && (
+            <p style={{ color: '#FF416C', fontSize: '0.88rem', fontWeight: 700, margin: '0 0 12px 0' }}>
+              🌸 ห้อง "{initialRoomName}"
+            </p>
+          )}
+          <p style={{ fontSize: '0.88rem', color: '#64748B', margin: '0 0 20px 0', lineHeight: 1.5 }}>
+            กรุณาตั้งชื่อเล่นของคุณเพื่อเข้าห้องเกม
+          </p>
+
+          <input
+            type="text"
+            required
+            autoFocus
+            maxLength={20}
+            placeholder="เช่น มังกร, เจมส์, แพรว"
+            value={tempName}
+            onChange={(e) => setTempName(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '14px 16px',
+              borderRadius: '14px',
+              border: '2px solid #E2E8F0',
+              backgroundColor: '#F8FAFC',
+              color: '#1E293B',
+              fontSize: '1rem',
+              fontWeight: 600,
+              outline: 'none',
+              boxSizing: 'border-box',
+              marginBottom: '16px',
+            }}
+          />
+
+          <button
+            type="submit"
+            style={{
+              width: '100%',
+              background: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '14px',
+              padding: '14px',
+              fontSize: '1rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 8px 24px rgba(255, 65, 108, 0.3)'
+            }}
+          >
+            เข้าห้องเล่นเลย 🎮
+          </button>
+        </form>
       </div>
     );
   }
@@ -1304,84 +1380,6 @@ export default function SpyGamePage() {
         )}
 
       </main>
-
-      {/* Guest Name Modal (If opened outside LINE / without profile) */}
-      {showNameModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.65)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px',
-          zIndex: 100
-        }}>
-          <form
-            onSubmit={handleSaveGuestName}
-            style={{
-              background: '#FFFFFF',
-              border: '1px solid #E2E8F0',
-              borderRadius: '24px',
-              padding: '28px 24px',
-              width: '100%',
-              maxWidth: '340px',
-              textAlign: 'center',
-              boxShadow: '0 20px 60px rgba(15, 23, 42, 0.25)'
-            }}
-          >
-            <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🕵️‍♂️</div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', margin: '0 0 6px 0' }}>
-              ยินดีต้อนรับสู่เกมจับสายลับ
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0 0 18px 0' }}>
-              กรุณากรอกชื่อเล่นของคุณเพื่อเข้าร่วมห้อง
-            </p>
-
-            <input
-              type="text"
-              required
-              placeholder="เช่น มังกร, เจมส์, แพรว"
-              value={tempName}
-              onChange={(e) => setTempName(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 14px',
-                borderRadius: '12px',
-                border: '1px solid #CBD5E1',
-                backgroundColor: '#F8FAFC',
-                color: '#1E293B',
-                fontSize: '1rem',
-                outline: 'none',
-                boxSizing: 'border-box',
-                marginBottom: '16px'
-              }}
-            />
-
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                background: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
-                color: '#FFFFFF',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '14px',
-                fontSize: '1rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 6px 18px rgba(255, 65, 108, 0.3)'
-              }}
-            >
-              เข้าห้องเล่นเลย 🎮
-            </button>
-          </form>
-        </div>
-      )}
 
       {/* FitJourney Themed Modal / Alert Pop-up */}
       {dialog.isOpen && (
