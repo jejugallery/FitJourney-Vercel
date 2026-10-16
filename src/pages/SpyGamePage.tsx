@@ -400,73 +400,25 @@ export default function SpyGamePage() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            onClick={handleCopyLink}
-            style={{
-              background: copiedLink ? '#10B981' : '#FFF1F4',
-              color: copiedLink ? '#FFFFFF' : '#FF416C',
-              border: copiedLink ? '1px solid #10B981' : '1px solid #FECDD3',
-              padding: '6px 12px',
-              borderRadius: '20px',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            {copiedLink ? '✓ ชวนแล้ว' : '🔗 ชวนเพื่อน'}
-          </button>
-
-          {isHost ? (
-            <button
-              onClick={handleCloseRoom}
-              disabled={isExiting}
-              title="ปิดห้องและจบเกมสำหรับทุกคน"
-              style={{
-                background: '#F1F5F9',
-                color: '#64748B',
-                border: '1px solid #E2E8F0',
-                padding: '6px 12px',
-                borderRadius: '20px',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                cursor: isExiting ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              ✕ ปิดห้อง
-            </button>
-          ) : (
-            <button
-              onClick={handleLeaveRoom}
-              disabled={isExiting}
-              title="ออกจากห้องนี้"
-              style={{
-                background: '#F1F5F9',
-                color: '#64748B',
-                border: '1px solid #E2E8F0',
-                padding: '6px 12px',
-                borderRadius: '20px',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                cursor: isExiting ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              🚪 ออก
-            </button>
-          )}
-        </div>
+        <button
+          onClick={handleCopyLink}
+          style={{
+            background: copiedLink ? '#10B981' : '#FFF1F4',
+            color: copiedLink ? '#FFFFFF' : '#FF416C',
+            border: copiedLink ? '1px solid #10B981' : '1px solid #FECDD3',
+            padding: '6px 14px',
+            borderRadius: '20px',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          {copiedLink ? '✓ คัดลอกแล้ว' : '🔗 ชวนเพื่อน'}
+        </button>
       </header>
 
       {/* Main Container */}
