@@ -146,7 +146,7 @@ export function getRandomFallbackWords(category: string, usedWords: string[] = [
   const pick = pool[Math.floor(Math.random() * pool.length)];
   return {
     commonWord: pick,
-    spyWord: 'ไม่มีคำศัพท์ (SPY)',
+    spyWord: 'SPY (สายลับ)',
   };
 }
 
@@ -200,7 +200,7 @@ ${excludePrompt}
     if (word && typeof word === 'string' && !usedWords.includes(word)) {
       return {
         commonWord: word,
-        spyWord: 'ไม่มีคำศัพท์ (SPY)',
+        spyWord: 'SPY (สายลับ)',
       };
     }
   } catch (err) {

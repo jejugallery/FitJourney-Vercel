@@ -809,7 +809,7 @@ export default function SpyGamePage() {
                   }}
                 >
                   {startingGame ? (
-                    <>🤖 AI กำลังคิดคำศัพท์ลับและแจกการ์ด...</>
+                    <>กำลังแจกการ์ด...</>
                   ) : (
                     <>🚀 เริ่มเกมจับสายลับ ({players.length} คน)</>
                   )}
@@ -1047,33 +1047,33 @@ export default function SpyGamePage() {
                   {(myPlayer?.isSpy || myPlayer?.is_spy) ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                       <div style={{ fontSize: '0.85rem', color: '#DC2626', marginBottom: '10px', fontWeight: 800 }}>
-                        🕵️‍♂️ คุณคือสายลับ!
+                        บทบาทของคุณคือ
                       </div>
 
                       <div style={{
                         background: 'linear-gradient(135deg, #1E293B, #0F172A)',
                         border: '2px solid #EF4444',
                         borderRadius: '16px',
-                        padding: '18px 14px',
+                        padding: '20px 16px',
                         width: '100%',
                         boxSizing: 'border-box',
                         boxShadow: '0 8px 25px rgba(220, 38, 38, 0.25)'
                       }}>
                         <div style={{
-                          fontSize: '1.45rem',
+                          fontSize: '2rem',
                           fontWeight: 900,
                           color: '#F87171',
-                          letterSpacing: '1px',
+                          letterSpacing: '2px',
                           marginBottom: '4px'
                         }}>
-                          ไม่มีคำศัพท์ในการ์ด
+                          🕵️‍♂️ SPY
                         </div>
                         <div style={{
-                          fontSize: '0.78rem',
-                          color: '#94A3B8',
-                          fontWeight: 500
+                          fontSize: '0.85rem',
+                          color: '#FECACA',
+                          fontWeight: 700
                         }}>
-                          (ไม่มีคำศัพท์ / Blank Spy)
+                          คุณคือสายลับ
                         </div>
                       </div>
 
@@ -1089,7 +1089,7 @@ export default function SpyGamePage() {
                         padding: '10px 12px'
                       }}>
                         🤫 <strong style={{ color: '#DC2626' }}>ภารกิจของคุณ:</strong><br/>
-                        คุณไม่มีคำศัพท์! ตั้งใจฟังคำใบ้ของเพื่อนให้ดี แล้วแกล้งเนียนใบ้ตามอย่าให้ใครจับได้!
+                        ตั้งใจฟังคำใบ้ของเพื่อนให้ดี แล้วแกล้งเนียนใบ้ตามอย่าให้ใครจับได้!
                       </div>
                     </div>
                   ) : (
@@ -1183,7 +1183,7 @@ export default function SpyGamePage() {
                 color: '#475569',
                 lineHeight: 1.6
               }}>
-                <li>ผู้เล่นทุกคนได้คำศัพท์เดียวกัน แต่มี <strong>1 คนเป็นสายลับที่ไม่มีคำศัพท์เลย!</strong></li>
+                <li>ผู้เล่นทุกคนได้คำศัพท์เดียวกัน แต่มี <strong>1 คนเป็นสายลับ (SPY)</strong></li>
                 <li>ผลัดกันพูดใบ้คำของตัวเองคนละ 1 ประโยค (สายลับต้องแอบฟังเพื่อนแล้วเนียนใบ้ตาม)</li>
                 <li>เมื่อพูดครบ ให้ปรึกษากันแล้วโหวตชี้ตัวคนที่คิดว่าเป็นสายลับ!</li>
               </ol>
@@ -1278,7 +1278,7 @@ export default function SpyGamePage() {
                   🕵️‍♂️ สายลับ
                 </div>
                 <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#E11D48' }}>
-                  {room?.spyWord || 'ไม่มีคำศัพท์ (SPY)'}
+                  {room?.spyWord || 'SPY (สายลับ)'}
                 </div>
               </div>
             </div>
@@ -1335,7 +1335,7 @@ export default function SpyGamePage() {
                             {p.display_name} {isMe ? '(คุณ)' : ''}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: isSpy ? '#E11D48' : '#64748B' }}>
-                            {isSpy ? 'ไม่มีคำศัพท์ (SPY)' : `คำที่ได้: ${p.word}`}
+                            {isSpy ? 'SPY (สายลับ)' : `คำที่ได้: ${p.word}`}
                           </div>
                         </div>
                       </div>
