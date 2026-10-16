@@ -211,19 +211,3 @@ export const supplementCoursesApi = {
   getByPdfToken: (token: string) => request<any>(`/api/supplement-courses?pdfToken=${encodeURIComponent(token)}`),
 };
 
-// 14. Spy Game (เกมจับสายลับ)
-export const spyGameApi = {
-  getRoom: (roomId: string, userId?: string) =>
-    request<any>(`/api/spy-game?action=get-room&roomId=${encodeURIComponent(roomId)}${userId ? `&userId=${encodeURIComponent(userId)}` : ''}`),
-  join: (data: { roomId: string; userId: string; displayName: string; pictureUrl?: string }) =>
-    request<any>('/api/spy-game?action=join', { method: 'POST', body: JSON.stringify(data) }),
-  updateCategory: (data: { roomId: string; userId: string; category: string }) =>
-    request<any>('/api/spy-game?action=update-category', { method: 'POST', body: JSON.stringify(data) }),
-  start: (data: { roomId: string; userId: string }) =>
-    request<any>('/api/spy-game?action=start', { method: 'POST', body: JSON.stringify(data) }),
-  reveal: (data: { roomId: string; userId: string }) =>
-    request<any>('/api/spy-game?action=reveal', { method: 'POST', body: JSON.stringify(data) }),
-  reset: (data: { roomId: string; userId: string }) =>
-    request<any>('/api/spy-game?action=reset', { method: 'POST', body: JSON.stringify(data) }),
-};
-

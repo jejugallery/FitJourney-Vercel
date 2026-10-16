@@ -1,28 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useLiff } from '../context/LiffContext';
-import { spyGameApi } from '../utils/api';
-
-interface Player {
-  user_id: string;
-  display_name: string;
-  picture_url?: string;
-  is_host: boolean;
-  word?: string;
-  is_spy?: boolean;
-  card_viewed?: boolean;
-}
-
-interface Room {
-  id: string;
-  hostId: string;
-  hostName: string;
-  category: 'food' | 'daily';
-  status: 'waiting' | 'playing' | 'revealed';
-  commonWord?: string;
-  spyWord?: string;
-  spyUserId?: string;
-}
+import {
+  type SpyPlayer,
+  type SpyRoom,
+  joinSpyGameRoom,
+  subscribeToSpyRoom,
+  subscribeToSpyPlayers,
+  updateSpyRoomCategory,
+  startSpyGame,
+  markSpyCardViewed,
+  revealSpyGame,
+  resetSpyGame,
+} from '../services/spyGameService';
 
 export default function SpyGamePage() {
   const params = useParams<{ roomId?: string }>();
@@ -53,9 +43,9 @@ export default function SpyGamePage() {
   const activePictureUrl = profile?.pictureUrl || '';
 
   // Room State
-  const [room, setRoom] = useState<Room | null>(null);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [myPlayer, setMyPlayer] = useState<any>(null);
+  const [room, setRoom] = useState<SpyRoom | null>(null);
+  const [players, setPlayers] = useState<SpyPlayer[]>([]);
+  const [myPlayer, setMyPlayer] = useState<SpyPlayer | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [loadingRoom, setLoadingRoom] = useState(true);
   const [startingGame, setStartingGame] = useState(false);
@@ -74,47 +64,43 @@ export default function SpyGamePage() {
     }
   }, [liffLoading, profile, guestName]);
 
-  // Join and Fetch Room
-  const fetchRoomState = async () => {
-    if (!roomId) return;
-    try {
-      const data = await spyGameApi.getRoom(roomId, activeUserId);
-      if (data.room) {
-        setRoom(data.room);
-        setPlayers(data.players || []);
-        setMyPlayer(data.me);
-        setIsHost(!!data.isHost);
-
-        // Reset flip state if new round started
-        if (prevStatusRef.current !== 'playing' && data.room.status === 'playing') {
-          setIsFlipped(false);
-        }
-        prevStatusRef.current = data.room.status;
-      }
-    } catch (err: any) {
-      console.error('Fetch room error:', err);
-    } finally {
-      setLoadingRoom(false);
-    }
-  };
-
-  // Initial join
+  // Realtime Firebase Firestore subscriptions
   useEffect(() => {
-    if (!roomId || liffLoading) return;
-    if (!activeDisplayName) return;
+    if (!roomId || liffLoading || !activeDisplayName) return;
 
+    let unsubRoom: (() => void) | null = null;
+    let unsubPlayers: (() => void) | null = null;
     let isMounted = true;
-    const doJoin = async () => {
+
+    const initRoom = async () => {
       try {
-        await spyGameApi.join({
-          roomId,
+        await joinSpyGameRoom(roomId, {
           userId: activeUserId,
           displayName: activeDisplayName,
           pictureUrl: activePictureUrl,
         });
-        if (isMounted) {
-          await fetchRoomState();
-        }
+
+        if (!isMounted) return;
+
+        unsubRoom = subscribeToSpyRoom(roomId, (roomData) => {
+          if (!isMounted) return;
+          if (roomData) {
+            setRoom(roomData);
+            setIsHost(roomData.hostId === activeUserId);
+            if (prevStatusRef.current !== 'playing' && roomData.status === 'playing') {
+              setIsFlipped(false);
+            }
+            prevStatusRef.current = roomData.status;
+          }
+          setLoadingRoom(false);
+        });
+
+        unsubPlayers = subscribeToSpyPlayers(roomId, (playerList) => {
+          if (!isMounted) return;
+          setPlayers(playerList);
+          const me = playerList.find((p) => p.userId === activeUserId);
+          setMyPlayer(me || null);
+        });
       } catch (err: any) {
         if (isMounted) {
           setErrorMsg(err.message || 'ไม่สามารถเข้าร่วมห้องได้');
@@ -123,15 +109,14 @@ export default function SpyGamePage() {
       }
     };
 
-    doJoin();
+    initRoom();
 
-    // Poll room state every 1.8 seconds for smooth real-time syncing
-    const interval = setInterval(fetchRoomState, 1800);
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      if (unsubRoom) unsubRoom();
+      if (unsubPlayers) unsubPlayers();
     };
-  }, [roomId, activeUserId, activeDisplayName, liffLoading]);
+  }, [roomId, activeUserId, activeDisplayName, liffLoading, activePictureUrl]);
 
   const handleSaveGuestName = (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,12 +138,7 @@ export default function SpyGamePage() {
   const handleSelectCategory = async (category: 'food' | 'daily') => {
     if (!isHost || !roomId) return;
     try {
-      await spyGameApi.updateCategory({
-        roomId,
-        userId: activeUserId,
-        category,
-      });
-      setRoom(prev => prev ? { ...prev, category } : null);
+      await updateSpyRoomCategory(roomId, category);
     } catch (err: any) {
       alert(err.message || 'เกิดข้อผิดพลาดในการเปลี่ยนหมวดหมู่');
     }
@@ -172,11 +152,7 @@ export default function SpyGamePage() {
     }
     setStartingGame(true);
     try {
-      await spyGameApi.start({
-        roomId,
-        userId: activeUserId,
-      });
-      await fetchRoomState();
+      await startSpyGame(roomId, room?.category || 'food', players);
     } catch (err: any) {
       alert(err.message || 'ไม่สามารถเริ่มเกมได้');
     } finally {
@@ -188,11 +164,7 @@ export default function SpyGamePage() {
     if (!isHost || !roomId) return;
     if (!window.confirm('คุณต้องการเฉลยสายลับและจบเกมรอบนี้ใช่หรือไม่?')) return;
     try {
-      await spyGameApi.reveal({
-        roomId,
-        userId: activeUserId,
-      });
-      await fetchRoomState();
+      await revealSpyGame(roomId);
     } catch (err: any) {
       alert(err.message || 'ไม่สามารถเฉลยผลได้');
     }
@@ -201,12 +173,8 @@ export default function SpyGamePage() {
   const handleReset = async () => {
     if (!isHost || !roomId) return;
     try {
-      await spyGameApi.reset({
-        roomId,
-        userId: activeUserId,
-      });
+      await resetSpyGame(roomId, players);
       setIsFlipped(false);
-      await fetchRoomState();
     } catch (err: any) {
       alert(err.message || 'ไม่สามารถเริ่มรอบใหม่ได้');
     }
@@ -216,7 +184,11 @@ export default function SpyGamePage() {
     if (navigator.vibrate) {
       navigator.vibrate(30);
     }
-    setIsFlipped(!isFlipped);
+    const next = !isFlipped;
+    setIsFlipped(next);
+    if (next && roomId && activeUserId && !myPlayer?.cardViewed) {
+      markSpyCardViewed(roomId, activeUserId).catch(() => {});
+    }
   };
 
   // If no room ID is provided in URL
