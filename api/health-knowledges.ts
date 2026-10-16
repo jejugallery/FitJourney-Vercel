@@ -1,8 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { sql } from './_db.js';
 import * as crypto from 'crypto';
+import notesHandler from './_knowledge-notes-handler.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.query.resource === 'notes') {
+    return notesHandler(req, res);
+  }
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

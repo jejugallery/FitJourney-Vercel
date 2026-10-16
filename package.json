@@ -39,5 +39,17 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12"
+  },
+  "allowScripts": {
+    "@firebase/util": true,
+    "@firebase/util@1.15.1": true,
+    "core-js": true,
+    "core-js@3.49.0": true,
+    "esbuild": true,
+    "esbuild@0.27.0": true,
+    "protobufjs": true,
+    "protobufjs@7.6.2": true,
+    "re2": true,
+    "re2@1.24.1": true
   }
 }

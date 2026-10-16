@@ -19,7 +19,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (userId && typeof userId === 'string') {
-        // Check if user already RSVPed
         const rows = await sql`
           SELECT * FROM event_rsvps 
           WHERE event_id = ${eventId} AND user_id = ${userId}
@@ -27,7 +26,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ exists: rows.length > 0, data: rows[0] || null });
       }
 
-      // Get all RSVPs for this event ordered by joined_at
       const rows = await sql`
         SELECT * FROM event_rsvps 
         WHERE event_id = ${eventId} 
@@ -76,7 +74,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(403).json({ error: 'ปิดการลงชื่อให้เพื่อนแล้ว' });
       }
 
-      // Use upsert to handle duplicate join requests
       const result = await sql`
         INSERT INTO event_rsvps (event_id, user_id, display_name, picture_url, joined_at)
         VALUES (${eventId}, ${userId}, ${displayName}, ${pictureUrl}, CURRENT_TIMESTAMP)

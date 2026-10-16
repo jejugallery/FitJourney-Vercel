@@ -2,6 +2,10 @@
   "rewrites": [
     { "source": "/api/supplements", "destination": "/api/supplement-courses?resource=catalog" },
     { "source": "/api/used-slips", "destination": "/api/billing-payments?resource=used-slips" },
+    { "source": "/api/knowledge-notes", "destination": "/api/health-knowledges?resource=notes" },
+    { "source": "/api/appointment-invitations", "destination": "/api/appointments?resource=invitations" },
+    { "source": "/api/event-invitations", "destination": "/api/events?resource=invitations" },
+    { "source": "/api/event-rsvps", "destination": "/api/events?resource=rsvps" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
