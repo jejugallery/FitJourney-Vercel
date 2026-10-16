@@ -551,126 +551,6 @@ export default function SpyGamePage() {
         {/* ----------------- STATE 1: WAITING LOBBY ----------------- */}
         {room?.status === 'waiting' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
-            {/* Host Banner */}
-            {isHost ? (
-              <div style={{
-                background: 'linear-gradient(135deg, #FFF1F4 0%, #FFF7F5 100%)',
-                border: '1px solid #FECDD3',
-                borderRadius: '18px',
-                padding: '18px',
-                textAlign: 'center',
-                boxShadow: '0 4px 15px rgba(255, 65, 108, 0.06)'
-              }}>
-                <div style={{ fontSize: '1.6rem', marginBottom: '4px' }}>👑</div>
-                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#E11D48' }}>
-                  {room?.roomName ? `คุณคือ Host ห้อง "${room.roomName}"` : 'คุณคือ Host ของห้องนี้'}
-                </div>
-                <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: '4px' }}>
-                  เลือกหมวดหมู่คำศัพท์ด้านล่าง แล้วกดเริ่มเกมเมื่อเพื่อนพร้อม
-                </div>
-              </div>
-            ) : (
-              <div style={{
-                background: '#FFFFFF',
-                border: '1px solid #E2E8F0',
-                borderRadius: '18px',
-                padding: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
-              }}>
-                <div style={{ fontSize: '1.8rem' }}>👑</div>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: '#64748B' }}>ผู้สร้างห้อง (Host)</div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B' }}>
-                    {room?.hostName || 'กำลังรอ...'}
-                  </div>
-                  {room?.roomName && (
-                    <div style={{ fontSize: '0.75rem', color: '#FF416C', fontWeight: 600, marginTop: '2px' }}>
-                      🌸 ห้อง "{room.roomName}"
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Category Selector */}
-            <div style={{
-              background: '#FFFFFF',
-              borderRadius: '20px',
-              padding: '18px',
-              border: '1px solid #E2E8F0',
-              boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
-            }}>
-              <div style={{
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                color: '#475569',
-                marginBottom: '12px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <span>หมวดหมู่คำศัพท์ (Category)</span>
-                {isHost && <span style={{ fontSize: '0.75rem', color: '#FF416C', fontWeight: 600 }}>แตะเพื่อเลือก</span>}
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                {/* Food Category */}
-                <button
-                  type="button"
-                  disabled={!isHost}
-                  onClick={() => handleSelectCategory('food')}
-                  style={{
-                    background: room?.category === 'food'
-                      ? 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)'
-                      : '#F8FAFC',
-                    border: room?.category === 'food'
-                      ? '2px solid #FF416C'
-                      : '1px solid #E2E8F0',
-                    borderRadius: '16px',
-                    padding: '20px 12px',
-                    color: room?.category === 'food' ? '#FFFFFF' : '#475569',
-                    cursor: isHost ? 'pointer' : 'default',
-                    textAlign: 'center',
-                    transition: 'all 0.2s',
-                    boxShadow: room?.category === 'food' ? '0 8px 20px rgba(255, 65, 108, 0.3)' : 'none',
-                    transform: room?.category === 'food' ? 'scale(1.02)' : 'scale(1)'
-                  }}
-                >
-                  <div style={{ fontSize: '2.2rem', marginBottom: '8px' }}>🍲</div>
-                  <div style={{ fontWeight: 800, fontSize: '1rem' }}>อาหาร</div>
-                </button>
-
-                {/* Daily Essentials Category */}
-                <button
-                  type="button"
-                  disabled={!isHost}
-                  onClick={() => handleSelectCategory('daily')}
-                  style={{
-                    background: room?.category === 'daily'
-                      ? 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)'
-                      : '#F8FAFC',
-                    border: room?.category === 'daily'
-                      ? '2px solid #FF416C'
-                      : '1px solid #E2E8F0',
-                    borderRadius: '16px',
-                    padding: '20px 12px',
-                    color: room?.category === 'daily' ? '#FFFFFF' : '#475569',
-                    cursor: isHost ? 'pointer' : 'default',
-                    textAlign: 'center',
-                    transition: 'all 0.2s',
-                    boxShadow: room?.category === 'daily' ? '0 8px 20px rgba(255, 65, 108, 0.3)' : 'none',
-                    transform: room?.category === 'daily' ? 'scale(1.02)' : 'scale(1)'
-                  }}
-                >
-                  <div style={{ fontSize: '2.2rem', marginBottom: '8px' }}>🧴</div>
-                  <div style={{ fontWeight: 800, fontSize: '1rem' }}>ของใช้ในชีวิตประจำวัน</div>
-                </button>
-              </div>
-            </div>
 
             {/* Players in Lobby */}
             <div style={{
@@ -746,6 +626,82 @@ export default function SpyGamePage() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Category Selector */}
+            <div style={{
+              background: '#FFFFFF',
+              borderRadius: '20px',
+              padding: '18px',
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
+            }}>
+              <div style={{
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: '#475569',
+                marginBottom: '12px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <span>หมวดหมู่คำศัพท์ (Category)</span>
+                {isHost && <span style={{ fontSize: '0.75rem', color: '#FF416C', fontWeight: 600 }}>แตะเพื่อเลือก</span>}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {/* Food Category */}
+                <button
+                  type="button"
+                  disabled={!isHost}
+                  onClick={() => handleSelectCategory('food')}
+                  style={{
+                    background: room?.category === 'food'
+                      ? 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)'
+                      : '#F8FAFC',
+                    border: room?.category === 'food'
+                      ? '2px solid #FF416C'
+                      : '1px solid #E2E8F0',
+                    borderRadius: '16px',
+                    padding: '20px 12px',
+                    color: room?.category === 'food' ? '#FFFFFF' : '#475569',
+                    cursor: isHost ? 'pointer' : 'default',
+                    textAlign: 'center',
+                    transition: 'all 0.2s',
+                    boxShadow: room?.category === 'food' ? '0 8px 20px rgba(255, 65, 108, 0.3)' : 'none',
+                    transform: room?.category === 'food' ? 'scale(1.02)' : 'scale(1)'
+                  }}
+                >
+                  <div style={{ fontSize: '2.2rem', marginBottom: '8px' }}>🍲</div>
+                  <div style={{ fontWeight: 800, fontSize: '1rem' }}>อาหาร</div>
+                </button>
+
+                {/* Daily Essentials Category */}
+                <button
+                  type="button"
+                  disabled={!isHost}
+                  onClick={() => handleSelectCategory('daily')}
+                  style={{
+                    background: room?.category === 'daily'
+                      ? 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)'
+                      : '#F8FAFC',
+                    border: room?.category === 'daily'
+                      ? '2px solid #FF416C'
+                      : '1px solid #E2E8F0',
+                    borderRadius: '16px',
+                    padding: '20px 12px',
+                    color: room?.category === 'daily' ? '#FFFFFF' : '#475569',
+                    cursor: isHost ? 'pointer' : 'default',
+                    textAlign: 'center',
+                    transition: 'all 0.2s',
+                    boxShadow: room?.category === 'daily' ? '0 8px 20px rgba(255, 65, 108, 0.3)' : 'none',
+                    transform: room?.category === 'daily' ? 'scale(1.02)' : 'scale(1)'
+                  }}
+                >
+                  <div style={{ fontSize: '2.2rem', marginBottom: '8px' }}>🧴</div>
+                  <div style={{ fontWeight: 800, fontSize: '1rem' }}>ของใช้ในชีวิตประจำวัน</div>
+                </button>
               </div>
             </div>
 
