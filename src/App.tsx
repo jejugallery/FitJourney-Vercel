@@ -13,6 +13,7 @@ import DownloadICSPage from './pages/DownloadICSPage';
 import BodyMetricsAnalysisPage from './pages/BodyMetricsAnalysisPage';
 import SupplementCoursePdfPage from './pages/SupplementCoursePdfPage';
 import SupplementCourseDashboardPage from './pages/SupplementCourseDashboardPage';
+import SpyGamePage from './pages/SpyGamePage';
 import './index.css';
 
 function AuthenticatedRoutes() {
@@ -32,6 +33,8 @@ function AuthenticatedRoutes() {
         <Route path="/payment/:billingId" element={<PaymentPage />} />
         <Route path="/download-ics" element={<DownloadICSPage />} />
         <Route path="/body-analysis/:traineeId" element={<BodyMetricsAnalysisPage />} />
+        <Route path="/spy-game" element={<SpyGamePage />} />
+        <Route path="/spy-game/:roomId" element={<SpyGamePage />} />
       </Routes>
     </LiffProvider>
   );

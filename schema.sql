@@ -216,3 +216,31 @@ ALTER TABLE supplements DROP CONSTRAINT IF EXISTS supplements_price_check;
 ALTER TABLE supplements ADD CONSTRAINT supplements_price_check CHECK (price >= 0);
 ALTER TABLE supplements DROP CONSTRAINT IF EXISTS supplements_content_unit_check;
 ALTER TABLE supplements ADD CONSTRAINT supplements_content_unit_check CHECK (content_unit IN ('เม็ด', 'ช้อน', 'ซอง', 'ใบ', 'ชิ้น'));
+
+-- 15. Spy Game (เกมจับสายลับ)
+CREATE TABLE IF NOT EXISTS spy_game_rooms (
+  id TEXT PRIMARY KEY,
+  host_id TEXT NOT NULL,
+  host_name TEXT NOT NULL,
+  category TEXT DEFAULT 'food',
+  status TEXT DEFAULT 'waiting',
+  common_word TEXT,
+  spy_word TEXT,
+  spy_user_id TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS spy_game_players (
+  room_id TEXT NOT NULL REFERENCES spy_game_rooms(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  picture_url TEXT,
+  word TEXT,
+  is_spy BOOLEAN DEFAULT FALSE,
+  is_host BOOLEAN DEFAULT FALSE,
+  card_viewed BOOLEAN DEFAULT FALSE,
+  joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (room_id, user_id)
+);
+

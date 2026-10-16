@@ -1007,6 +1007,137 @@ const getMediaVideoLoopUrl = (url: string | null | undefined): string => {
   return url;
 };
 
+const buildSpyGameFlexMessage = (roomId: string) => {
+  const gameUrl = `${DEFAULT_LIFF_URL}/spy-game?roomId=${encodeURIComponent(roomId)}`;
+  return {
+    type: 'flex',
+    altText: '🕵️ อยากเล่นเกมจับสายลับไหม? กดเล่นเลย!',
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#0F172A',
+        paddingAll: 'md',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            alignItems: 'center',
+            spacing: 'sm',
+            contents: [
+              {
+                type: 'text',
+                text: '🕵️‍♂️',
+                size: 'lg',
+                flex: 0
+              },
+              {
+                type: 'text',
+                text: 'เกมจับสายลับ (UNDERCOVER)',
+                weight: 'bold',
+                color: '#38BDF8',
+                size: 'sm',
+                flex: 1
+              }
+            ]
+          }
+        ]
+      },
+      hero: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#1E293B',
+        paddingAll: 'xl',
+        alignItems: 'center',
+        justifyContent: 'center',
+        contents: [
+          {
+            type: 'text',
+            text: '🃏 🔍 🤫',
+            size: 'xxl',
+            align: 'center'
+          },
+          {
+            type: 'text',
+            text: 'ใครคือสายลับในกลุ่มพวกเรา?',
+            size: 'xs',
+            color: '#94A3B8',
+            align: 'center',
+            margin: 'sm'
+          }
+        ]
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'md',
+        paddingAll: 'xl',
+        backgroundColor: '#FFFFFF',
+        contents: [
+          {
+            type: 'text',
+            text: 'อยากเล่นเกมจับสายลับไหม ?',
+            weight: 'bold',
+            size: 'lg',
+            color: '#0F172A',
+            align: 'center'
+          },
+          {
+            type: 'text',
+            text: 'เกมปาร์ตี้สุดมันส์! มีเพียง 1 คนเท่านั้นที่จะได้คำต่างจากคนอื่น จับพิรุธแล้วโหวตหาตัวสายลับให้เจอ!',
+            size: 'sm',
+            color: '#64748B',
+            wrap: true,
+            align: 'center',
+            lineSpacing: '4px'
+          },
+          {
+            type: 'box',
+            layout: 'horizontal',
+            backgroundColor: '#F1F5F9',
+            cornerRadius: 'md',
+            paddingAll: 'sm',
+            margin: 'md',
+            justifyContent: 'center',
+            contents: [
+              {
+                type: 'text',
+                text: `รหัสห้อง: #${roomId.toUpperCase()}`,
+                size: 'xs',
+                color: '#475569',
+                weight: 'bold',
+                align: 'center'
+              }
+            ]
+          }
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        paddingAll: 'lg',
+        backgroundColor: '#FFFFFF',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#E11D48',
+            height: 'sm',
+            action: {
+              type: 'uri',
+              label: 'เล่นเลย 🎮',
+              uri: gameUrl
+            }
+          }
+        ]
+      }
+    }
+  };
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const host = req.headers.host || 'fitjourneythailand.web.app';
   const origin = host.startsWith('localhost') ? `http://${host}` : `https://${host}`;
@@ -1161,6 +1292,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         } catch (err: any) {
           console.error('[Error handling YouTube challenge]:', err.message);
+        }
+        continue;
+      }
+
+      // Spy Game trigger: "จับสายลับ"
+      if (trimmedText.includes('จับสายลับ')) {
+        if (!replyToken) continue;
+        const chatId = event.source?.groupId || event.source?.roomId || event.source?.userId;
+        const roomId = 'sg_' + crypto.randomBytes(3).toString('hex');
+        const flexMsg = buildSpyGameFlexMessage(roomId);
+        try {
+          await replyToLine(replyToken, [flexMsg]);
+        } catch (replyErr: any) {
+          console.warn('[Spy Game reply failed, falling back to push]:', replyErr.message);
+          if (chatId) {
+            try {
+              await pushToLine(chatId, [flexMsg]);
+            } catch (pushErr: any) {
+              console.error('[Spy Game push failed]:', pushErr.message);
+            }
+          }
         }
         continue;
       }
