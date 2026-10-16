@@ -1035,16 +1035,27 @@ const generatePoeticRoomName = async (): Promise<string> => {
   try {
     const apiKeys = await getGeminiApiKeys();
     if (apiKeys.length === 0) return fallback;
-    const model = 'gemini-2.5-flash-lite';
+    const models = ['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite', 'gemini-1.5-flash'];
     const prompt = 'คิดชื่อห้องเกมภาษาไทยสั้นๆ สไตล์บทกวี ไพเราะ มีความหมาย ซาบซึ้ง ความยาว 2-4 คำ เช่น สายลมที่พัดผ่าน, แสงจันทร์กระจ่าง, ประกายดาวราตรี ตอบมาแค่ชื่อเดียวสั้นๆ ไม่มีเครื่องหมายคำพูด ไม่มีคำอธิบาย';
-    const res = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKeys[0]}`,
-      { contents: [{ parts: [{ text: prompt }] }] },
-      { headers: { 'Content-Type': 'application/json' }, timeout: 1500 }
-    );
-    const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()?.replace(/["'«»“”\n]/g, '');
-    if (text && text.length >= 2 && text.length <= 30) {
-      return text;
+
+    for (const apiKey of apiKeys) {
+      for (const model of models) {
+        try {
+          const res = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+            { contents: [{ parts: [{ text: prompt }] }] },
+            { headers: { 'Content-Type': 'application/json' }, timeout: 2500 }
+          );
+          const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()?.replace(/["'«»“”\n]/g, '');
+          if (text && text.length >= 2 && text.length <= 30) {
+            return text;
+          }
+        } catch (err: any) {
+          if (err.response?.status === 429) {
+            break; // Try next apiKey
+          }
+        }
+      }
     }
   } catch (e) {
     // fallback

@@ -6,6 +6,11 @@ import {
   updateDoc,
   writeBatch,
   getDoc,
+  getDocs,
+  deleteDoc,
+  query,
+  where,
+  limit,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -35,12 +40,14 @@ export interface SpyRoom {
   hostId: string;
   hostName: string;
   category: 'food' | 'daily';
-  status: 'waiting' | 'playing' | 'revealed';
+  status: 'waiting' | 'playing' | 'revealed' | 'closed';
   commonWord?: string;
   spyWord?: string;
   spyUserId?: string;
   createdAt?: any;
   updatedAt?: any;
+  lastActiveAt?: number;
+  expiresAt?: any;
 }
 
 export const POETIC_ROOM_NAMES = [
@@ -70,7 +77,7 @@ export async function generatePoeticRoomNameWithAI(): Promise<string> {
   const fallback = POETIC_ROOM_NAMES[Math.floor(Math.random() * POETIC_ROOM_NAMES.length)];
   try {
     const prompt = 'คิดชื่อห้องเกมภาษาไทยสั้นๆ สไตล์บทกวี ไพเราะ มีความหมาย ซาบซึ้ง ความยาว 2-4 คำ เช่น สายลมที่พัดผ่าน, แสงจันทร์กระจ่าง, ประกายดาวราตรี ตอบมาแค่ชื่อเดียวสั้นๆ ไม่มีเครื่องหมายคำพูด ไม่มีคำอธิบาย';
-    const res = await fetchGeminiWithFallback(['gemini-2.5-flash-lite', 'gemini-1.5-flash'], [{ parts: [{ text: prompt }] }]);
+    const res = await fetchGeminiWithFallback(['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite', 'gemini-1.5-flash'], [{ parts: [{ text: prompt }] }]);
     const text = res.rawText?.trim()?.replace(/["'«»“”\n]/g, '');
     if (text && text.length >= 2 && text.length <= 30) {
       return text;
@@ -151,9 +158,10 @@ export async function generateSpyWordsWithAI(category: 'food' | 'daily'): Promis
 
   try {
     const models = [
+      'gemini-3.5-flash-lite',
+      'gemini-2.5-flash-lite',
       'gemini-2.5-flash',
       'gemini-1.5-flash',
-      'gemini-2.5-flash-lite',
     ];
     const res = await fetchGeminiWithFallback(models, [{ parts: [{ text: prompt }] }]);
     let raw = res.rawText.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -201,6 +209,8 @@ export async function joinSpyGameRoom(
       spyUserId: '',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      lastActiveAt: Date.now(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
     await setDoc(playerRef, {
@@ -220,11 +230,14 @@ export async function joinSpyGameRoom(
 
     const isHost = roomData.hostId === user.userId;
 
+    const updates: Record<string, any> = {
+      lastActiveAt: Date.now(),
+      updatedAt: serverTimestamp(),
+    };
     if (!roomData.roomName && suggestedRoomName?.trim()) {
-      await updateDoc(roomRef, {
-        roomName: suggestedRoomName.trim(),
-      });
+      updates.roomName = suggestedRoomName.trim();
     }
+    await updateDoc(roomRef, updates);
 
     if (!playerSnap.exists()) {
       await setDoc(playerRef, {
@@ -246,6 +259,9 @@ export async function joinSpyGameRoom(
       });
     }
   }
+
+  // Trigger background cleanup for inactive rooms older than 24h
+  cleanupExpiredSpyRooms().catch(() => {});
 }
 
 /**
@@ -423,4 +439,101 @@ export function subscribeToSpyPlayers(
       console.error('[SpyGame] Players listener error:', err);
     }
   );
+}
+
+/**
+ * Leave Room:
+ * - If last player leaves: delete room entirely
+ * - If host leaves and other players remain: pass host to next player
+ * - If regular player leaves: remove player doc
+ */
+export async function leaveSpyGameRoom(
+  roomId: string,
+  userId: string,
+  players: SpyPlayer[]
+): Promise<void> {
+  const cleanRoomId = roomId.trim().toLowerCase();
+  const playerRef = doc(db, 'spy_game_rooms', cleanRoomId, 'players', userId);
+  await deleteDoc(playerRef).catch(() => {});
+
+  const remaining = players.filter((p) => p.userId !== userId);
+  const roomRef = doc(db, 'spy_game_rooms', cleanRoomId);
+
+  if (remaining.length === 0) {
+    // Last player left: Delete room document completely
+    await deleteDoc(roomRef).catch(() => {});
+  } else {
+    // If leaving player was host, assign host to first remaining player
+    const leavingWasHost = players.find((p) => p.userId === userId)?.isHost;
+    if (leavingWasHost) {
+      const newHost = remaining[0];
+      await updateDoc(roomRef, {
+        hostId: newHost.userId,
+        hostName: newHost.displayName,
+        lastActiveAt: Date.now(),
+      }).catch(() => {});
+
+      const newHostPlayerRef = doc(db, 'spy_game_rooms', cleanRoomId, 'players', newHost.userId);
+      await updateDoc(newHostPlayerRef, {
+        isHost: true,
+      }).catch(() => {});
+    } else {
+      await updateDoc(roomRef, {
+        lastActiveAt: Date.now(),
+      }).catch(() => {});
+    }
+  }
+}
+
+/**
+ * Close Room (Host only):
+ * Deletes room and all players, notifying everyone that room is closed
+ */
+export async function closeSpyGameRoom(roomId: string): Promise<void> {
+  const cleanRoomId = roomId.trim().toLowerCase();
+  const roomRef = doc(db, 'spy_game_rooms', cleanRoomId);
+
+  // Notify connected clients that room is closed
+  await updateDoc(roomRef, {
+    status: 'closed',
+    lastActiveAt: Date.now(),
+  }).catch(() => {});
+
+  // Delete all players in subcollection
+  const playersCol = collection(db, 'spy_game_rooms', cleanRoomId, 'players');
+  const playerSnaps = await getDocs(playersCol);
+  const batch = writeBatch(db);
+  playerSnaps.forEach((docSnap) => {
+    batch.delete(docSnap.ref);
+  });
+  batch.delete(roomRef);
+  await batch.commit().catch(() => {});
+}
+
+/**
+ * Auto-Cleanup routine:
+ * Removes inactive rooms older than 24 hours to keep Firestore database clean
+ */
+export async function cleanupExpiredSpyRooms(): Promise<void> {
+  try {
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const q = query(
+      collection(db, 'spy_game_rooms'),
+      where('lastActiveAt', '<', oneDayAgo),
+      limit(5)
+    );
+    const snaps = await getDocs(q);
+    for (const roomDoc of snaps.docs) {
+      const roomId = roomDoc.id;
+      const playersCol = collection(db, 'spy_game_rooms', roomId, 'players');
+      const pSnaps = await getDocs(playersCol);
+      const batch = writeBatch(db);
+      pSnaps.forEach((p) => batch.delete(p.ref));
+      batch.delete(roomDoc.ref);
+      await batch.commit().catch(() => {});
+    }
+  } catch (err) {
+    // Non-blocking catch
+    console.warn('[SpyGame] Inactive rooms cleanup:', err);
+  }
 }

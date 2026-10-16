@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import liff from '@line/liff';
 import { useLiff } from '../context/LiffContext';
 import {
   type SpyPlayer,
@@ -12,9 +13,12 @@ import {
   markSpyCardViewed,
   revealSpyGame,
   resetSpyGame,
+  leaveSpyGameRoom,
+  closeSpyGameRoom,
 } from '../services/spyGameService';
 
 export default function SpyGamePage() {
+  const navigate = useNavigate();
   const params = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const rawRoomId = params.roomId || searchParams.get('roomId') || '';
@@ -52,6 +56,8 @@ export default function SpyGamePage() {
   const [startingGame, setStartingGame] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [hasLeft, setHasLeft] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   // Card Flip State
   const [isFlipped, setIsFlipped] = useState(false);
@@ -89,8 +95,8 @@ export default function SpyGamePage() {
 
         unsubRoom = subscribeToSpyRoom(roomId, (roomData) => {
           if (!isMounted) return;
+          setRoom(roomData);
           if (roomData) {
-            setRoom(roomData);
             setIsHost(roomData.hostId === activeUserId);
             if (prevStatusRef.current !== 'playing' && roomData.status === 'playing') {
               setIsFlipped(false);
@@ -121,7 +127,7 @@ export default function SpyGamePage() {
       if (unsubRoom) unsubRoom();
       if (unsubPlayers) unsubPlayers();
     };
-  }, [roomId, activeUserId, activeDisplayName, liffLoading, activePictureUrl]);
+  }, [roomId, activeUserId, activeDisplayName, liffLoading, activePictureUrl, initialRoomName]);
 
   const handleSaveGuestName = (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,6 +202,46 @@ export default function SpyGamePage() {
     }
   };
 
+  const handleLeaveRoom = async () => {
+    if (!roomId || !activeUserId || isExiting) return;
+    if (!window.confirm('คุณต้องการออกจากห้องเกมนี้ใช่หรือไม่?')) return;
+    setIsExiting(true);
+    setHasLeft(true);
+    try {
+      await leaveSpyGameRoom(roomId, activeUserId, players);
+    } catch (err: any) {
+      console.error('Error leaving room:', err);
+    } finally {
+      setIsExiting(false);
+    }
+  };
+
+  const handleCloseRoom = async () => {
+    if (!isHost || !roomId || isExiting) return;
+    if (!window.confirm('คุณต้องการปิดห้องนี้และลบเกมใช่หรือไม่?\nผู้เล่นทุกคนจะออกจากห้องทันที')) return;
+    setIsExiting(true);
+    setHasLeft(true);
+    try {
+      await closeSpyGameRoom(roomId);
+    } catch (err: any) {
+      console.error('Error closing room:', err);
+    } finally {
+      setIsExiting(false);
+    }
+  };
+
+  const handleExitToHome = () => {
+    try {
+      if (liff && liff.isInClient && liff.isInClient()) {
+        liff.closeWindow();
+        return;
+      }
+    } catch {
+      // ignore
+    }
+    navigate('/');
+  };
+
   // If no room ID is provided in URL
   if (!roomId) {
     return (
@@ -256,6 +302,68 @@ export default function SpyGamePage() {
     );
   }
 
+  // Room is Closed, User Left, or Room does not exist anymore
+  if (!loadingRoom && (!room || room.status === 'closed' || hasLeft)) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#F8FAFC',
+        backgroundImage: 'radial-gradient(circle at top right, rgba(255,65,108,0.06), transparent 45%), radial-gradient(circle at bottom left, rgba(255,75,43,0.06), transparent 45%)',
+        color: '#1E293B',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        textAlign: 'center',
+        fontFamily: 'Inter, system-ui, sans-serif'
+      }}>
+        <div style={{
+          width: '76px',
+          height: '76px',
+          borderRadius: '50%',
+          backgroundColor: '#FFF1F4',
+          color: '#FF416C',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '2.4rem',
+          marginBottom: '20px',
+          boxShadow: '0 8px 24px rgba(255, 65, 108, 0.12)'
+        }}>
+          {hasLeft ? '🚪' : '🔒'}
+        </div>
+        <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1E293B', marginBottom: '8px' }}>
+          {hasLeft ? 'คุณออกจากห้องแล้ว' : 'ห้องนี้ถูกปิดแล้ว'}
+        </h2>
+        <p style={{ color: '#64748B', fontSize: '0.92rem', maxWidth: '320px', lineHeight: 1.6, marginBottom: '28px' }}>
+          {hasLeft
+            ? 'คุณได้ออกจากห้องเกมเรียบร้อยแล้ว ขอบคุณที่มาร่วมสนุกกับเพื่อน ๆ'
+            : 'Host ได้ทำการปิดห้องเกมนี้แล้ว หรือห้องเกมสิ้นสุดลงแล้ว'}
+        </p>
+        <button
+          onClick={handleExitToHome}
+          style={{
+            background: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
+            color: '#FFFFFF',
+            border: 'none',
+            borderRadius: '16px',
+            padding: '14px 28px',
+            fontSize: '1rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 8px 20px rgba(255, 65, 108, 0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          🏠 กลับสู่หน้าหลัก FitJourney
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -292,25 +400,73 @@ export default function SpyGamePage() {
           </div>
         </div>
 
-        <button
-          onClick={handleCopyLink}
-          style={{
-            background: copiedLink ? '#10B981' : '#FFF1F4',
-            color: copiedLink ? '#FFFFFF' : '#FF416C',
-            border: copiedLink ? '1px solid #10B981' : '1px solid #FECDD3',
-            padding: '6px 14px',
-            borderRadius: '20px',
-            fontSize: '0.78rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          {copiedLink ? '✓ คัดลอกแล้ว' : '🔗 ชวนเพื่อน'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={handleCopyLink}
+            style={{
+              background: copiedLink ? '#10B981' : '#FFF1F4',
+              color: copiedLink ? '#FFFFFF' : '#FF416C',
+              border: copiedLink ? '1px solid #10B981' : '1px solid #FECDD3',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            {copiedLink ? '✓ ชวนแล้ว' : '🔗 ชวนเพื่อน'}
+          </button>
+
+          {isHost ? (
+            <button
+              onClick={handleCloseRoom}
+              disabled={isExiting}
+              title="ปิดห้องและจบเกมสำหรับทุกคน"
+              style={{
+                background: '#F1F5F9',
+                color: '#64748B',
+                border: '1px solid #E2E8F0',
+                padding: '6px 12px',
+                borderRadius: '20px',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                cursor: isExiting ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              ✕ ปิดห้อง
+            </button>
+          ) : (
+            <button
+              onClick={handleLeaveRoom}
+              disabled={isExiting}
+              title="ออกจากห้องนี้"
+              style={{
+                background: '#F1F5F9',
+                color: '#64748B',
+                border: '1px solid #E2E8F0',
+                padding: '6px 12px',
+                borderRadius: '20px',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                cursor: isExiting ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              🚪 ออก
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Main Container */}
@@ -543,51 +699,91 @@ export default function SpyGamePage() {
 
             {/* Action Section */}
             {isHost ? (
-              <button
-                type="button"
-                onClick={handleStartGame}
-                disabled={startingGame || players.length < 2}
-                style={{
-                  background: players.length < 2
-                    ? '#E2E8F0'
-                    : 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
-                  color: players.length < 2 ? '#94A3B8' : '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '16px',
-                  padding: '16px',
-                  fontSize: '1.05rem',
-                  fontWeight: 800,
-                  cursor: players.length < 2 || startingGame ? 'not-allowed' : 'pointer',
-                  width: '100%',
-                  boxShadow: players.length >= 2 ? '0 10px 24px rgba(255, 65, 108, 0.35)' : 'none',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                {startingGame ? (
-                  <>🤖 AI กำลังคิดคำศัพท์ลับและแจกการ์ด...</>
-                ) : (
-                  <>🚀 เริ่มเกมจับสายลับ ({players.length} คน)</>
-                )}
-              </button>
-            ) : (
-              <div style={{
-                background: '#FFFFFF',
-                borderRadius: '16px',
-                padding: '20px',
-                textAlign: 'center',
-                border: '1px dashed #CBD5E1',
-                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
-              }}>
-                <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>⏳</div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B' }}>
-                  กำลังรอ Host เริ่มเกม...
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleStartGame}
+                  disabled={startingGame || players.length < 2 || isExiting}
+                  style={{
+                    background: players.length < 2
+                      ? '#E2E8F0'
+                      : 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
+                    color: players.length < 2 ? '#94A3B8' : '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '16px',
+                    padding: '16px',
+                    fontSize: '1.05rem',
+                    fontWeight: 800,
+                    cursor: players.length < 2 || startingGame || isExiting ? 'not-allowed' : 'pointer',
+                    width: '100%',
+                    boxShadow: players.length >= 2 ? '0 10px 24px rgba(255, 65, 108, 0.35)' : 'none',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {startingGame ? (
+                    <>🤖 AI กำลังคิดคำศัพท์ลับและแจกการ์ด...</>
+                  ) : (
+                    <>🚀 เริ่มเกมจับสายลับ ({players.length} คน)</>
+                  )}
+                </button>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={handleCloseRoom}
+                    disabled={isExiting}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#94A3B8',
+                      fontSize: '0.82rem',
+                      cursor: isExiting ? 'not-allowed' : 'pointer',
+                      padding: '6px 12px',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    ✕ ปิดห้องนี้ (ลบห้องและจบเกม)
+                  </button>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '4px' }}>
-                  เมื่อ Host กดเริ่ม AI จะสุ่มคำศัพท์ส่งให้ทุกคน
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{
+                  background: '#FFFFFF',
+                  borderRadius: '16px',
+                  padding: '20px',
+                  textAlign: 'center',
+                  border: '1px dashed #CBD5E1',
+                  boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
+                }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>⏳</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B' }}>
+                    กำลังรอ Host เริ่มเกม...
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '4px' }}>
+                    เมื่อ Host กดเริ่ม AI จะสุ่มคำศัพท์ส่งให้ทุกคน
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={handleLeaveRoom}
+                    disabled={isExiting}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#94A3B8',
+                      fontSize: '0.82rem',
+                      cursor: isExiting ? 'not-allowed' : 'pointer',
+                      padding: '6px 12px',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    🚪 ออกจากห้องนี้
+                  </button>
                 </div>
               </div>
             )}
@@ -1012,33 +1208,82 @@ export default function SpyGamePage() {
               </div>
             </div>
 
-            {/* Host Play Again Button */}
+            {/* Host Play Again or Close Button */}
             {isHost ? (
-              <button
-                type="button"
-                onClick={handleReset}
-                style={{
-                  width: '100%',
-                  background: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '16px',
-                  padding: '16px',
-                  fontSize: '1.05rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  boxShadow: '0 8px 24px rgba(255, 65, 108, 0.35)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                🔄 เล่นรอบใหม่ (ผู้เล่นเดิม)
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  disabled={isExiting}
+                  style={{
+                    width: '100%',
+                    background: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '16px',
+                    padding: '16px',
+                    fontSize: '1.05rem',
+                    fontWeight: 800,
+                    cursor: isExiting ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 8px 24px rgba(255, 65, 108, 0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  🔄 เล่นรอบใหม่ (ผู้เล่นเดิม)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCloseRoom}
+                  disabled={isExiting}
+                  style={{
+                    width: '100%',
+                    background: '#F1F5F9',
+                    color: '#64748B',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '16px',
+                    padding: '14px',
+                    fontSize: '0.95rem',
+                    fontWeight: 700,
+                    cursor: isExiting ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  ✕ ปิดห้องนี้ (จบเกมและลบห้อง)
+                </button>
+              </div>
             ) : (
-              <div style={{ textAlign: 'center', color: '#64748B', fontSize: '0.85rem' }}>
-                กำลังรอ Host เริ่มเล่นรอบใหม่...
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ textAlign: 'center', color: '#64748B', fontSize: '0.85rem' }}>
+                  กำลังรอ Host เริ่มเล่นรอบใหม่...
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLeaveRoom}
+                  disabled={isExiting}
+                  style={{
+                    width: '100%',
+                    background: '#F1F5F9',
+                    color: '#64748B',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '16px',
+                    padding: '14px',
+                    fontSize: '0.95rem',
+                    fontWeight: 700,
+                    cursor: isExiting ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  🚪 ออกจากห้อง
+                </button>
               </div>
             )}
           </div>
