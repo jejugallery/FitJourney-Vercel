@@ -1246,40 +1246,20 @@ export default function SpyGamePage() {
               </div>
             </div>
 
-            {/* Word Comparison */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              {/* Citizens Word */}
-              <div style={{
-                background: '#F0FDF4',
-                border: '1px solid #BBF7D0',
-                borderRadius: '16px',
-                padding: '16px',
-                textAlign: 'center',
-                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.05)'
-              }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#166534', marginBottom: '6px' }}>
-                  👥 คำของพลเมือง
-                </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#15803D' }}>
-                  {room?.commonWord}
-                </div>
+            {/* Common Word Card */}
+            <div style={{
+              background: '#F0FDF4',
+              border: '2px solid #BBF7D0',
+              borderRadius: '20px',
+              padding: '20px 16px',
+              textAlign: 'center',
+              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.08)'
+            }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#166534', marginBottom: '6px' }}>
+                👥 คำศัพท์ของรอบนี้ (คำของพลเมือง)
               </div>
-
-              {/* Spy Word */}
-              <div style={{
-                background: '#FFF1F4',
-                border: '1px solid #FECDD3',
-                borderRadius: '16px',
-                padding: '16px',
-                textAlign: 'center',
-                boxShadow: '0 2px 8px rgba(225, 29, 72, 0.05)'
-              }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9F1239', marginBottom: '6px' }}>
-                  🕵️‍♂️ สายลับ
-                </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#E11D48' }}>
-                  {room?.spyWord || 'SPY (สายลับ)'}
-                </div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#15803D', letterSpacing: '1px' }}>
+                {room?.commonWord}
               </div>
             </div>
 
@@ -1334,8 +1314,8 @@ export default function SpyGamePage() {
                           <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1E293B' }}>
                             {p.display_name} {isMe ? '(คุณ)' : ''}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: isSpy ? '#E11D48' : '#64748B' }}>
-                            {isSpy ? 'SPY (สายลับ)' : `คำที่ได้: ${p.word}`}
+                          <div style={{ fontSize: '0.75rem', color: isSpy ? '#E11D48' : '#64748B', fontWeight: isSpy ? 700 : 500 }}>
+                            {isSpy ? '🕵️‍♂️ ผู้เล่นนี้คือสายลับ' : `คำที่ได้: ${p.word}`}
                           </div>
                         </div>
                       </div>
