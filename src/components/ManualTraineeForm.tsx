@@ -24,7 +24,7 @@ const THAI_PROVINCES = [
 interface ManualTraineeFormProps {
   trainerId: string;
 
-  onSuccess: (traineeNickname: string, weight: string, height: string, age: string) => void;
+  onSuccess: (traineeNickname: string, weight: string, height: string, age: string, traineeId?: string) => void;
   onCancel: () => void;
 }
 
@@ -77,7 +77,7 @@ export default function ManualTraineeForm({ trainerId, onSuccess, onCancel }: Ma
         createdAt: serverTimestamp(),
       });
 
-      onSuccess(formData.nickname, formData.weight, formData.height, formData.age);
+      onSuccess(formData.nickname, formData.weight, formData.height, formData.age, generatedUserId);
     } catch (err) {
       console.error("Register Error:", err);
       setError("เกิดข้อผิดพลาดในการลงทะเบียน กรุณาลองใหม่อีกครั้ง");

@@ -1116,7 +1116,30 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
         <div className="form-row" style={{ marginBottom: '1.5rem' }}>
           {/* Name select / Trainee dropdown */}
           <div className="form-group" style={{ flex: '1', position: 'relative' }}>
-            <label>ชื่อลูกเทรน (Name)</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <label style={{ margin: 0 }}>ชื่อลูกเทรน (Name)</label>
+              <button 
+                type="button"
+                onClick={() => {
+                  if (profile?.userId) sessionStorage.removeItem(`selectedTraineeId_${profile.userId}`);
+                  setShowManualRegister(true);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--primary)',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '2px 4px'
+                }}
+              >
+                ➕ เพิ่มลูกเทรนแบบกำหนดเอง
+              </button>
+            </div>
             <div 
               onClick={() => setDropdownOpen(!dropdownOpen)}
               style={{
@@ -1183,6 +1206,30 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
                         autoFocus
                       />
                     </div>
+                  </div>
+                  <div 
+                    onClick={() => {
+                      if (profile?.userId) sessionStorage.removeItem(`selectedTraineeId_${profile.userId}`);
+                      setShowManualRegister(true);
+                      setDropdownOpen(false);
+                      setSearchQuery('');
+                    }}
+                    style={{
+                      padding: '0.75rem 1rem',
+                      cursor: 'pointer',
+                      borderBottom: '1px solid #f1f5f9',
+                      color: 'var(--primary)',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = '#fff1f2'}
+                    onMouseOut={(e) => e.currentTarget.style.background = '#fff'}
+                  >
+                    <span>➕</span>
+                    <span>เพิ่มลูกเทรนแบบกำหนดเอง</span>
                   </div>
                   <div 
                     onClick={() => { handleChange({ target: { name: 'name', value: '__SELF__' } } as any); setDropdownOpen(false); setSearchQuery(''); }}
@@ -1459,7 +1506,10 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
             <p style={{ margin: 0, fontSize: '0.9rem', color: '#94a3b8' }}>กรุณาเลือกชื่อลูกเทรนที่ต้องการบันทึกข้อมูลทางด้านบนก่อนครับ</p>
             <button
               type="button"
-              onClick={() => setShowManualRegister(true)}
+              onClick={() => {
+                if (profile?.userId) sessionStorage.removeItem(`selectedTraineeId_${profile.userId}`);
+                setShowManualRegister(true);
+              }}
               style={{
                 marginTop: '0.5rem',
                 padding: '0.65rem 1.25rem',
@@ -1476,7 +1526,7 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
                 boxShadow: '0 4px 12px rgba(255, 65, 108, 0.25)'
               }}
             >
-              ➕ เพิ่มลูกเทรนใหม่
+              ➕ เพิ่มลูกเทรนแบบกำหนดเอง
             </button>
           </div>
         ) : (
@@ -1588,8 +1638,11 @@ export default function MetricsForm({ initialTraineeName = '', adminData, onView
       {showManualRegister && profile && (
         <ManualTraineeForm 
           trainerId={profile.userId}
-          onSuccess={(nickname, weight, height, age) => {
+          onSuccess={(nickname, weight, height, age, traineeId) => {
             setShowManualRegister(false);
+            if (profile?.userId && traineeId) {
+              sessionStorage.setItem(`selectedTraineeId_${profile.userId}`, traineeId);
+            }
             setFormData(prev => ({ 
               ...prev, 
               name: nickname,
