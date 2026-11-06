@@ -1,6 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/supplements", "destination": "/api/supplement-courses?resource=catalog" },
     { "source": "/api/used-slips", "destination": "/api/billing-payments?resource=used-slips" },
     { "source": "/api/knowledge-notes", "destination": "/api/health-knowledges?resource=notes" },
     { "source": "/api/appointment-invitations", "destination": "/api/appointments?resource=invitations" },

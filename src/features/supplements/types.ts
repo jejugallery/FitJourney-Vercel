@@ -9,6 +9,10 @@ export interface Supplement {
   contentQuantity: number;
   contentUnit: ContentUnit;
   isActive: boolean;
+  createdBy?: string;
+  updatedBy?: string;
+  archivedBy?: string | null;
+  archivedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -57,6 +61,8 @@ export interface SavedSupplementCourse {
   cashbackPercent: number;
   cashbackAmount: number;
   createdAt: string;
+  updatedAt?: string;
+  itemCount?: number;
   items: SavedCourseItem[];
 }
 
