@@ -13,7 +13,7 @@ test('course form saves without offering an immediate PDF download', () => {
   assert.doesNotMatch(modal, /downloadSupplementCoursePdf/);
 });
 
-test('course history opens the external PDF flow', () => {
-  assert.match(history, /openCoursePdfExternal/);
+test('course history opens the external course dashboard/PDF flow', () => {
+  assert.match(history, /openCourseDashboardExternal/);
   assert.doesNotMatch(history, /downloadSupplementCoursePdf/);
 });

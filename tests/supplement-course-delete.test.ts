@@ -4,19 +4,17 @@ import test from 'node:test';
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
-test('course API permanently deletes only a course owned by the current trainer', () => {
-  const source = read('../api/supplement-courses.ts');
-  assert.match(source, /GET, POST, DELETE, OPTIONS/);
-  assert.match(source, /req\.method === 'DELETE'/);
-  assert.match(source, /DELETE FROM supplement_courses WHERE id = \$\{id\} AND trainer_id = \$\{actor\.userId\} RETURNING id/);
-  assert.match(source, /ไม่พบคอร์สที่คุณสร้าง/);
+test('course service permanently deletes a course', () => {
+  const service = read('../src/services/supplementService.ts');
+  assert.match(service, /async deleteCourse\(id: string\)/);
+  assert.match(service, /deleteDoc\(ref\)/);
 });
 
 test('client exposes delete and passes the current trainer to course history', () => {
   const api = read('../src/utils/api.ts');
   const metrics = read('../src/components/MetricsForm.tsx');
   const modal = read('../src/components/SupplementCourseModal.tsx');
-  assert.match(api, /delete: \(id: string\).*method: 'DELETE'/);
+  assert.match(api, /delete: \(id: string\) => supplementService\.deleteCourse\(id\)/);
   assert.match(metrics, /currentTrainerId=\{profile\?\.userId \|\| ''\}/);
   assert.match(modal, /currentTrainerId/);
   assert.match(modal, /<SupplementCourseHistory[^>]*currentTrainerId=\{currentTrainerId\}/);
