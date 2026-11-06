@@ -49,6 +49,15 @@ service cloud.firestore {
     match /spy_game_rooms/{document=**} {
       allow read, write: if true;
     }
+    match /supplements/{document} {
+      allow read, write: if true;
+    }
+    match /supplementCourses/{document} {
+      allow read, write: if true;
+    }
+    match /supplementCoursePdfTokens/{document} {
+      allow read, write: if true;
+    }
     match /system_configs/{document} {
       allow read: if true;
       allow write: if false;
