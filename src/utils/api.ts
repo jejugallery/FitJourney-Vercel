@@ -1,5 +1,6 @@
-// Frontend API Service Layer for FitJourney Vercel + Neon Migration
+// Frontend API Service Layer for FitJourney
 import liff from '@line/liff';
+import { supplementService } from '../services/supplementService';
 
 function toCamel(s: string): string {
   return s.replace(/([-_][a-z])/ig, ($1) => {
@@ -192,22 +193,22 @@ export const knowledgeNotesApi = {
     request<any>('/api/knowledge-notes', { method: 'POST', body: JSON.stringify(data) }),
 };
 
-// 12. Supplement catalog
+// 12. Supplement catalog (Cloud Firestore)
 export const supplementsApi = {
-  list: (includeArchived = false) => request<any[]>(`/api/supplements${includeArchived ? '?includeArchived=true' : ''}`),
-  create: (data: any) => request<any>('/api/supplements', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => request<any>(`/api/supplements?id=${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) }),
-  archive: (id: string) => request<any>(`/api/supplements?id=${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  list: (includeArchived = false) => supplementService.listSupplements(includeArchived),
+  create: (data: any) => supplementService.createSupplement(data),
+  update: (id: string, data: any) => supplementService.updateSupplement(id, data),
+  archive: (id: string) => supplementService.archiveSupplement(id),
 };
 
-// 13. Trainer-owned supplement courses
+// 13. Trainer-owned supplement courses (Cloud Firestore)
 export const supplementCoursesApi = {
-  list: (traineeId?: string) => request<any[]>(`/api/supplement-courses${traineeId ? `?traineeId=${encodeURIComponent(traineeId)}` : ''}`),
-  get: (id: string) => request<any>(`/api/supplement-courses?id=${encodeURIComponent(id)}`),
-  create: (data: any) => request<any>('/api/supplement-courses', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: any) => request<any>(`/api/supplement-courses?id=${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id: string) => request<any>(`/api/supplement-courses?id=${encodeURIComponent(id)}`, { method: 'DELETE' }),
-  createPdfToken: (courseId: string) => request<{ token: string; expiresAt: string }>('/api/supplement-courses?action=pdf-token', { method: 'POST', body: JSON.stringify({ courseId }) }),
-  getByPdfToken: (token: string) => request<any>(`/api/supplement-courses?pdfToken=${encodeURIComponent(token)}`),
+  list: (traineeId?: string) => supplementService.listCourses(traineeId),
+  get: (id: string) => supplementService.getCourse(id),
+  create: (data: any) => supplementService.saveCourse(data),
+  update: (id: string, data: any) => supplementService.saveCourse(data, id),
+  delete: (id: string) => supplementService.deleteCourse(id),
+  createPdfToken: (courseId: string) => supplementService.createPdfToken(courseId),
+  getByPdfToken: (token: string) => supplementService.getByPdfToken(token),
 };
 
