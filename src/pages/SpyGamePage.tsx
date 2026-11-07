@@ -77,6 +77,12 @@ export default function SpyGamePage() {
     }
   }, [profile?.displayName, hostNameInput]);
 
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('is_spy_game', '1');
+    } catch {}
+  }, []);
+
   // Handle LIFF state redirect cleanup if present in query params
   useEffect(() => {
     const liffState = searchParams.get('liff.state');

@@ -27,13 +27,13 @@ function LiffRedirectHandler() {
     if (liffState) {
       try {
         const decoded = decodeURIComponent(liffState);
+        if (decoded.includes('spy-game')) {
+          try {
+            sessionStorage.setItem('is_spy_game', '1');
+          } catch {}
+        }
         if (decoded.startsWith('/') && location.pathname !== decoded) {
           navigate(decoded, { replace: true });
-        } else {
-          const newSearch = new URLSearchParams(window.location.search);
-          newSearch.delete('liff.state');
-          const searchStr = newSearch.toString() ? `?${newSearch.toString()}` : '';
-          window.history.replaceState(null, '', window.location.pathname + searchStr);
         }
       } catch (err) {
         console.warn('Error parsing liff.state:', err);

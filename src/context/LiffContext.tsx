@@ -70,27 +70,46 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
           LIFF_ID = LIFF_IDS.SHARE_EVENT;
         }
 
-        let isSpyGame = path.startsWith('/spy-game');
-        if (!isSpyGame && state) {
+        // Check if current session is for Spy Game
+        const search = window.location.search;
+        const hash = window.location.hash;
+        const stateParam = urlParams.get('liff.state') || '';
+        
+        const isSpyGame = 
+          path.includes('spy-game') ||
+          search.includes('spy-game') ||
+          hash.includes('spy-game') ||
+          stateParam.includes('spy-game') ||
+          urlParams.has('roomId') ||
+          sessionStorage.getItem('is_spy_game') === '1';
+
+        if (isSpyGame) {
           try {
-            const decodedState = decodeURIComponent(state);
-            if (decodedState.includes('spy-game') || decodedState.startsWith('/spy-game')) {
-              isSpyGame = true;
-            }
+            sessionStorage.setItem('is_spy_game', '1');
           } catch {}
-        }
-        if (!isSpyGame && (urlParams.has('roomId') || window.location.hash.includes('spy-game'))) {
-          isSpyGame = true;
         }
 
         await liff.init({ liffId: LIFF_ID });
         
-        if (!liff.isLoggedIn()) {
-          if (isSpyGame) {
-            // Allow guest access without forcing LINE login
-            setLoading(false);
-            return;
+        if (isSpyGame) {
+          // If in Spy Game, fetch profile if already logged in, but NEVER call liff.login() or trigger reload
+          if (liff.isLoggedIn()) {
+            try {
+              const liffProfile = await liff.getProfile();
+              setProfile({
+                userId: liffProfile.userId,
+                displayName: liffProfile.displayName,
+                pictureUrl: liffProfile.pictureUrl,
+              });
+            } catch (pErr) {
+              console.warn('[SpyGame] Could not get LINE profile:', pErr);
+            }
           }
+          setLoading(false);
+          return;
+        }
+
+        if (!liff.isLoggedIn()) {
           liff.login({ redirectUri: window.location.href });
           return;
         }
@@ -105,11 +124,10 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("LIFF Init Error:", err);
         const errMsg = err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
         
-        const currentUrlParams = new URLSearchParams(window.location.search);
-        const currentState = currentUrlParams.get('liff.state');
-        const isSpyCatch = path.startsWith('/spy-game') || 
-          (currentState && currentState.includes('spy-game')) || 
-          currentUrlParams.has('roomId');
+        const isSpyCatch = 
+          window.location.pathname.includes('spy-game') || 
+          window.location.search.includes('spy-game') ||
+          sessionStorage.getItem('is_spy_game') === '1';
 
         if (isSpyCatch) {
           // Allow spy game guest mode to proceed smoothly even if LIFF fails in external browser

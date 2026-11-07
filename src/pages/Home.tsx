@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useLocation, useParams, Navigate } from 'react-router-dom';
 import { collection, query, where, getDocs, updateDoc, doc, onSnapshot, limit, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useLiff } from '../context/LiffContext';
@@ -437,7 +437,11 @@ export default function Home({ isRecordOnly = false }: { isRecordOnly?: boolean 
       // Skip trainee/admin checks if the user is entering Spy Game via LIFF
       const searchParams = new URLSearchParams(window.location.search);
       const liffState = searchParams.get('liff.state');
-      if (liffState && liffState.includes('spy-game')) {
+      if (
+        (liffState && liffState.includes('spy-game')) ||
+        sessionStorage.getItem('is_spy_game') === '1' ||
+        window.location.pathname.includes('spy-game')
+      ) {
         return;
       }
       
@@ -728,21 +732,12 @@ export default function Home({ isRecordOnly = false }: { isRecordOnly?: boolean 
 
   const urlSearch = new URLSearchParams(window.location.search);
   const rawLiffState = urlSearch.get('liff.state');
-  if (rawLiffState && rawLiffState.includes('spy-game')) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#F8FAFC',
-        fontFamily: 'Inter, system-ui, sans-serif'
-      }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🕵️‍♂️</div>
-        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#334155' }}>กำลังเข้าสู่ห้องเกมจับสายลับ...</div>
-      </div>
-    );
+  if (
+    (rawLiffState && rawLiffState.includes('spy-game')) ||
+    sessionStorage.getItem('is_spy_game') === '1' ||
+    window.location.pathname.includes('spy-game')
+  ) {
+    return <Navigate to="/spy-game" replace />;
   }
 
   if (liffLoading || checkingRole) {
