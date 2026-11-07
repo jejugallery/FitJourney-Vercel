@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { LiffProvider } from './context/LiffContext';
 import Home from './pages/Home';
 import RegisterAdmin from './pages/RegisterAdmin';
@@ -16,9 +17,37 @@ import SupplementCourseDashboardPage from './pages/SupplementCourseDashboardPage
 import SpyGamePage from './pages/SpyGamePage';
 import './index.css';
 
+function LiffRedirectHandler() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const liffState = searchParams.get('liff.state');
+    if (liffState) {
+      try {
+        const decoded = decodeURIComponent(liffState);
+        if (decoded.startsWith('/') && location.pathname !== decoded) {
+          navigate(decoded, { replace: true });
+        } else {
+          const newSearch = new URLSearchParams(window.location.search);
+          newSearch.delete('liff.state');
+          const searchStr = newSearch.toString() ? `?${newSearch.toString()}` : '';
+          window.history.replaceState(null, '', window.location.pathname + searchStr);
+        }
+      } catch (err) {
+        console.warn('Error parsing liff.state:', err);
+      }
+    }
+  }, [navigate, location.pathname]);
+
+  return null;
+}
+
 function AuthenticatedRoutes() {
   return (
     <LiffProvider>
+      <LiffRedirectHandler />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/record-metrics" element={<Home isRecordOnly={true} />} />

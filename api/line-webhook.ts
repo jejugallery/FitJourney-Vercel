@@ -1063,11 +1063,11 @@ const generatePoeticRoomName = async (): Promise<string> => {
   return fallback;
 };
 
-const buildSpyGameFlexMessage = (roomId: string, roomName: string) => {
-  const gameUrl = `${DEFAULT_LIFF_URL}/spy-game?roomId=${encodeURIComponent(roomId)}&roomName=${encodeURIComponent(roomName)}`;
+const buildSpyGameFlexMessage = () => {
+  const gameUrl = `${DEFAULT_LIFF_URL}/spy-game`;
   return {
     type: 'flex',
-    altText: `🕵️ ห้อง "${roomName}" - อยากเล่นเกมจับสายลับไหม? กดเล่นเลย!`,
+    altText: '🕵️‍♂️ อยากเล่นเกมจับสายลับไหม? กดเล่นเลย!',
     contents: {
       type: 'bubble',
       size: 'mega',
@@ -1110,7 +1110,7 @@ const buildSpyGameFlexMessage = (roomId: string, roomName: string) => {
             contents: [
               {
                 type: 'text',
-                text: `🌸 ห้อง "${roomName}"`,
+                text: '✨ เกมบลัฟคำศัพท์สุดมันส์',
                 weight: 'bold',
                 size: 'sm',
                 color: '#FF416C',
@@ -1336,9 +1336,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (trimmedText.includes('จับสายลับ')) {
         if (!replyToken) continue;
         const chatId = event.source?.groupId || event.source?.roomId || event.source?.userId;
-        const roomId = 'sg_' + crypto.randomBytes(3).toString('hex');
-        const roomName = await generatePoeticRoomName();
-        const flexMsg = buildSpyGameFlexMessage(roomId, roomName);
+        const flexMsg = buildSpyGameFlexMessage();
         try {
           await replyToLine(replyToken, [flexMsg]);
         } catch (replyErr: any) {

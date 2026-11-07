@@ -70,10 +70,23 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
           LIFF_ID = LIFF_IDS.SHARE_EVENT;
         }
 
+        let isSpyGame = path.startsWith('/spy-game');
+        if (!isSpyGame && state) {
+          try {
+            const decodedState = decodeURIComponent(state);
+            if (decodedState.includes('spy-game') || decodedState.startsWith('/spy-game')) {
+              isSpyGame = true;
+            }
+          } catch {}
+        }
+        if (!isSpyGame && (urlParams.has('roomId') || window.location.hash.includes('spy-game'))) {
+          isSpyGame = true;
+        }
+
         await liff.init({ liffId: LIFF_ID });
         
         if (!liff.isLoggedIn()) {
-          if (path.startsWith('/spy-game')) {
+          if (isSpyGame) {
             // Allow guest access without forcing LINE login
             setLoading(false);
             return;
@@ -92,7 +105,13 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("LIFF Init Error:", err);
         const errMsg = err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
         
-        if (path.startsWith('/spy-game')) {
+        const currentUrlParams = new URLSearchParams(window.location.search);
+        const currentState = currentUrlParams.get('liff.state');
+        const isSpyCatch = path.startsWith('/spy-game') || 
+          (currentState && currentState.includes('spy-game')) || 
+          currentUrlParams.has('roomId');
+
+        if (isSpyCatch) {
           // Allow spy game guest mode to proceed smoothly even if LIFF fails in external browser
           setLoading(false);
           return;

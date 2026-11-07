@@ -8,9 +8,6 @@ import {
   getDoc,
   getDocs,
   deleteDoc,
-  query,
-  where,
-  limit,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -34,12 +31,18 @@ export interface SpyPlayer {
   card_viewed?: boolean;
 }
 
+export interface SpyAiHint {
+  style: string;
+  hint: string;
+  explanation?: string;
+}
+
 export interface SpyRoom {
   id: string;
   roomName?: string;
   hostId: string;
   hostName: string;
-  category: 'food' | 'daily';
+  category: 'food' | 'daily' | 'animal';
   status: 'waiting' | 'playing' | 'revealed' | 'closed';
   commonWord?: string;
   spyWord?: string;
@@ -112,6 +115,12 @@ export const FALLBACK_WORDS: Record<string, string[]> = {
     'โทรศัพท์มือถือ', 'สายชาร์จ', 'พาวเวอร์แบงค์', 'หูฟัง', 'แล็ปท็อป', 'รีโมททีวี', 'พัดลม', 'เครื่องฟอกอากาศ', 'ปลั๊กพ่วง',
     'ไม้กวาด', 'ที่โกยผง', 'ไม้ถูพื้น', 'น้ำยาล้างจาน', 'ผงซักฟอก', 'น้ำยาปรับผ้านุ่ม', 'ถังขยะ', 'ทิชชู่เปียก', 'ทิชชู่ม้วน',
   ],
+  animal: [
+    'แมวส้ม', 'สุนัขพันธุ์ชิบะ', 'กระต่ายแคระ', 'แฮมสเตอร์', 'แพนด้าแดง', 'หมีแพนด้า', 'เพนกวิน', 'นากทะเล',
+    'คาปิบารา', 'โคอาล่า', 'อัลปาก้า', 'เม่นแคระ', 'กระรอกบิน', 'ชินชิล่า', 'ชูก้าร์ไรเดอร์',
+    'แมวน้ำ', 'โลมา', 'วาฬเบลูก้า', 'เต่าญี่ปุ่น', 'จิ้งจอกหิมะ', 'กวางเรนเดียร์', 'เป็ดแมนดาริน',
+    'สล็อต', 'ลิงลีเมอร์', 'เมียร์แคท', 'นกฟลามิงโก', 'นกฮูกหิมะ', 'นกแก้วมาคอว์', 'ปลาการ์ตูน', 'ม้าน้ำ',
+  ],
 };
 
 export const SUB_THEMES: Record<string, string[]> = {
@@ -137,6 +146,12 @@ export const SUB_THEMES: Record<string, string[]> = {
     'อุปกรณ์ทำความสะอาดบ้าน / ซักรีด',
     'แกดเจ็ต / อุปกรณ์อิเล็กทรอนิกส์ส่วนบุคคล',
   ],
+  animal: [
+    'สัตว์เลี้ยงแสนรักในบ้าน / สัตว์ขนปุกปุย',
+    'สัตว์ป่าตัวจิ๋วสุดคิ้วท์ / สัตว์โลกน่ารัก',
+    'สัตว์น้ำน่ารัก / สัตว์ขั้วโลก',
+    'สัตว์ป่าแสนรู้ / สัตว์ในสวนสัตว์ยอดฮิต',
+  ],
 };
 
 export function getRandomFallbackWords(category: string, usedWords: string[] = []): { commonWord: string; spyWord: string } {
@@ -151,10 +166,10 @@ export function getRandomFallbackWords(category: string, usedWords: string[] = [
 }
 
 export async function generateSpyWordsWithAI(
-  category: 'food' | 'daily',
+  category: 'food' | 'daily' | 'animal',
   usedWords: string[] = []
 ): Promise<{ commonWord: string; spyWord: string }> {
-  const categoryName = category === 'daily' ? 'ของใช้ในชีวิตประจำวัน' : 'อาหาร';
+  const categoryName = category === 'animal' ? 'สัตว์โลกน่ารัก' : category === 'daily' ? 'ของใช้ในชีวิตประจำวัน' : 'อาหาร';
   const subThemes = SUB_THEMES[category] || SUB_THEMES.food;
   const randomTheme = subThemes[Math.floor(Math.random() * subThemes.length)];
   const randomSeed = Math.floor(Math.random() * 1000000);
@@ -211,12 +226,63 @@ ${excludePrompt}
 }
 
 /**
+ * AI Hint Assistant: Generates 3 styles of hints for non-SPY players
+ */
+export async function generateSpyAiHints(
+  word: string,
+  category: 'food' | 'daily' | 'animal'
+): Promise<SpyAiHint[]> {
+  const catName = category === 'animal' ? 'สัตว์โลกน่ารัก' : category === 'daily' ? 'ของใช้ในชีวิตประจำวัน' : 'อาหาร';
+  const prompt = `คุณคือผู้ช่วยคิดคำใบ้สำหรับเกมจับสายลับ (Undercover Game)
+คำศัพท์ของผู้เล่นคือ: "${word}" (หมวดหมู่: ${catName})
+ผู้เล่นเป็น "พลเมืองทั่วไป" (ไม่ใช่สายลับ)
+ต้องการคิดคำใบ้ภาษาไทยสั้นๆ 1 ประโยค จำนวน 3 สไตล์:
+1. "สไตล์เนียนๆ (กว้างแต่ตรง)": พูดกว้างๆ ไม่ชี้เป้าเกินไป สายลับฟังแล้วยังเดายาก แต่เพื่อนพลเมืองฟังแล้วเก็ท
+2. "สไตล์เจาะจง (มั่นใจว่ารู้จริง)": มีจุดเด่นหรือลักษณะเฉพาะของคำนี้ คนมีคำเดียวกันจะพยักหน้าทันที
+3. "สไตล์เปรียบเทียบ (มีชั้นเชิง)": เปรียบเทียบความรู้สึก กิจกรรม หรือสถานการณ์ที่เกี่ยวข้องอย่างชาญฉลาด
+
+ข้อกำหนด:
+- คำใบ้ต้องเป็นภาษาไทยสั้น กระชับ (5-15 คำ)
+- ห้ามมีคำว่า "${word}" หรือคำพ้องเสียงตรงๆ ในคำใบ้เด็ดขาด!
+- ตอบกลับเป็น JSON รูปแบบนี้เท่านั้น (ห้ามมี markdown หรือคำอธิบายใดๆ ทั้งสิ้น):
+{
+  "hints": [
+    { "style": "สไตล์เนียนๆ", "hint": "ประโยคคำใบ้", "explanation": "เหตุผลสั้นๆ" },
+    { "style": "สไตล์เจาะจง", "hint": "ประโยคคำใบ้", "explanation": "เหตุผลสั้นๆ" },
+    { "style": "สไตล์เปรียบเทียบ", "hint": "ประโยคคำใบ้", "explanation": "เหตุผลสั้นๆ" }
+  ]
+}`;
+
+  try {
+    const res = await fetchGeminiWithFallback(
+      ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash'],
+      [{ parts: [{ text: prompt }] }],
+      { temperature: 0.9, topP: 0.95 }
+    );
+    const raw = res.rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed.hints) && parsed.hints.length > 0) {
+      return parsed.hints;
+    }
+  } catch (err) {
+    console.warn('[SpyGame] AI Hints generation failed:', err);
+  }
+
+  return [
+    { style: 'สไตล์เนียนๆ', hint: `สิ่งนี้มักจะพบเห็นหรือคุ้นเคยได้บ่อยในหมวด${catName}` },
+    { style: 'สไตล์เจาะจง', hint: `มีเอกลักษณ์เฉพาะตัวที่ถ้าใครมีคำนี้อยู่จะนึกออกทันที` },
+    { style: 'สไตล์เปรียบเทียบ', hint: `ให้ความรู้สึกคุ้นเคยและเป็นที่ชื่นชอบของใครหลายคน` },
+  ];
+}
+
+/**
  * Join or initialize room in Firestore
  */
 export async function joinSpyGameRoom(
   roomId: string,
   user: { userId: string; displayName: string; pictureUrl?: string },
-  suggestedRoomName?: string
+  suggestedRoomName?: string,
+  initialCategory: 'food' | 'daily' | 'animal' = 'food'
 ): Promise<void> {
   const cleanRoomId = roomId.trim().toLowerCase();
   const roomRef = doc(db, 'spy_game_rooms', cleanRoomId);
@@ -226,13 +292,13 @@ export async function joinSpyGameRoom(
 
   if (!roomSnap.exists()) {
     // Room doesn't exist: Current user is the host and creates the room
-    const poeticName = suggestedRoomName?.trim() || (await generatePoeticRoomNameWithAI());
+    const poeticName = suggestedRoomName?.trim() || POETIC_ROOM_NAMES[Math.floor(Math.random() * POETIC_ROOM_NAMES.length)];
     await setDoc(roomRef, {
       id: cleanRoomId,
       roomName: poeticName,
       hostId: user.userId,
       hostName: user.displayName,
-      category: 'food',
+      category: initialCategory,
       status: 'waiting',
       commonWord: '',
       spyWord: '',
@@ -289,15 +355,12 @@ export async function joinSpyGameRoom(
       });
     }
   }
-
-  // Trigger background cleanup for inactive rooms older than 24h
-  cleanupExpiredSpyRooms().catch(() => {});
 }
 
 /**
  * Update room category (Host only)
  */
-export async function updateSpyRoomCategory(roomId: string, category: 'food' | 'daily'): Promise<void> {
+export async function updateSpyRoomCategory(roomId: string, category: 'food' | 'daily' | 'animal'): Promise<void> {
   const cleanRoomId = roomId.trim().toLowerCase();
   const roomRef = doc(db, 'spy_game_rooms', cleanRoomId);
   await updateDoc(roomRef, {
@@ -311,7 +374,7 @@ export async function updateSpyRoomCategory(roomId: string, category: 'food' | '
  */
 export async function startSpyGame(
   roomId: string,
-  category: 'food' | 'daily',
+  category: 'food' | 'daily' | 'animal',
   players: SpyPlayer[]
 ): Promise<void> {
   if (players.length < 2) {
@@ -498,10 +561,7 @@ export async function leaveSpyGameRoom(
   const remaining = players.filter((p) => p.userId !== userId);
   const roomRef = doc(db, 'spy_game_rooms', cleanRoomId);
 
-  if (remaining.length === 0) {
-    // Last player left: Delete room document completely
-    await deleteDoc(roomRef).catch(() => {});
-  } else {
+  if (remaining.length > 0) {
     // If leaving player was host, assign host to first remaining player
     const leavingWasHost = players.find((p) => p.userId === userId)?.isHost;
     if (leavingWasHost) {
@@ -521,6 +581,11 @@ export async function leaveSpyGameRoom(
         lastActiveAt: Date.now(),
       }).catch(() => {});
     }
+  } else {
+    // Room remains open even if empty
+    await updateDoc(roomRef, {
+      lastActiveAt: Date.now(),
+    }).catch(() => {});
   }
 }
 
@@ -547,32 +612,4 @@ export async function closeSpyGameRoom(roomId: string): Promise<void> {
   });
   batch.delete(roomRef);
   await batch.commit().catch(() => {});
-}
-
-/**
- * Auto-Cleanup routine:
- * Removes inactive rooms older than 24 hours to keep Firestore database clean
- */
-export async function cleanupExpiredSpyRooms(): Promise<void> {
-  try {
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-    const q = query(
-      collection(db, 'spy_game_rooms'),
-      where('lastActiveAt', '<', oneDayAgo),
-      limit(5)
-    );
-    const snaps = await getDocs(q);
-    for (const roomDoc of snaps.docs) {
-      const roomId = roomDoc.id;
-      const playersCol = collection(db, 'spy_game_rooms', roomId, 'players');
-      const pSnaps = await getDocs(playersCol);
-      const batch = writeBatch(db);
-      pSnaps.forEach((p) => batch.delete(p.ref));
-      batch.delete(roomDoc.ref);
-      await batch.commit().catch(() => {});
-    }
-  } catch (err) {
-    // Non-blocking catch
-    console.warn('[SpyGame] Inactive rooms cleanup:', err);
-  }
 }

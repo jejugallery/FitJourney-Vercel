@@ -434,6 +434,13 @@ export default function Home({ isRecordOnly = false }: { isRecordOnly?: boolean 
     const checkUserRole = async () => {
       if (!profile) return;
       
+      // Skip trainee/admin checks if the user is entering Spy Game via LIFF
+      const searchParams = new URLSearchParams(window.location.search);
+      const liffState = searchParams.get('liff.state');
+      if (liffState && liffState.includes('spy-game')) {
+        return;
+      }
+      
       try {
         // 1. Check if user is an approved admin/trainer
         const adminQ = query(collection(db, 'trainers'), where('trainerId', '==', profile.userId));
@@ -718,6 +725,25 @@ export default function Home({ isRecordOnly = false }: { isRecordOnly?: boolean 
     const interval = setInterval(fetchPendingCounts, 10000);
     return () => clearInterval(interval);
   }, [role, profile]);
+
+  const urlSearch = new URLSearchParams(window.location.search);
+  const rawLiffState = urlSearch.get('liff.state');
+  if (rawLiffState && rawLiffState.includes('spy-game')) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#F8FAFC',
+        fontFamily: 'Inter, system-ui, sans-serif'
+      }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🕵️‍♂️</div>
+        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#334155' }}>กำลังเข้าสู่ห้องเกมจับสายลับ...</div>
+      </div>
+    );
+  }
 
   if (liffLoading || checkingRole) {
     return (
