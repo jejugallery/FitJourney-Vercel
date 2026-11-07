@@ -81,7 +81,7 @@ export async function generatePoeticRoomNameWithAI(): Promise<string> {
   const fallback = POETIC_ROOM_NAMES[Math.floor(Math.random() * POETIC_ROOM_NAMES.length)];
   try {
     const prompt = 'คิดชื่อห้องเกมภาษาไทยสั้นๆ สไตล์บทกวี ไพเราะ มีความหมาย ซาบซึ้ง ความยาว 2-4 คำ เช่น สายลมที่พัดผ่าน, แสงจันทร์กระจ่าง, ประกายดาวราตรี ตอบมาแค่ชื่อเดียวสั้นๆ ไม่มีเครื่องหมายคำพูด ไม่มีคำอธิบาย';
-    const res = await fetchGeminiWithFallback(['gemini-3.5-flash-lite', 'gemini-2.5-flash-lite', 'gemini-1.5-flash'], [{ parts: [{ text: prompt }] }]);
+    const res = await fetchGeminiWithFallback(['gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.5-flash'], [{ parts: [{ text: prompt }] }]);
     const text = res.rawText?.trim()?.replace(/["'«»“”\n]/g, '');
     if (text && text.length >= 2 && text.length <= 30) {
       return text;
@@ -196,10 +196,9 @@ ${excludePrompt}
   try {
     const models = [
       'gemini-3.5-flash-lite',
-      'gemini-2.5-flash-lite',
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
+      'gemini-flash-lite-latest',
+      'gemini-3.5-flash',
+      'gemini-flash-latest',
     ];
     const res = await fetchGeminiWithFallback(
       models,
@@ -209,14 +208,16 @@ ${excludePrompt}
         topP: 0.95,
       }
     );
-    let raw = res.rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(raw);
-    const word = (parsed.word || parsed.word1 || '').trim();
-    if (word && typeof word === 'string' && !usedWords.includes(word)) {
-      return {
-        commonWord: word,
-        spyWord: 'SPY (สายลับ)',
-      };
+    const jsonMatch = res.rawText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      const word = (parsed.word || parsed.word1 || '').trim();
+      if (word && typeof word === 'string' && !usedWords.includes(word)) {
+        return {
+          commonWord: word,
+          spyWord: 'SPY (สายลับ)',
+        };
+      }
     }
   } catch (err) {
     console.warn('[SpyGame] Gemini generation failed, using fallback list:', err);
@@ -255,14 +256,16 @@ export async function generateSpyAiHints(
 
   try {
     const res = await fetchGeminiWithFallback(
-      ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash'],
+      ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.5-flash', 'gemini-flash-latest'],
       [{ parts: [{ text: prompt }] }],
       { temperature: 0.9, topP: 0.95 }
     );
-    const raw = res.rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed.hints) && parsed.hints.length > 0) {
-      return parsed.hints;
+    const jsonMatch = res.rawText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed.hints) && parsed.hints.length > 0) {
+        return parsed.hints;
+      }
     }
   } catch (err) {
     console.warn('[SpyGame] AI Hints generation failed:', err);
