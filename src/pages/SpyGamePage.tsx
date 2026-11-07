@@ -121,6 +121,7 @@ export default function SpyGamePage() {
   useEffect(() => {
     if (roomId) {
       const inviteUrl = getInviteUrl(roomId);
+      const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(inviteUrl)}`;
       QRCode.toDataURL(inviteUrl, {
         width: 320,
         margin: 2,
@@ -130,7 +131,7 @@ export default function SpyGamePage() {
         },
       })
         .then((url) => setQrDataUrl(url))
-        .catch((err) => console.error('[SpyGame] QR Code generation error:', err));
+        .catch(() => setQrDataUrl(fallbackUrl));
     }
   }, [roomId]);
 
