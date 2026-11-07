@@ -295,71 +295,62 @@ export default function SpyGamePage() {
   const [isFlipped, setIsFlipped] = useState(false);
   const prevStatusRef = useRef<string>('waiting');
 
-  // Realtime Firebase Firestore subscriptions
+  // 1. Instant Realtime Firebase Firestore Subscriptions (Runs immediately on roomId)
   useEffect(() => {
-    if (!roomId || !activeDisplayName) return;
+    if (!roomId) {
+      setLoadingRoom(false);
+      return;
+    }
 
-    let unsubRoom: (() => void) | null = null;
-    let unsubPlayers: (() => void) | null = null;
-    let isMounted = true;
+    setLoadingRoom(true);
 
-    const initRoom = async () => {
-      try {
-        await joinSpyGameRoom(
-          roomId,
-          {
-            userId: activeUserId,
-            displayName: activeDisplayName,
-            pictureUrl: activePictureUrl,
-          },
-          initialRoomName
-        );
-
-        if (!isMounted) return;
-
-        unsubRoom = subscribeToSpyRoom(roomId, (roomData) => {
-          if (!isMounted) return;
-          if (!roomData || roomData.status === 'closed') {
-            try {
-              localStorage.removeItem('spy_active_room_id');
-            } catch {}
-          }
-          setRoom(roomData);
-          if (roomData) {
-            setIsHost(roomData.hostId === activeUserId);
-            if (prevStatusRef.current !== 'playing' && roomData.status === 'playing') {
-              setIsFlipped(false);
-              setAiHints([]);
-            }
-            prevStatusRef.current = roomData.status;
-          }
-          setLoadingRoom(false);
-        });
-
-        unsubPlayers = subscribeToSpyPlayers(roomId, (playerList) => {
-          if (!isMounted) return;
-          setPlayers(playerList);
-          const me = playerList.find((p) => p.userId === activeUserId);
-          setMyPlayer(me || null);
-        });
-      } catch (err: any) {
-        if (isMounted) {
-          try {
-            localStorage.removeItem('spy_active_room_id');
-          } catch {}
-          setErrorMsg(err.message || 'ไม่สามารถเข้าร่วมห้องได้');
-          setLoadingRoom(false);
-        }
+    const unsubRoom = subscribeToSpyRoom(roomId, (roomData) => {
+      if (!roomData || roomData.status === 'closed') {
+        try {
+          localStorage.removeItem('spy_active_room_id');
+        } catch {}
       }
-    };
+      setRoom(roomData);
+      if (roomData) {
+        setIsHost(roomData.hostId === activeUserId);
+        if (prevStatusRef.current !== 'playing' && roomData.status === 'playing') {
+          setIsFlipped(false);
+          setAiHints([]);
+        }
+        prevStatusRef.current = roomData.status;
+      }
+    });
 
-    initRoom();
+    const unsubPlayers = subscribeToSpyPlayers(roomId, (playerList) => {
+      setPlayers(playerList);
+      const me = playerList.find((p) => (p.userId || p.user_id) === activeUserId);
+      setMyPlayer(me || null);
+      // Once initial snapshot of players is delivered, room is loaded and ready
+      setLoadingRoom(false);
+    });
 
     return () => {
-      isMounted = false;
-      if (unsubRoom) unsubRoom();
-      if (unsubPlayers) unsubPlayers();
+      unsubRoom();
+      unsubPlayers();
     };
+  }, [roomId, activeUserId]);
+
+  // 2. Parallel Player Join / Presence in Background (Zero blocking of realtime listeners)
+  useEffect(() => {
+    if (!roomId || !activeUserId || !activeDisplayName) return;
+
+    joinSpyGameRoom(
+      roomId,
+      {
+        userId: activeUserId,
+        displayName: activeDisplayName,
+        pictureUrl: activePictureUrl,
+      },
+      initialRoomName
+    ).catch((err: any) => {
+      console.error('[SpyGame] Join room error:', err);
+      setErrorMsg(err.message || 'ไม่สามารถเข้าร่วมห้องได้');
+    });
   }, [roomId, activeUserId, activeDisplayName, activePictureUrl, initialRoomName]);
 
   const handleCreateRoomSubmit = (e: React.FormEvent) => {
@@ -424,7 +415,7 @@ export default function SpyGamePage() {
     }
     setStartingGame(true);
     try {
-      await startSpyGame(roomId, room?.category || 'food', players);
+      await startSpyGame(roomId, room?.category || 'food', players, room?.usedWords || []);
     } catch (err: any) {
       showAlert({
         title: 'เริ่มเกมไม่สำเร็จ',
@@ -1331,6 +1322,23 @@ export default function SpyGamePage() {
                     </div>
                   );
                 })}
+                {players.length <= 1 && (
+                  <div
+                    style={{
+                      gridColumn: '1 / -1',
+                      marginTop: '6px',
+                      padding: '12px 14px',
+                      background: '#F8FAFC',
+                      border: '1px dashed #CBD5E1',
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                      color: '#64748B',
+                      fontSize: '0.82rem',
+                    }}
+                  >
+                    ⏳ กำลังรอเพื่อนเข้าร่วมห้อง... (แตะปุ่ม <strong>"📱 ชวนเพื่อน"</strong> ด้านบนเพื่อสแกน QR หรือส่งลิงก์)
+                  </div>
+                )}
               </div>
             </div>
 

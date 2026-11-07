@@ -2,7 +2,6 @@ import {
   doc,
   collection,
   onSnapshot,
-  setDoc,
   updateDoc,
   writeBatch,
   getDoc,
@@ -169,16 +168,20 @@ export async function generateSpyWordsWithAI(
   category: 'food' | 'daily' | 'animal',
   usedWords: string[] = []
 ): Promise<{ commonWord: string; spyWord: string }> {
-  const categoryName = category === 'animal' ? 'สัตว์โลกน่ารัก' : category === 'daily' ? 'ของใช้ในชีวิตประจำวัน' : 'อาหาร';
-  const subThemes = SUB_THEMES[category] || SUB_THEMES.food;
-  const randomTheme = subThemes[Math.floor(Math.random() * subThemes.length)];
-  const randomSeed = Math.floor(Math.random() * 1000000);
+  const fallback = getRandomFallbackWords(category, usedWords);
 
-  const excludePrompt = usedWords.length > 0
-    ? `\nข้อห้ามสำคัญที่สุด: ห้ามสุ่มหรือเลือกคำต่อไปนี้เด็ดขาดเพราะเพิ่งเล่นไปแล้ว: [${usedWords.slice(-30).join(', ')}]`
-    : '';
+  // Fast AI attempt with 1.2s timeout so starting game is instant with zero lag
+  const aiPromise = (async () => {
+    const categoryName = category === 'animal' ? 'สัตว์โลกน่ารัก' : category === 'daily' ? 'ของใช้ในชีวิตประจำวัน' : 'อาหาร';
+    const subThemes = SUB_THEMES[category] || SUB_THEMES.food;
+    const randomTheme = subThemes[Math.floor(Math.random() * subThemes.length)];
+    const randomSeed = Math.floor(Math.random() * 1000000);
 
-  const prompt = `คิดคำศัพท์ภาษาไทย 1 คำ ในหมวดหมู่ "${categoryName}" เพื่อใช้เล่นเกมจับสายลับ (Undercover Game)
+    const excludePrompt = usedWords.length > 0
+      ? `\nข้อห้ามสำคัญที่สุด: ห้ามสุ่มหรือเลือกคำต่อไปนี้เด็ดขาดเพราะเพิ่งเล่นไปแล้ว: [${usedWords.slice(-30).join(', ')}]`
+      : '';
+
+    const prompt = `คิดคำศัพท์ภาษาไทย 1 คำ ในหมวดหมู่ "${categoryName}" เพื่อใช้เล่นเกมจับสายลับ (Undercover Game)
 จุดเน้นประเภทของรอบนี้: "${randomTheme}"
 (Random Seed ID: ${randomSeed})
 ${excludePrompt}
@@ -193,7 +196,6 @@ ${excludePrompt}
   "word": "คำศัพท์ภาษาไทย"
 }`;
 
-  try {
     const models = [
       'gemini-3.5-flash-lite',
       'gemini-flash-lite-latest',
@@ -219,11 +221,18 @@ ${excludePrompt}
         };
       }
     }
-  } catch (err) {
-    console.warn('[SpyGame] Gemini generation failed, using fallback list:', err);
-  }
+    return fallback;
+  })();
 
-  return getRandomFallbackWords(category, usedWords);
+  const timeoutPromise = new Promise<{ commonWord: string; spyWord: string }>((resolve) => {
+    setTimeout(() => resolve(fallback), 1200);
+  });
+
+  try {
+    return await Promise.race([aiPromise, timeoutPromise]);
+  } catch {
+    return fallback;
+  }
 }
 
 /**
@@ -279,7 +288,7 @@ export async function generateSpyAiHints(
 }
 
 /**
- * Join or initialize room in Firestore
+ * Join or initialize room in Firestore (Optimized with atomic batch and merge)
  */
 export async function joinSpyGameRoom(
   roomId: string,
@@ -296,7 +305,8 @@ export async function joinSpyGameRoom(
   if (!roomSnap.exists()) {
     // Room doesn't exist: Current user is the host and creates the room
     const poeticName = suggestedRoomName?.trim() || POETIC_ROOM_NAMES[Math.floor(Math.random() * POETIC_ROOM_NAMES.length)];
-    await setDoc(roomRef, {
+    const batch = writeBatch(db);
+    batch.set(roomRef, {
       id: cleanRoomId,
       roomName: poeticName,
       hostId: user.userId,
@@ -312,7 +322,7 @@ export async function joinSpyGameRoom(
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    await setDoc(playerRef, {
+    batch.set(playerRef, {
       userId: user.userId,
       displayName: user.displayName,
       pictureUrl: user.pictureUrl || '',
@@ -321,14 +331,21 @@ export async function joinSpyGameRoom(
       word: '',
       cardViewed: false,
       joinedAt: Date.now(),
+      // Compatibility aliases
+      user_id: user.userId,
+      display_name: user.displayName,
+      picture_url: user.pictureUrl || '',
+      is_host: true,
+      is_spy: false,
+      card_viewed: false,
     });
+    await batch.commit();
   } else {
-    // Room exists: Add or update player
+    // Room exists: Add or update player atomically with merge
     const roomData = roomSnap.data() as SpyRoom;
-    const playerSnap = await getDoc(playerRef);
-
     const isHost = roomData.hostId === user.userId;
 
+    const batch = writeBatch(db);
     const updates: Record<string, any> = {
       lastActiveAt: Date.now(),
       updatedAt: serverTimestamp(),
@@ -336,27 +353,26 @@ export async function joinSpyGameRoom(
     if (!roomData.roomName && suggestedRoomName?.trim()) {
       updates.roomName = suggestedRoomName.trim();
     }
-    await updateDoc(roomRef, updates);
+    batch.update(roomRef, updates);
 
-    if (!playerSnap.exists()) {
-      await setDoc(playerRef, {
+    batch.set(
+      playerRef,
+      {
         userId: user.userId,
         displayName: user.displayName,
         pictureUrl: user.pictureUrl || '',
         isHost,
-        isSpy: false,
-        word: '',
-        cardViewed: false,
         joinedAt: Date.now(),
-      });
-    } else {
-      // Just update display name / picture if changed
-      await updateDoc(playerRef, {
-        displayName: user.displayName,
-        pictureUrl: user.pictureUrl || '',
-        isHost,
-      });
-    }
+        // Compatibility aliases
+        user_id: user.userId,
+        display_name: user.displayName,
+        picture_url: user.pictureUrl || '',
+        is_host: isHost,
+      },
+      { merge: true }
+    );
+
+    await batch.commit();
   }
 }
 
@@ -378,7 +394,8 @@ export async function updateSpyRoomCategory(roomId: string, category: 'food' | '
 export async function startSpyGame(
   roomId: string,
   category: 'food' | 'daily' | 'animal',
-  players: SpyPlayer[]
+  players: SpyPlayer[],
+  providedUsedWords?: string[]
 ): Promise<void> {
   if (players.length < 2) {
     throw new Error('ต้องมีผู้เล่นอย่างน้อย 2 คนขึ้นไปเพื่อเริ่มเกม');
@@ -386,11 +403,17 @@ export async function startSpyGame(
 
   const cleanRoomId = roomId.trim().toLowerCase();
   const roomRef = doc(db, 'spy_game_rooms', cleanRoomId);
-  const roomSnap = await getDoc(roomRef);
-  const currentRoomData = roomSnap.data();
-  const existingUsedWords: string[] = Array.isArray(currentRoomData?.usedWords)
-    ? currentRoomData.usedWords
-    : [];
+
+  let existingUsedWords: string[] = providedUsedWords || [];
+  if (!providedUsedWords) {
+    try {
+      const roomSnap = await getDoc(roomRef);
+      const currentRoomData = roomSnap.data();
+      if (Array.isArray(currentRoomData?.usedWords)) {
+        existingUsedWords = currentRoomData.usedWords;
+      }
+    } catch {}
+  }
 
   const { commonWord, spyWord } = await generateSpyWordsWithAI(category, existingUsedWords);
 
@@ -421,6 +444,9 @@ export async function startSpyGame(
       isSpy,
       word: isSpy ? '' : commonWord,
       cardViewed: false,
+      // Compatibility aliases
+      is_spy: isSpy,
+      card_viewed: false,
     });
   }
 

@@ -71,11 +71,42 @@ function AuthenticatedRoutes() {
 }
 
 function App() {
-  return <Router><Routes>
-    <Route path="/supplement-course-pdf" element={<SupplementCoursePdfPage />} />
-    <Route path="/supplement-course-dashboard" element={<SupplementCourseDashboardPage />} />
-    <Route path="*" element={<AuthenticatedRoutes />} />
-  </Routes></Router>;
+  const isSpy = (() => {
+    try {
+      const search = window.location.search;
+      const pathname = window.location.pathname;
+      const hash = window.location.hash;
+      const urlParams = new URLSearchParams(search);
+      const liffState = urlParams.get('liff.state') || '';
+      return (
+        pathname.startsWith('/spy-game') ||
+        urlParams.get('page') === 'spy-game' ||
+        urlParams.has('roomId') ||
+        urlParams.has('room') ||
+        liffState.includes('spy-game') ||
+        liffState.includes('roomId') ||
+        search.includes('spy-game') ||
+        hash.includes('spy-game') ||
+        sessionStorage.getItem('is_spy_game') === '1' ||
+        !!localStorage.getItem('spy_active_room_id')
+      );
+    } catch {
+      return false;
+    }
+  })();
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/supplement-course-pdf" element={<SupplementCoursePdfPage />} />
+        <Route path="/supplement-course-dashboard" element={<SupplementCourseDashboardPage />} />
+        <Route path="/spy-game" element={<SpyGamePage />} />
+        <Route path="/spy-game/:roomId" element={<SpyGamePage />} />
+        {isSpy && <Route path="/" element={<SpyGamePage />} />}
+        <Route path="*" element={<AuthenticatedRoutes />} />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;
