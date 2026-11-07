@@ -1364,24 +1364,47 @@ export default function SpyGamePage() {
         {/* ----------------- STATE 2: PLAYING (3D CARD FLIP) ----------------- */}
         {room?.status === 'playing' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-            {/* Player Count Banner */}
+            {/* Category & Player Count Banner */}
             <div
               style={{
                 background: '#FFFFFF',
-                padding: '8px 20px',
-                borderRadius: '20px',
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                color: '#64748B',
+                padding: '10px 24px',
+                borderRadius: '22px',
                 border: '1px solid #E2E8F0',
-                boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
-                display: 'inline-flex',
+                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.05)',
+                display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                gap: '6px',
-                justifyContent: 'center',
+                gap: '4px',
+                textAlign: 'center',
               }}
             >
-              <span>👥 ผู้เล่น {players.length} คน</span>
+              <div
+                style={{
+                  fontSize: '1.25rem',
+                  fontWeight: 900,
+                  color: '#1E293B',
+                  letterSpacing: '-0.3px',
+                }}
+              >
+                {room?.category === 'animal'
+                  ? '🐾 หมวดสัตว์โลกน่ารัก'
+                  : room?.category === 'daily'
+                  ? '🧴 หมวดของใช้ในชีวิตประจำวัน'
+                  : '🍲 หมวดอาหาร'}
+              </div>
+              <div
+                style={{
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: '#64748B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <span>👥 ผู้เล่น {players.length} คน</span>
+              </div>
             </div>
 
             {/* 3D Flip Card Container */}
