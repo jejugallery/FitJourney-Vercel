@@ -1364,41 +1364,24 @@ export default function SpyGamePage() {
         {/* ----------------- STATE 2: PLAYING (3D CARD FLIP) ----------------- */}
         {room?.status === 'playing' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-            {/* Room Name & Category Banner with Room Code */}
+            {/* Player Count Banner */}
             <div
               style={{
                 background: '#FFFFFF',
-                padding: '8px 18px',
+                padding: '8px 20px',
                 borderRadius: '20px',
-                fontSize: '0.82rem',
+                fontSize: '0.85rem',
                 fontWeight: 700,
-                color: '#334155',
+                color: '#64748B',
                 border: '1px solid #E2E8F0',
                 boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: '8px',
-                flexWrap: 'wrap',
+                gap: '6px',
                 justifyContent: 'center',
               }}
             >
-              <span style={{ color: '#FF416C' }}>🔢 รหัส {roomId}</span>
-              <span style={{ color: '#CBD5E1' }}>•</span>
-              {room?.roomName && (
-                <>
-                  <span style={{ color: '#1E293B' }}>🌸 {room.roomName}</span>
-                  <span style={{ color: '#CBD5E1' }}>•</span>
-                </>
-              )}
-              <span>
-                {room?.category === 'animal'
-                  ? '🐾 หมวดสัตว์โลกน่ารัก'
-                  : room?.category === 'daily'
-                  ? '🧴 หมวดของใช้ในชีวิตประจำวัน'
-                  : '🍲 หมวดอาหาร'}
-              </span>
-              <span style={{ color: '#CBD5E1' }}>•</span>
-              <span style={{ color: '#64748B' }}>ผู้เล่น {players.length} คน</span>
+              <span>👥 ผู้เล่น {players.length} คน</span>
             </div>
 
             {/* 3D Flip Card Container */}
