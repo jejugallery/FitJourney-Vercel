@@ -200,7 +200,6 @@ export default function SpyGamePage() {
   const [showHintModal, setShowHintModal] = useState(false);
   const [aiHints, setAiHints] = useState<SpyAiHint[]>([]);
   const [loadingAiHint, setLoadingAiHint] = useState(false);
-  const [copiedHintIndex, setCopiedHintIndex] = useState<number | null>(null);
 
   // Generate Invite URL that forces LINE to open Safari/Chrome external browser
   const getInviteUrl = (code: string) => {
@@ -2491,14 +2490,7 @@ export default function SpyGamePage() {
                       position: 'relative',
                     }}
                   >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: '6px',
-                      }}
-                    >
+                    <div style={{ marginBottom: '6px' }}>
                       <span
                         style={{
                           fontSize: '0.72rem',
@@ -2511,26 +2503,6 @@ export default function SpyGamePage() {
                       >
                         {item.style}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(item.hint);
-                          setCopiedHintIndex(idx);
-                          setTimeout(() => setCopiedHintIndex(null), 2000);
-                        }}
-                        style={{
-                          background: copiedHintIndex === idx ? '#10B981' : '#FFFFFF',
-                          color: copiedHintIndex === idx ? '#FFFFFF' : '#64748B',
-                          border: '1px solid #CBD5E1',
-                          borderRadius: '12px',
-                          padding: '3px 8px',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {copiedHintIndex === idx ? '✓ ก๊อปแล้ว' : '📋 คัดลอก'}
-                      </button>
                     </div>
                     <div
                       style={{
