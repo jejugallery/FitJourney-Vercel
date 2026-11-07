@@ -31,6 +31,7 @@ function LiffRedirectHandler() {
           try {
             sessionStorage.setItem('is_spy_game', '1');
           } catch {}
+          return;
         }
         if (decoded.startsWith('/') && location.pathname !== decoded) {
           navigate(decoded, { replace: true });

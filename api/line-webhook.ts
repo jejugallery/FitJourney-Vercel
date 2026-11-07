@@ -1064,7 +1064,7 @@ const generatePoeticRoomName = async (): Promise<string> => {
 };
 
 const buildSpyGameFlexMessage = () => {
-  const gameUrl = `${DEFAULT_LIFF_URL}/spy-game`;
+  const gameUrl = `${DEFAULT_LIFF_URL}?page=spy-game`;
   return {
     type: 'flex',
     altText: '🕵️‍♂️ อยากเล่นเกมจับสายลับไหม? กดเล่นเลย!',

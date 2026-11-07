@@ -81,6 +81,7 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
           hash.includes('spy-game') ||
           stateParam.includes('spy-game') ||
           urlParams.has('roomId') ||
+          urlParams.get('page') === 'spy-game' ||
           sessionStorage.getItem('is_spy_game') === '1';
 
         if (isSpyGame) {

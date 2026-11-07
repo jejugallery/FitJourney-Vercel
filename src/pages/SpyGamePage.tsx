@@ -119,9 +119,9 @@ export default function SpyGamePage() {
   // Generate Invite URL & QR Code
   const getInviteUrl = (code: string) => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return `${window.location.origin}/spy-game/${code}`;
+      return `${window.location.origin}/?page=spy-game&roomId=${code}`;
     }
-    return `https://liff.line.me/2010284484-jvUDlx0u/spy-game/${code}`;
+    return `https://liff.line.me/2010284484-jvUDlx0u?page=spy-game&roomId=${code}`;
   };
 
   useEffect(() => {
@@ -281,7 +281,7 @@ export default function SpyGamePage() {
     // Generate pure 6-digit numeric room code
     const newRoomId = String(Math.floor(100000 + Math.random() * 900000));
     const finalRoomName = createRoomName.trim() || 'อรุณรุ่งเรืองรอง';
-    navigate(`/spy-game/${newRoomId}?roomName=${encodeURIComponent(finalRoomName)}`);
+    navigate(`/?page=spy-game&roomId=${newRoomId}&roomName=${encodeURIComponent(finalRoomName)}`);
   };
 
   const handleJoinByCode = (e: React.FormEvent) => {
@@ -296,7 +296,7 @@ export default function SpyGamePage() {
       });
       return;
     }
-    navigate(`/spy-game/${code}`);
+    navigate(`/?page=spy-game&roomId=${code}`);
   };
 
   const handleSelectCategory = async (category: 'food' | 'daily' | 'animal') => {
