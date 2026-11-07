@@ -678,7 +678,7 @@ export default function SpyGamePage() {
             >
               🔢 หรือเข้าร่วมด้วยรหัสตัวเลข 6 หลัก:
             </label>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <input
                 type="tel"
                 pattern="[0-9]*"
@@ -687,40 +687,43 @@ export default function SpyGamePage() {
                 onChange={(e) => setJoinRoomCode(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="เช่น 123456"
                 style={{
-                  flex: 1,
-                  padding: '13px 16px',
+                  width: '100%',
+                  padding: '14px 16px',
                   borderRadius: '16px',
                   border: '1.5px solid #E2E8F0',
                   backgroundColor: '#F8FAFC',
                   color: '#1E293B',
-                  fontSize: '1.05rem',
-                  fontWeight: 700,
+                  fontSize: '1.15rem',
+                  fontWeight: 800,
                   outline: 'none',
                   boxSizing: 'border-box',
-                  letterSpacing: '1px',
+                  letterSpacing: '3px',
+                  textAlign: 'center',
                 }}
               />
               <button
                 type="submit"
                 disabled={!joinRoomCode.trim()}
                 style={{
-                  background: '#1E293B',
-                  color: '#FFFFFF',
+                  width: '100%',
+                  background: !joinRoomCode.trim() ? '#E2E8F0' : '#1E293B',
+                  color: !joinRoomCode.trim() ? '#94A3B8' : '#FFFFFF',
                   border: 'none',
                   borderRadius: '16px',
-                  padding: '13px 20px',
-                  fontSize: '0.95rem',
+                  padding: '14px 20px',
+                  fontSize: '1rem',
                   fontWeight: 800,
                   cursor: !joinRoomCode.trim() ? 'not-allowed' : 'pointer',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 14px rgba(30, 41, 59, 0.25)',
+                  boxShadow: !joinRoomCode.trim() ? 'none' : '0 4px 14px rgba(30, 41, 59, 0.25)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
+                  justifyContent: 'center',
+                  gap: '8px',
                   transition: 'all 0.2s',
                 }}
               >
-                เข้าห้อง ➔
+                <span>เข้าห้อง</span>
+                <span>➔</span>
               </button>
             </div>
           </form>
