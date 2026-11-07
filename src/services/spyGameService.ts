@@ -540,6 +540,13 @@ export function subscribeToSpyPlayers(
   return onSnapshot(
     playersCol,
     (snap) => {
+      if (snap.empty) {
+        onUpdate([]);
+        // When no players are left in the room, automatically delete room document
+        const roomRef = doc(db, 'spy_game_rooms', cleanRoomId);
+        deleteDoc(roomRef).catch(() => {});
+        return;
+      }
       const list: SpyPlayer[] = [];
       snap.forEach((docSnap) => {
         const d = docSnap.data();
@@ -574,7 +581,7 @@ export function subscribeToSpyPlayers(
 
 /**
  * Leave Room:
- * - If last player leaves: delete room entirely
+ * - If last player leaves (no players left): automatically delete room entirely
  * - If host leaves and other players remain: pass host to next player
  * - If regular player leaves: remove player doc
  */
@@ -585,35 +592,60 @@ export async function leaveSpyGameRoom(
 ): Promise<void> {
   const cleanRoomId = roomId.trim().toLowerCase();
   const playerRef = doc(db, 'spy_game_rooms', cleanRoomId, 'players', userId);
-  await deleteDoc(playerRef).catch(() => {});
-
-  const remaining = players.filter((p) => p.userId !== userId);
   const roomRef = doc(db, 'spy_game_rooms', cleanRoomId);
 
-  if (remaining.length > 0) {
-    // If leaving player was host, assign host to first remaining player
-    const leavingWasHost = players.find((p) => p.userId === userId)?.isHost;
-    if (leavingWasHost) {
-      const newHost = remaining[0];
-      await updateDoc(roomRef, {
-        hostId: newHost.userId,
-        hostName: newHost.displayName,
-        lastActiveAt: Date.now(),
-      }).catch(() => {});
+  // 1. Delete player document
+  await deleteDoc(playerRef).catch(() => {});
 
-      const newHostPlayerRef = doc(db, 'spy_game_rooms', cleanRoomId, 'players', newHost.userId);
-      await updateDoc(newHostPlayerRef, {
-        isHost: true,
-      }).catch(() => {});
-    } else {
-      await updateDoc(roomRef, {
-        lastActiveAt: Date.now(),
-      }).catch(() => {});
-    }
+  // 2. Query Firestore directly to see actual remaining players in the room
+  const playersCol = collection(db, 'spy_game_rooms', cleanRoomId, 'players');
+  const snap = await getDocs(playersCol);
+
+  if (snap.empty) {
+    // No players left in room -> automatically delete room document
+    await deleteDoc(roomRef).catch(() => {});
+    return;
+  }
+
+  // If there are still players left in the room:
+  const remainingPlayers: SpyPlayer[] = [];
+  snap.forEach((d) => {
+    const data = d.data();
+    remainingPlayers.push({
+      userId: data.userId || data.user_id || d.id,
+      displayName: data.displayName || data.display_name || 'ผู้เล่น',
+      isHost: !!(data.isHost ?? data.is_host),
+      word: data.word || '',
+      user_id: data.userId || data.user_id || d.id,
+      display_name: data.displayName || data.display_name || 'ผู้เล่น',
+      is_host: !!(data.isHost ?? data.is_host),
+    });
+  });
+
+  // If leaving player was the host, reassign host to the first remaining player
+  const leavingWasHost = players.find((p) => (p.userId || p.user_id) === userId)?.isHost;
+  if (leavingWasHost && remainingPlayers.length > 0) {
+    const newHost = remainingPlayers[0];
+    const newHostId = newHost.userId || newHost.user_id;
+
+    const batch = writeBatch(db);
+    batch.update(roomRef, {
+      hostId: newHostId,
+      hostName: newHost.displayName || newHost.display_name,
+      lastActiveAt: Date.now(),
+      updatedAt: serverTimestamp(),
+    });
+
+    const newHostPlayerRef = doc(db, 'spy_game_rooms', cleanRoomId, 'players', newHostId);
+    batch.update(newHostPlayerRef, {
+      isHost: true,
+      is_host: true,
+    });
+    await batch.commit().catch(() => {});
   } else {
-    // Room remains open even if empty
     await updateDoc(roomRef, {
       lastActiveAt: Date.now(),
+      updatedAt: serverTimestamp(),
     }).catch(() => {});
   }
 }
