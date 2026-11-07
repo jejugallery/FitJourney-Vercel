@@ -740,8 +740,10 @@ export default function Home({ isRecordOnly = false }: { isRecordOnly?: boolean 
   const isSpy =
     pageParam === 'spy-game' ||
     urlSearch.has('roomId') ||
-    (rawLiffState && rawLiffState.includes('spy-game')) ||
+    urlSearch.has('room') ||
+    (rawLiffState && (rawLiffState.includes('spy-game') || rawLiffState.includes('roomId') || rawLiffState.includes('room'))) ||
     sessionStorage.getItem('is_spy_game') === '1' ||
+    !!localStorage.getItem('spy_active_room_id') ||
     window.location.pathname.includes('spy-game');
 
   if (isSpy) {

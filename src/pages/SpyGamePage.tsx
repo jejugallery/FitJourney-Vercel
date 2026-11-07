@@ -36,8 +36,93 @@ export default function SpyGamePage() {
   const navigate = useNavigate();
   const params = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
-  const rawRoomId = params.roomId || searchParams.get('roomId') || '';
-  const roomId = rawRoomId.trim().toLowerCase();
+
+  const resolveRoomId = (): string => {
+    // 1. Path param (e.g. /spy-game/:roomId)
+    if (params.roomId) {
+      return params.roomId.trim().toLowerCase();
+    }
+
+    // 2. Direct query param (?roomId=... or ?room=...)
+    const queryRoom = searchParams.get('roomId') || searchParams.get('room');
+    if (queryRoom) {
+      return queryRoom.trim().toLowerCase();
+    }
+
+    // 3. Check window.location.search directly
+    try {
+      const urlSearch = new URLSearchParams(window.location.search);
+      const directSearchRoom = urlSearch.get('roomId') || urlSearch.get('room');
+      if (directSearchRoom) {
+        return directSearchRoom.trim().toLowerCase();
+      }
+
+      // 4. Check liff.state (from LINE LIFF redirect: ?liff.state=...)
+      const liffState = urlSearch.get('liff.state') || searchParams.get('liff.state');
+      if (liffState) {
+        const decoded = decodeURIComponent(liffState);
+        const qIdx = decoded.indexOf('?');
+        const qs = qIdx >= 0 ? decoded.substring(qIdx + 1) : decoded;
+        const stateParams = new URLSearchParams(qs);
+        const stateRoom = stateParams.get('roomId') || stateParams.get('room');
+        if (stateRoom) {
+          return stateRoom.trim().toLowerCase();
+        }
+        const regexMatch =
+          decoded.match(/roomId=([0-9a-zA-Z_-]+)/i) ||
+          decoded.match(/room=([0-9a-zA-Z_-]+)/i) ||
+          decoded.match(/spy-game\/([0-9a-zA-Z_-]+)/i);
+        if (regexMatch && regexMatch[1]) {
+          return regexMatch[1].trim().toLowerCase();
+        }
+      }
+    } catch {}
+
+    // 5. Check window.location.hash
+    try {
+      if (window.location.hash) {
+        const hIdx = window.location.hash.indexOf('?');
+        if (hIdx >= 0) {
+          const hashParams = new URLSearchParams(window.location.hash.substring(hIdx + 1));
+          const hashRoom = hashParams.get('roomId') || hashParams.get('room');
+          if (hashRoom) {
+            return hashRoom.trim().toLowerCase();
+          }
+        }
+      }
+    } catch {}
+
+    // 6. Check localStorage (remember active room session when leaving page)
+    try {
+      const saved = localStorage.getItem('spy_active_room_id');
+      if (saved && saved.trim()) {
+        return saved.trim().toLowerCase();
+      }
+    } catch {}
+
+    return '';
+  };
+
+  const [roomId, setRoomId] = useState<string>(() => resolveRoomId());
+
+  // Keep roomId in sync when search params change
+  useEffect(() => {
+    const resolved = resolveRoomId();
+    if (resolved && resolved !== roomId) {
+      setRoomId(resolved);
+    }
+  }, [searchParams, params.roomId]);
+
+  // Persist active roomId to localStorage
+  useEffect(() => {
+    if (roomId) {
+      try {
+        localStorage.setItem('spy_active_room_id', roomId);
+        sessionStorage.setItem('is_spy_game', '1');
+      } catch {}
+    }
+  }, [roomId]);
+
   const initialRoomName = searchParams.get('roomName') || searchParams.get('name') || '';
 
   const { profile, loading: liffLoading } = useLiff();
@@ -82,18 +167,6 @@ export default function SpyGamePage() {
       sessionStorage.setItem('is_spy_game', '1');
     } catch {}
   }, []);
-
-  // Handle LIFF state redirect cleanup if present in query params
-  useEffect(() => {
-    const liffState = searchParams.get('liff.state');
-    if (liffState) {
-      const decoded = decodeURIComponent(liffState);
-      const match = decoded.match(/spy-game\/([0-9a-zA-Z_-]+)/);
-      if (match && match[1] && !params.roomId) {
-        navigate(`/spy-game/${match[1]}`, { replace: true });
-      }
-    }
-  }, [searchParams, params.roomId, navigate]);
 
   // Room State
   const [room, setRoom] = useState<SpyRoom | null>(null);
@@ -235,6 +308,11 @@ export default function SpyGamePage() {
 
         unsubRoom = subscribeToSpyRoom(roomId, (roomData) => {
           if (!isMounted) return;
+          if (!roomData || roomData.status === 'closed') {
+            try {
+              localStorage.removeItem('spy_active_room_id');
+            } catch {}
+          }
           setRoom(roomData);
           if (roomData) {
             setIsHost(roomData.hostId === activeUserId);
@@ -255,6 +333,9 @@ export default function SpyGamePage() {
         });
       } catch (err: any) {
         if (isMounted) {
+          try {
+            localStorage.removeItem('spy_active_room_id');
+          } catch {}
           setErrorMsg(err.message || 'ไม่สามารถเข้าร่วมห้องได้');
           setLoadingRoom(false);
         }
@@ -281,12 +362,17 @@ export default function SpyGamePage() {
     // Generate pure 6-digit numeric room code
     const newRoomId = String(Math.floor(100000 + Math.random() * 900000));
     const finalRoomName = createRoomName.trim() || 'อรุณรุ่งเรืองรอง';
+    try {
+      localStorage.setItem('spy_active_room_id', newRoomId);
+      sessionStorage.setItem('is_spy_game', '1');
+    } catch {}
+    setRoomId(newRoomId);
     navigate(`/?page=spy-game&roomId=${newRoomId}&roomName=${encodeURIComponent(finalRoomName)}`);
   };
 
   const handleJoinByCode = (e: React.FormEvent) => {
     e.preventDefault();
-    const code = joinRoomCode.trim();
+    const code = joinRoomCode.trim().toLowerCase();
     if (!code) return;
     if (code.length !== 6) {
       showAlert({
@@ -296,6 +382,11 @@ export default function SpyGamePage() {
       });
       return;
     }
+    try {
+      localStorage.setItem('spy_active_room_id', code);
+      sessionStorage.setItem('is_spy_game', '1');
+    } catch {}
+    setRoomId(code);
     navigate(`/?page=spy-game&roomId=${code}`);
   };
 
@@ -412,6 +503,8 @@ export default function SpyGamePage() {
         setIsExiting(true);
         setHasLeft(true);
         try {
+          localStorage.removeItem('spy_active_room_id');
+          sessionStorage.removeItem('is_spy_game');
           await leaveSpyGameRoom(roomId, activeUserId, players);
         } catch (err: any) {
           console.error('[SpyGame] Error leaving room:', err);
@@ -424,6 +517,8 @@ export default function SpyGamePage() {
 
   const handleExitToHome = () => {
     try {
+      localStorage.removeItem('spy_active_room_id');
+      sessionStorage.removeItem('is_spy_game');
       if (liff && liff.isInClient && liff.isInClient()) {
         liff.closeWindow();
         return;
@@ -918,7 +1013,7 @@ export default function SpyGamePage() {
             fontSize: '0.92rem',
             maxWidth: '320px',
             lineHeight: 1.6,
-            marginBottom: hasLeft ? '0' : '28px',
+            marginBottom: '28px',
           }}
         >
           {hasLeft
@@ -926,28 +1021,54 @@ export default function SpyGamePage() {
             : 'ห้องเกมนี้ถูกปิดแล้ว หรือเกมสิ้นสุดลงแล้ว'}
         </p>
 
-        {/* If room was closed by host and user hasn't explicitly clicked left, offer exit */}
-        {!hasLeft && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '280px' }}>
           <button
-            onClick={handleExitToHome}
+            onClick={() => {
+              try {
+                localStorage.removeItem('spy_active_room_id');
+              } catch {}
+              setHasLeft(false);
+              setRoomId('');
+              navigate('/?page=spy-game');
+            }}
             style={{
               background: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
               color: '#FFFFFF',
               border: 'none',
               borderRadius: '16px',
-              padding: '14px 28px',
+              padding: '14px 24px',
               fontSize: '1rem',
               fontWeight: 700,
               cursor: 'pointer',
               boxShadow: '0 8px 20px rgba(255, 65, 108, 0.25)',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '8px',
             }}
           >
-            🏠 กลับสู่หน้าหลัก FitJourney
+            🎮 สร้างห้อง / เข้าห้องใหม่
           </button>
-        )}
+          <button
+            onClick={handleExitToHome}
+            style={{
+              background: '#FFFFFF',
+              color: '#64748B',
+              border: '1px solid #CBD5E1',
+              borderRadius: '16px',
+              padding: '12px 24px',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            🏠 ปิดหน้าต่าง
+          </button>
+        </div>
       </div>
     );
   }

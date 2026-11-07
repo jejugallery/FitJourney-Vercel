@@ -80,9 +80,13 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
           search.includes('spy-game') ||
           hash.includes('spy-game') ||
           stateParam.includes('spy-game') ||
+          stateParam.includes('roomId') ||
+          stateParam.includes('room') ||
           urlParams.has('roomId') ||
+          urlParams.has('room') ||
           urlParams.get('page') === 'spy-game' ||
-          sessionStorage.getItem('is_spy_game') === '1';
+          sessionStorage.getItem('is_spy_game') === '1' ||
+          !!localStorage.getItem('spy_active_room_id');
 
         if (isSpyGame) {
           try {
@@ -128,7 +132,10 @@ export const LiffProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const isSpyCatch = 
           window.location.pathname.includes('spy-game') || 
           window.location.search.includes('spy-game') ||
-          sessionStorage.getItem('is_spy_game') === '1';
+          window.location.search.includes('roomId') ||
+          window.location.search.includes('room') ||
+          sessionStorage.getItem('is_spy_game') === '1' ||
+          !!localStorage.getItem('spy_active_room_id');
 
         if (isSpyCatch) {
           // Allow spy game guest mode to proceed smoothly even if LIFF fails in external browser
