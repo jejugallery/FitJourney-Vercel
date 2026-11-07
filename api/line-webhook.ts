@@ -1063,8 +1063,9 @@ const generatePoeticRoomName = async (): Promise<string> => {
   return fallback;
 };
 
-const buildSpyGameFlexMessage = () => {
-  const gameUrl = `${DEFAULT_LIFF_URL}?page=spy-game`;
+const buildSpyGameFlexMessage = (customOrigin?: string) => {
+  const origin = customOrigin || 'https://fit-journey-vercel.vercel.app';
+  const gameUrl = `${origin}/?page=spy-game&openExternalBrowser=1`;
   return {
     type: 'flex',
     altText: '🕵️‍♂️ อยากเล่นเกมจับสายลับไหม? กดเล่นเลย!',
@@ -1336,7 +1337,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (trimmedText.includes('จับสายลับ')) {
         if (!replyToken) continue;
         const chatId = event.source?.groupId || event.source?.roomId || event.source?.userId;
-        const flexMsg = buildSpyGameFlexMessage();
+        const flexMsg = buildSpyGameFlexMessage(origin);
         try {
           await replyToLine(replyToken, [flexMsg]);
         } catch (replyErr: any) {

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import liff from '@line/liff';
 import QRCode from 'qrcode';
-import { useLiff } from '../context/LiffContext';
 import {
   type SpyPlayer,
   type SpyRoom,
@@ -16,6 +15,7 @@ import {
   revealSpyGame,
   resetSpyGame,
   leaveSpyGameRoom,
+  updateSpyPlayerName,
   POETIC_ROOM_NAMES,
   generateSpyAiHints,
 } from '../services/spyGameService';
@@ -125,42 +125,55 @@ export default function SpyGamePage() {
 
   const initialRoomName = searchParams.get('roomName') || searchParams.get('name') || '';
 
-  const { profile, loading: liffLoading } = useLiff();
+  // 1. Force break out of LINE In-App Browser to Safari/Chrome
+  // Allows players to use LINE freely for work/chat while playing the game in browser
+  useEffect(() => {
+    const ua = navigator.userAgent || '';
+    const isLineInApp = /Line\//i.test(ua);
+    if (isLineInApp) {
+      try {
+        if (liff && liff.isInClient && liff.isInClient()) {
+          const extUrl = new URL(window.location.href);
+          extUrl.searchParams.set('openExternalBrowser', '1');
+          liff.openWindow({ url: extUrl.toString(), external: true });
+          return;
+        }
+      } catch {}
+      const cur = new URL(window.location.href);
+      if (!cur.searchParams.has('openExternalBrowser')) {
+        cur.searchParams.set('openExternalBrowser', '1');
+        window.location.replace(cur.toString());
+      }
+    }
+  }, []);
 
-  // Local guest fallback if opened outside LINE or without login
+  // 2. Purely independent player identity (decoupled from LINE profile)
+  // Players use custom in-game nicknames stored in localStorage
   const [guestName, setGuestName] = useState(() => {
     return localStorage.getItem('spy_guest_name') || '';
   });
   const [guestId] = useState(() => {
     let id = localStorage.getItem('spy_guest_id');
     if (!id) {
-      id = 'guest_' + Math.random().toString(36).substring(2, 9);
+      id = 'player_' + Math.random().toString(36).substring(2, 9);
       localStorage.setItem('spy_guest_id', id);
     }
     return id;
   });
 
-  // Active user identity
-  const activeUserId = profile?.userId || guestId;
-  const activeDisplayName = profile?.displayName || guestName;
-  const activePictureUrl = profile?.pictureUrl || '';
+  const activeUserId = guestId;
+  const activeDisplayName = guestName;
+  const activePictureUrl = '';
 
   // Room creation and Join by code state (for !roomId page)
   const [createRoomName, setCreateRoomName] = useState(() => {
     return POETIC_ROOM_NAMES[Math.floor(Math.random() * POETIC_ROOM_NAMES.length)];
   });
   const [hostNameInput, setHostNameInput] = useState(() => {
-    return profile?.displayName || guestName || '';
+    return guestName || '';
   });
   const [creatingRoom, setCreatingRoom] = useState(false);
   const [joinRoomCode, setJoinRoomCode] = useState('');
-
-  // Update hostNameInput if LINE profile loads later
-  useEffect(() => {
-    if (profile?.displayName && !hostNameInput) {
-      setHostNameInput(profile.displayName);
-    }
-  }, [profile?.displayName, hostNameInput]);
 
   useEffect(() => {
     try {
@@ -189,12 +202,10 @@ export default function SpyGamePage() {
   const [loadingAiHint, setLoadingAiHint] = useState(false);
   const [copiedHintIndex, setCopiedHintIndex] = useState<number | null>(null);
 
-  // Generate Invite URL & QR Code
+  // Generate Invite URL that forces LINE to open Safari/Chrome external browser
   const getInviteUrl = (code: string) => {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return `${window.location.origin}/?page=spy-game&roomId=${code}`;
-    }
-    return `https://liff.line.me/2010284484-jvUDlx0u?page=spy-game&roomId=${code}`;
+    const origin = window.location.origin;
+    return `${origin}/?page=spy-game&roomId=${code}&openExternalBrowser=1`;
   };
 
   useEffect(() => {
@@ -286,7 +297,7 @@ export default function SpyGamePage() {
 
   // Realtime Firebase Firestore subscriptions
   useEffect(() => {
-    if (!roomId || liffLoading || !activeDisplayName) return;
+    if (!roomId || !activeDisplayName) return;
 
     let unsubRoom: (() => void) | null = null;
     let unsubPlayers: (() => void) | null = null;
@@ -349,15 +360,13 @@ export default function SpyGamePage() {
       if (unsubRoom) unsubRoom();
       if (unsubPlayers) unsubPlayers();
     };
-  }, [roomId, activeUserId, activeDisplayName, liffLoading, activePictureUrl, initialRoomName]);
+  }, [roomId, activeUserId, activeDisplayName, activePictureUrl, initialRoomName]);
 
   const handleCreateRoomSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const finalHostName = hostNameInput.trim() || 'ผู้เล่น';
-    if (!profile?.displayName) {
-      setGuestName(finalHostName);
-      localStorage.setItem('spy_guest_name', finalHostName);
-    }
+    setGuestName(finalHostName);
+    localStorage.setItem('spy_guest_name', finalHostName);
     setCreatingRoom(true);
     // Generate pure 6-digit numeric room code
     const newRoomId = String(Math.floor(100000 + Math.random() * 900000));
@@ -833,7 +842,7 @@ export default function SpyGamePage() {
   // -------------------------------------------------------------
   // SCREEN B: GUEST NAME PROMPT (When entering room via URL/QR without displayName)
   // -------------------------------------------------------------
-  if (!liffLoading && !activeDisplayName) {
+  if (!activeDisplayName) {
     return (
       <div
         style={{
@@ -927,7 +936,7 @@ export default function SpyGamePage() {
   // -------------------------------------------------------------
   // SCREEN C: LOADING ROOM
   // -------------------------------------------------------------
-  if (liffLoading || loadingRoom) {
+  if (loadingRoom) {
     return (
       <div
         style={{
@@ -1214,16 +1223,63 @@ export default function SpyGamePage() {
 
               <div
                 style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: '#FFF1F4',
+                  borderRadius: '12px',
+                  padding: '8px 12px',
+                  marginBottom: '14px',
+                  border: '1px solid #FECDD3',
+                }}
+              >
+                <div style={{ fontSize: '0.82rem', color: '#881337', fontWeight: 600 }}>
+                  👤 ชื่อในเกมของคุณ: <strong style={{ color: '#E11D48' }}>{activeDisplayName}</strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newName = prompt('ระบุชื่อในเกมของคุณ:', activeDisplayName);
+                    if (newName && newName.trim() && newName.trim() !== activeDisplayName) {
+                      const trimmed = newName.trim();
+                      setGuestName(trimmed);
+                      localStorage.setItem('spy_guest_name', trimmed);
+                      if (roomId) {
+                        updateSpyPlayerName(roomId, activeUserId, trimmed).catch(() => {});
+                      }
+                    }
+                  }}
+                  style={{
+                    background: '#FFFFFF',
+                    border: '1px solid #FECDD3',
+                    borderRadius: '12px',
+                    padding: '3px 10px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    color: '#E11D48',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✏️ เปลี่ยนชื่อ
+                </button>
+              </div>
+
+              <div
+                style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
                   gap: '10px',
                 }}
               >
                 {players.map((p) => {
-                  const isMe = p.user_id === activeUserId;
+                  const pId = p.userId || p.user_id;
+                  const pName = p.displayName || p.display_name || 'ผู้เล่น';
+                  const pPic = p.pictureUrl || p.picture_url;
+                  const isMe = pId === activeUserId;
+                  const isHostPlayer = p.isHost || p.is_host;
                   return (
                     <div
-                      key={p.user_id}
+                      key={pId}
                       style={{
                         background: isMe ? '#FFF1F4' : '#F8FAFC',
                         border: isMe ? '1px solid #FECDD3' : '1px solid #E2E8F0',
@@ -1241,7 +1297,7 @@ export default function SpyGamePage() {
                           height: '34px',
                           borderRadius: '50%',
                           backgroundColor: '#E2E8F0',
-                          backgroundImage: p.picture_url ? `url(${p.picture_url})` : 'none',
+                          backgroundImage: pPic ? `url(${pPic})` : 'none',
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
                           display: 'flex',
@@ -1253,7 +1309,7 @@ export default function SpyGamePage() {
                           flexShrink: 0,
                         }}
                       >
-                        {!p.picture_url && p.display_name.charAt(0)}
+                        {!pPic && pName.charAt(0)}
                       </div>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div
@@ -1266,9 +1322,9 @@ export default function SpyGamePage() {
                             textOverflow: 'ellipsis',
                           }}
                         >
-                          {p.display_name} {isMe ? '(คุณ)' : ''}
+                          {pName} {isMe ? '(คุณ)' : ''}
                         </div>
-                        {p.is_host && (
+                        {isHostPlayer && (
                           <div style={{ fontSize: '0.65rem', color: '#D97706', fontWeight: 600 }}>👑 Host</div>
                         )}
                       </div>
@@ -2259,28 +2315,61 @@ export default function SpyGamePage() {
               <div style={{ padding: '40px 0', color: '#94A3B8' }}>กำลังสร้าง QR Code...</div>
             )}
 
-            <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 20px 0' }}>
-              เปิดกล้องมือถือหรือ LINE สแกน QR เพื่อเข้าห้องได้ทันที
+            <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+              สแกน QR หรือส่งลิงก์ให้เพื่อน (จะเปิดใน Safari/Chrome ภายนอกทันที ไม่ทับแชท LINE)
             </p>
 
-            <button
-              type="button"
-              onClick={() => setShowQrModal(false)}
-              style={{
-                width: '100%',
-                background: '#F1F5F9',
-                color: '#475569',
-                border: 'none',
-                borderRadius: '16px',
-                padding: '13px',
-                fontSize: '0.95rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              ✕ ปิดหน้าต่าง
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const url = getInviteUrl(roomId);
+                  navigator.clipboard.writeText(url);
+                  showAlert({
+                    title: 'คัดลอกลิงก์เรียบร้อย',
+                    message: 'ส่งลิงก์นี้ให้เพื่อนใน LINE ได้เลย เมื่อเพื่อนกดจะเปิดใน Safari / Chrome ให้อัตโนมัติ โดยไม่ปิดแชท LINE',
+                    icon: '📋',
+                  });
+                }}
+                style={{
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '16px',
+                  padding: '13px',
+                  fontSize: '0.95rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 15px rgba(255, 65, 108, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                }}
+              >
+                <span>📋</span>
+                <span>คัดลอกลิงก์ส่งให้เพื่อน</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowQrModal(false)}
+                style={{
+                  width: '100%',
+                  background: '#F1F5F9',
+                  color: '#475569',
+                  border: 'none',
+                  borderRadius: '16px',
+                  padding: '13px',
+                  fontSize: '0.95rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                ✕ ปิดหน้าต่าง
+              </button>
+            </div>
           </div>
         </div>
       )}

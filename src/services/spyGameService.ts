@@ -616,3 +616,31 @@ export async function closeSpyGameRoom(roomId: string): Promise<void> {
   batch.delete(roomRef);
   await batch.commit().catch(() => {});
 }
+
+/**
+ * Update player's in-game nickname
+ */
+export async function updateSpyPlayerName(
+  roomId: string,
+  userId: string,
+  newDisplayName: string
+): Promise<void> {
+  const cleanRoomId = roomId.trim().toLowerCase();
+  const trimmed = newDisplayName.trim();
+  if (!trimmed) return;
+
+  const playerRef = doc(db, 'spy_game_rooms', cleanRoomId, 'players', userId);
+  await updateDoc(playerRef, {
+    displayName: trimmed,
+  });
+
+  // If this player is the room host, also update hostName on the room document
+  const roomRef = doc(db, 'spy_game_rooms', cleanRoomId);
+  const roomSnap = await getDoc(roomRef);
+  if (roomSnap.exists() && roomSnap.data().hostId === userId) {
+    await updateDoc(roomRef, {
+      hostName: trimmed,
+    });
+  }
+}
+
