@@ -11,7 +11,7 @@
     "deploy": "npm run build && npx firebase deploy --only hosting && node -e \"const now=new Date();const pad=n=>String(n).padStart(2,'0');const v=now.getFullYear()+''+pad(now.getMonth()+1)+''+pad(now.getDate())+'-'+pad(now.getHours())+''+pad(now.getMinutes());console.log('\\n✅ Deploy สำเร็จ! เปลี่ยน LIFF Endpoint URL เป็น:');console.log('https://fitjourneythailand.web.app/?v='+v+'\\n');\""
   },
   "dependencies": {
-    "@line/liff": "^2.29.0",
+    "@line/liff": "^2.32.0",
     "@neondatabase/serverless": "^0.9.4",
     "@types/qrcode": "^1.5.6",
     "axios": "^1.7.2",

@@ -219,7 +219,7 @@ export default function SpyGamePage() {
           light: '#FFFFFF',
         },
       })
-        .then((url) => setQrDataUrl(url))
+        .then((url: string) => setQrDataUrl(url))
         .catch(() => setQrDataUrl(fallbackUrl));
     }
   }, [roomId]);
